@@ -30,6 +30,7 @@ type DeploymentProfilesDataSourceModel struct {
 type DeploymentProfileItemModel struct {
 	ProfileID   types.String `tfsdk:"profile_id"`
 	ProfileName types.String `tfsdk:"profile_name"`
+	AuthCode    types.String `tfsdk:"auth_code"`
 	Details     types.String `tfsdk:"details"`
 }
 
@@ -65,6 +66,10 @@ func (d *deploymentProfilesDataSource) Schema(_ context.Context, _ datasource.Sc
 						"profile_name": schema.StringAttribute{
 							Computed:    true,
 							Description: "Deployment profile name.",
+						},
+						"auth_code": schema.StringAttribute{
+							Computed:    true,
+							Description: "Auth code for API key creation.",
 						},
 						"details": schema.StringAttribute{
 							Computed:    true,
@@ -122,6 +127,7 @@ func (d *deploymentProfilesDataSource) Read(ctx context.Context, req datasource.
 		config.Items[i] = DeploymentProfileItemModel{
 			ProfileID:   types.StringValue(item.AuthCode),
 			ProfileName: types.StringValue(item.DpName),
+			AuthCode:    types.StringValue(item.AuthCode),
 			Details:     types.StringValue(detailsJSON),
 		}
 	}

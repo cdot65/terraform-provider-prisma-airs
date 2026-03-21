@@ -21,10 +21,13 @@ type scanLogsDataSource struct {
 }
 
 type ScanLogsDataSourceModel struct {
-	Limit      types.Int64        `tfsdk:"limit"`
-	Offset     types.Int64        `tfsdk:"offset"`
-	Items      []ScanLogItemModel `tfsdk:"items"`
-	TotalCount types.Int64        `tfsdk:"total_count"`
+	Limit        types.Int64        `tfsdk:"limit"`
+	Offset       types.Int64        `tfsdk:"offset"`
+	TimeInterval types.Int64        `tfsdk:"time_interval"`
+	TimeUnit     types.String       `tfsdk:"time_unit"`
+	Filter       types.String       `tfsdk:"filter"`
+	Items        []ScanLogItemModel `tfsdk:"items"`
+	TotalCount   types.Int64        `tfsdk:"total_count"`
 }
 
 type ScanLogItemModel struct {
@@ -48,6 +51,18 @@ func (d *scanLogsDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 			"offset": schema.Int64Attribute{
 				Optional:    true,
 				Description: "Offset for pagination.",
+			},
+			"time_interval": schema.Int64Attribute{
+				Optional:    true,
+				Description: "Time interval for the query window. Defaults to 24.",
+			},
+			"time_unit": schema.StringAttribute{
+				Optional:    true,
+				Description: "Time unit for the query window (hour, day). Defaults to hour.",
+			},
+			"filter": schema.StringAttribute{
+				Optional:    true,
+				Description: "Filter results: all, benign, or threat. Defaults to all.",
 			},
 			"total_count": schema.Int64Attribute{
 				Computed:    true,
@@ -96,12 +111,27 @@ func (d *scanLogsDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	opts := management.ScanLogListOpts{}
+	opts := management.ScanLogListOpts{
+		TimeInterval: 24,
+		TimeUnit:     "hour",
+		PageNumber:   1,
+		PageSize:     25,
+		Filter:       "all",
+	}
 	if !config.Limit.IsNull() && !config.Limit.IsUnknown() {
 		opts.PageSize = int32(config.Limit.ValueInt64())
 	}
 	if !config.Offset.IsNull() && !config.Offset.IsUnknown() {
 		opts.PageNumber = int32(config.Offset.ValueInt64())
+	}
+	if !config.TimeInterval.IsNull() && !config.TimeInterval.IsUnknown() {
+		opts.TimeInterval = config.TimeInterval.ValueInt64()
+	}
+	if !config.TimeUnit.IsNull() && !config.TimeUnit.IsUnknown() {
+		opts.TimeUnit = config.TimeUnit.ValueString()
+	}
+	if !config.Filter.IsNull() && !config.Filter.IsUnknown() {
+		opts.Filter = config.Filter.ValueString()
 	}
 
 	listResp, err := d.client.ScanLogs.List(ctx, opts)

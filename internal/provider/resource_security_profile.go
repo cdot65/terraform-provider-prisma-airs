@@ -262,7 +262,21 @@ func mapProfileToState(profile *management.SecurityProfile, state *SecurityProfi
 	if profile.Policy != nil {
 		policyJSON, err := json.Marshal(profile.Policy)
 		if err == nil {
-			state.Policy = types.StringValue(string(policyJSON))
+			newPolicyStr := string(policyJSON)
+			// Preserve the original JSON string if semantically equivalent
+			// to avoid Terraform detecting a change due to key ordering.
+			if !state.Policy.IsNull() && !state.Policy.IsUnknown() {
+				var existing, returned any
+				if json.Unmarshal([]byte(state.Policy.ValueString()), &existing) == nil &&
+					json.Unmarshal(policyJSON, &returned) == nil {
+					existingNorm, _ := json.Marshal(existing)
+					returnedNorm, _ := json.Marshal(returned)
+					if string(existingNorm) == string(returnedNorm) {
+						return // keep existing policy string
+					}
+				}
+			}
+			state.Policy = types.StringValue(newPolicyStr)
 		}
 	}
 }
