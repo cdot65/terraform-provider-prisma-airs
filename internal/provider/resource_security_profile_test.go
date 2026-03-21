@@ -21,12 +21,11 @@ func TestAccSecurityProfileResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "profile_name", rName),
 					resource.TestCheckResourceAttrSet("prisma-airs_security_profile.test", "id"),
 					resource.TestCheckResourceAttrSet("prisma-airs_security_profile.test", "profile_id"),
+					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_type", "default"),
+					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_protection.0.name", "prompt-injection"),
+					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_protection.0.action", "alert"),
 				),
 			},
-			// Note: ImportState step skipped — GET /v1/mgmt/profile?profile_name=X
-			// returns 403. Read uses List-based lookup which works.
-			// Update step skipped — PUT /v1/mgmt/profile/{id} returns 403
-			// with the current service account permissions.
 		},
 	})
 }
@@ -35,21 +34,15 @@ func testAccSecurityProfileConfig(name string) string {
 	return fmt.Sprintf(`
 resource "prisma-airs_security_profile" "test" {
   profile_name = %[1]q
-  policy = jsonencode({
-    "ai-security-profiles" = [
-      {
-        "model-type" = "default"
-        "model-configuration" = {
-          "model-protection" = [
-            {
-              "name"   = "prompt-injection"
-              "action" = "alert"
-            }
-          ]
-        }
-      }
-    ]
-  })
+
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "alert"
+    }
+  }
 }
 `, name)
 }
