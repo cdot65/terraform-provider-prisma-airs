@@ -587,31 +587,49 @@ func TestAllResourceSchemas(t *testing.T) {
 	}{
 		"api_key": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &apiKeyResource{} },
+		} {
+			return &apiKeyResource{}
+		},
 		"customer_app": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &customerAppResource{} },
+		} {
+			return &customerAppResource{}
+		},
 		"security_profile": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &securityProfileResource{} },
+		} {
+			return &securityProfileResource{}
+		},
 		"custom_topic": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &customTopicResource{} },
+		} {
+			return &customTopicResource{}
+		},
 		"model_security_group": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &modelSecurityGroupResource{} },
+		} {
+			return &modelSecurityGroupResource{}
+		},
 		"model_scan": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &modelScanResource{} },
+		} {
+			return &modelScanResource{}
+		},
 		"red_team_target": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &redTeamTargetResource{} },
+		} {
+			return &redTeamTargetResource{}
+		},
 		"red_team_scan": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &redTeamScanResource{} },
+		} {
+			return &redTeamScanResource{}
+		},
 		"red_team_custom_prompt_set": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} { return &redTeamCustomPromptSetResource{} },
+		} {
+			return &redTeamCustomPromptSetResource{}
+		},
 	}
 
 	for name, factory := range resources {
@@ -643,31 +661,49 @@ func TestAllDataSourceSchemas(t *testing.T) {
 	}{
 		"dlp_profiles": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &dlpProfilesDataSource{} },
+		} {
+			return &dlpProfilesDataSource{}
+		},
 		"deployment_profiles": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &deploymentProfilesDataSource{} },
+		} {
+			return &deploymentProfilesDataSource{}
+		},
 		"scan_logs": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &scanLogsDataSource{} },
+		} {
+			return &scanLogsDataSource{}
+		},
 		"model_security_rules": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &modelSecurityRulesDataSource{} },
+		} {
+			return &modelSecurityRulesDataSource{}
+		},
 		"model_scan_evaluations": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &modelScanEvaluationsDataSource{} },
+		} {
+			return &modelScanEvaluationsDataSource{}
+		},
 		"model_scan_violations": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &modelScanViolationsDataSource{} },
+		} {
+			return &modelScanViolationsDataSource{}
+		},
 		"red_team_categories": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &redTeamCategoriesDataSource{} },
+		} {
+			return &redTeamCategoriesDataSource{}
+		},
 		"red_team_quota": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &redTeamQuotaDataSource{} },
+		} {
+			return &redTeamQuotaDataSource{}
+		},
 		"content_scan": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} { return &contentScanDataSource{} },
+		} {
+			return &contentScanDataSource{}
+		},
 	}
 
 	for name, factory := range dataSources {
