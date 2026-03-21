@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
+	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -172,6 +173,23 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 		providerData.MgmtClient = mgmtClient
 	}
 
+	// Initialize model security client if OAuth2 credentials are available.
+	if clientID != "" && clientSecret != "" && tsgID != "" {
+		msClient, err := modelsecurity.NewClient(modelsecurity.Opts{
+			ClientID:      clientID,
+			ClientSecret:  clientSecret,
+			TsgID:         tsgID,
+			DataEndpoint:  modelSecDataEndpoint,
+			MgmtEndpoint:  modelSecMgmtEndpoint,
+			TokenEndpoint: tokenEndpoint,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to create model security client", err.Error())
+			return
+		}
+		providerData.ModelSecClient = msClient
+	}
+
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 }
@@ -182,6 +200,8 @@ func (p *PrismaAIRSProvider) Resources(_ context.Context) []func() resource.Reso
 		NewCustomTopicResource,
 		NewApiKeyResource,
 		NewCustomerAppResource,
+		NewModelSecurityGroupResource,
+		NewModelScanResource,
 	}
 }
 
@@ -190,6 +210,9 @@ func (p *PrismaAIRSProvider) DataSources(_ context.Context) []func() datasource.
 		NewDlpProfilesDataSource,
 		NewDeploymentProfilesDataSource,
 		NewScanLogsDataSource,
+		NewModelSecurityRulesDataSource,
+		NewModelScanEvaluationsDataSource,
+		NewModelScanViolationsDataSource,
 	}
 }
 
@@ -205,6 +228,7 @@ func New(version string) func() provider.Provider {
 // ProviderData holds resolved configuration passed to resources and data sources.
 type ProviderData struct {
 	MgmtClient           *management.Client
+	ModelSecClient       *modelsecurity.Client
 	APIKey               string
 	APIToken             string
 	ProfileName          string
