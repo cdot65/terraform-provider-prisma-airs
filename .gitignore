@@ -1,0 +1,56 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+terraform-provider-prisma-airs
+
+# Test binary
+*.test
+
+# Coverage
+coverage/
+*.out
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# MkDocs build output
+site/
+
+# Review documents
+REVIEW-*.md
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# GoReleaser
+dist/
+
+# Vendor (optional — we use Go modules)
+# vendor/
