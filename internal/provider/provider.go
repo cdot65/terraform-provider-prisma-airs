@@ -6,6 +6,7 @@ import (
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
+	"github.com/cdot65/prisma-airs-go/aisec/redteam"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -190,6 +191,23 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 		providerData.ModelSecClient = msClient
 	}
 
+	// Initialize red team client if OAuth2 credentials are available.
+	if clientID != "" && clientSecret != "" && tsgID != "" {
+		rtClient, err := redteam.NewClient(redteam.Opts{
+			ClientID:      clientID,
+			ClientSecret:  clientSecret,
+			TsgID:         tsgID,
+			DataEndpoint:  redTeamDataEndpoint,
+			MgmtEndpoint:  redTeamMgmtEndpoint,
+			TokenEndpoint: tokenEndpoint,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to create red team client", err.Error())
+			return
+		}
+		providerData.RedTeamClient = rtClient
+	}
+
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 }
@@ -202,6 +220,9 @@ func (p *PrismaAIRSProvider) Resources(_ context.Context) []func() resource.Reso
 		NewCustomerAppResource,
 		NewModelSecurityGroupResource,
 		NewModelScanResource,
+		NewRedTeamTargetResource,
+		NewRedTeamScanResource,
+		NewRedTeamCustomPromptSetResource,
 	}
 }
 
@@ -213,6 +234,8 @@ func (p *PrismaAIRSProvider) DataSources(_ context.Context) []func() datasource.
 		NewModelSecurityRulesDataSource,
 		NewModelScanEvaluationsDataSource,
 		NewModelScanViolationsDataSource,
+		NewRedTeamCategoriesDataSource,
+		NewRedTeamQuotaDataSource,
 	}
 }
 
@@ -229,6 +252,7 @@ func New(version string) func() provider.Provider {
 type ProviderData struct {
 	MgmtClient           *management.Client
 	ModelSecClient       *modelsecurity.Client
+	RedTeamClient        *redteam.Client
 	APIKey               string
 	APIToken             string
 	ProfileName          string
