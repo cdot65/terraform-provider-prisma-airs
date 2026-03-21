@@ -119,6 +119,10 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 
 	app, err := r.client.CustomerApps.Get(ctx, state.AppID.ValueString())
 	if err != nil {
+		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Failed to read customer app", err.Error())
 		return
 	}

@@ -137,10 +137,12 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// Preserve the api_key value from state since it's only returned at creation.
+	// Preserve write-only values from state since they're not returned by the API.
 	apiKeyVal := state.ApiKey
+	updatedByVal := state.UpdatedBy
 	mapApiKeyToState(found, &state)
 	state.ApiKey = apiKeyVal
+	state.UpdatedBy = updatedByVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 

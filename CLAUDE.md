@@ -56,8 +56,8 @@ internal/provider/
   datasource_scan_logs.go
   datasource_model_security_rules.go
   datasource_model_scan_evaluations.go
+  datasource_model_scan_violations.go
   datasource_content_scan.go
-  datasource_red_team_reports.go
   datasource_red_team_categories.go
   datasource_red_team_quota.go
 ```
@@ -72,7 +72,7 @@ internal/provider/
 
 ## Conventions
 
-- Go 1.22+ minimum
+- Go 1.24+ minimum (go.mod targets 1.25)
 - All resources implement `resource.Resource` + `resource.ResourceWithImportState`
 - All data sources implement `datasource.DataSource`
 - Test files: `*_test.go` alongside source, use `testAccProtoV6ProviderFactories`

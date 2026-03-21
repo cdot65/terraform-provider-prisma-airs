@@ -186,7 +186,10 @@ func (r *modelScanResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
+	// Preserve write-only Source value from prior state (not returned by API).
+	sourceVal := state.Source
 	mapScanToState(ctx, scan, &state, &resp.Diagnostics)
+	state.Source = sourceVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
