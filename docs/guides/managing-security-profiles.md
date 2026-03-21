@@ -57,7 +57,7 @@ resource "prisma-airs_security_profile" "with_topics" {
 ```hcl
 resource "prisma-airs_api_key" "scanner" {
   api_key_name = "production-scanner-key"
-  updated_by   = "terraform"
+  created_by   = "terraform"
 }
 
 output "api_key_value" {

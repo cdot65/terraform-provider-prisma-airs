@@ -6,13 +6,9 @@ Manages a model security scan in Prisma AIRS Model Security API.
 
 ```hcl
 resource "prisma-airs_model_scan" "scan_bert" {
-  name                = "scan-bert-base"
-  source_type         = "HUGGING_FACE"
+  model_uri           = "hf://bert-base-uncased"
+  scan_origin         = "HUGGING_FACE"
   security_group_uuid = prisma-airs_model_security_group.ml_models.id
-
-  source = jsonencode({
-    model_name = "bert-base-uncased"
-  })
 
   labels = {
     team        = "ml-platform"
@@ -23,18 +19,18 @@ resource "prisma-airs_model_scan" "scan_bert" {
 
 ## Argument Reference
 
-- `name` - (Required) Name of the scan.
-- `source_type` - (Required) Source type. Valid values: `LOCAL`, `HUGGING_FACE`, `S3`, `GCS`, `AZURE`, `ARTIFACTORY`, `GITLAB`.
-- `security_group_uuid` - (Optional) UUID of the security group to use.
-- `source` - (Optional) JSON-encoded source configuration.
-- `labels` - (Optional) Map of labels to attach to the scan.
+- `model_uri` - (Required, ForceNew) URI of the model to scan.
+- `scan_origin` - (Required, ForceNew) Scan origin. Valid values: `MODEL_SECURITY_SDK`, `HUGGING_FACE`.
+- `security_group_uuid` - (Optional, ForceNew) UUID of the security group to use.
+- `labels` - (Optional) Map of key-value labels for the scan.
 
 ## Attribute Reference
 
 - `id` - The scan UUID.
 - `uuid` - The scan UUID (same as `id`).
+- `source_type` - Source type (`LOCAL`, `HUGGING_FACE`, `S3`, `GCS`, `AZURE`, `ARTIFACTORY`, `GITLAB`, `ALL`).
 - `eval_outcome` - Evaluation outcome (`PENDING`, `ALLOWED`, `BLOCKED`, `ERROR`).
-- `eval_summary` - Evaluation summary with passed/failed/error counts.
+- `eval_summary` - Evaluation summary as JSON with rules_passed/rules_failed/total_rules.
 - `created_at` - Timestamp when the scan was created.
 - `updated_at` - Timestamp when the scan was last updated.
 
