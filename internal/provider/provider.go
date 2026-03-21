@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -155,16 +156,41 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 		RedTeamMgmtEndpoint:  redTeamMgmtEndpoint,
 	}
 
+	// Initialize management client if OAuth2 credentials are available.
+	if clientID != "" && clientSecret != "" && tsgID != "" {
+		mgmtClient, err := management.NewClient(management.Opts{
+			ClientID:      clientID,
+			ClientSecret:  clientSecret,
+			TsgID:         tsgID,
+			APIEndpoint:   mgmtEndpoint,
+			TokenEndpoint: tokenEndpoint,
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to create management client", err.Error())
+			return
+		}
+		providerData.MgmtClient = mgmtClient
+	}
+
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 }
 
 func (p *PrismaAIRSProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		NewSecurityProfileResource,
+		NewCustomTopicResource,
+		NewApiKeyResource,
+		NewCustomerAppResource,
+	}
 }
 
 func (p *PrismaAIRSProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewDlpProfilesDataSource,
+		NewDeploymentProfilesDataSource,
+		NewScanLogsDataSource,
+	}
 }
 
 // New returns a function that creates a new provider instance.
@@ -178,6 +204,7 @@ func New(version string) func() provider.Provider {
 
 // ProviderData holds resolved configuration passed to resources and data sources.
 type ProviderData struct {
+	MgmtClient           *management.Client
 	APIKey               string
 	APIToken             string
 	ProfileName          string
