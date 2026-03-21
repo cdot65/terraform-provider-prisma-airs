@@ -46,27 +46,17 @@ internal/provider/
   resource_api_key.go           # management: API keys
   resource_customer_app.go      # management: customer apps
   resource_model_security_group.go
-  resource_model_scan.go
   resource_red_team_target.go
-  resource_red_team_scan.go
   resource_red_team_custom_prompt_set.go
-  # Data Sources (read-only):
+  # Data Sources (read-only reference):
   datasource_dlp_profiles.go
   datasource_deployment_profiles.go
-  datasource_scan_logs.go
   datasource_model_security_rules.go
-  datasource_model_scan_evaluations.go
-  datasource_model_scan_violations.go
-  datasource_content_scan.go
-  datasource_red_team_categories.go
-  datasource_red_team_quota.go
 ```
 
 **SDK dependency:** `github.com/cdot65/prisma-airs-go` — private repo, requires `GOPRIVATE=github.com/cdot65/*`.
 
-**Auth model:** Provider config → env var fallback. Two auth methods:
-- API Key (HMAC-SHA256) for Scan API only
-- OAuth2 client_credentials for Management, Model Security, Red Team
+**Auth model:** Provider config → env var fallback. OAuth2 client_credentials for Management, Model Security, Red Team.
 
 **Client initialization:** `provider.Configure()` resolves config, creates SDK clients. `ProviderData` struct is passed to all resources/data sources via `req.ProviderData`.
 

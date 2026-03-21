@@ -253,103 +253,6 @@ func TestMapSecurityGroupToState_basic(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// mapScanToState
-// ---------------------------------------------------------------------------
-
-func TestMapScanToState_basic(t *testing.T) {
-	ctx := context.Background()
-	scanResp := &modelsecurity.ScanBaseResponse{
-		UUID:              "scan-123",
-		ModelURI:          "hf://org/model",
-		ScanOrigin:        modelsecurity.ScanOriginHuggingFace,
-		SourceType:        modelsecurity.SourceType("HUGGING_FACE"),
-		SecurityGroupUUID: "sg-456",
-		EvalOutcome:       modelsecurity.EvalOutcome("ALLOWED"),
-		EvalSummary:       &modelsecurity.EvalSummary{RulesPassed: 5, TotalRules: 5},
-		Labels:            []modelsecurity.Label{{Key: "env", Value: "prod"}},
-		CreatedAt:         "2026-01-01T00:00:00Z",
-		UpdatedAt:         "2026-01-02T00:00:00Z",
-	}
-
-	var state ModelScanResourceModel
-	var diags diag.Diagnostics
-	mapScanToState(ctx, scanResp, &state, &diags)
-
-	if diags.HasError() {
-		t.Fatalf("unexpected diagnostics: %v", diags)
-	}
-
-	assertStringValue(t, "ID", state.ID, "scan-123")
-	assertStringValue(t, "UUID", state.UUID, "scan-123")
-	assertStringValue(t, "ModelURI", state.ModelURI, "hf://org/model")
-	assertStringValue(t, "ScanOrigin", state.ScanOrigin, "HUGGING_FACE")
-	assertStringValue(t, "SourceType", state.SourceType, "HUGGING_FACE")
-	assertStringValue(t, "SecurityGroupUUID", state.SecurityGroupUUID, "sg-456")
-	assertStringValue(t, "EvalOutcome", state.EvalOutcome, "ALLOWED")
-
-	if state.EvalSummary.IsNull() {
-		t.Error("EvalSummary: expected non-null")
-	}
-	if state.Labels.IsNull() {
-		t.Error("Labels: expected non-null map")
-	}
-}
-
-func TestMapScanToState_nilEvalSummaryAndLabels(t *testing.T) {
-	ctx := context.Background()
-	scanResp := &modelsecurity.ScanBaseResponse{
-		UUID:        "scan-456",
-		EvalSummary: nil,
-		Labels:      nil,
-	}
-
-	var state ModelScanResourceModel
-	var diags diag.Diagnostics
-	mapScanToState(ctx, scanResp, &state, &diags)
-
-	if diags.HasError() {
-		t.Fatalf("unexpected diagnostics: %v", diags)
-	}
-
-	if !state.EvalSummary.IsNull() {
-		t.Error("EvalSummary: expected null for nil summary")
-	}
-	if !state.Labels.IsNull() {
-		t.Error("Labels: expected null for nil labels")
-	}
-}
-
-// ---------------------------------------------------------------------------
-// mapToLabels / labelsToMap
-// ---------------------------------------------------------------------------
-
-func TestMapToLabels(t *testing.T) {
-	m := map[string]string{"env": "prod", "team": "ml"}
-	labels := mapToLabels(m)
-	if len(labels) != 2 {
-		t.Fatalf("expected 2 labels, got %d", len(labels))
-	}
-	found := make(map[string]string)
-	for _, l := range labels {
-		found[l.Key] = l.Value
-	}
-	if found["env"] != "prod" || found["team"] != "ml" {
-		t.Errorf("unexpected labels: %v", found)
-	}
-}
-
-func TestLabelsToMap(t *testing.T) {
-	labels := []modelsecurity.Label{
-		{Key: "env", Value: "prod"},
-		{Key: "team", Value: "ml"},
-	}
-	m := labelsToMap(labels)
-	if m["env"] != "prod" || m["team"] != "ml" {
-		t.Errorf("unexpected map: %v", m)
-	}
-}
-
-// ---------------------------------------------------------------------------
 // mapTargetToState
 // ---------------------------------------------------------------------------
 
@@ -399,58 +302,6 @@ func TestMapTargetToState_emptyOptionalFields(t *testing.T) {
 	if state.ConnectionType.ValueString() != "" && !state.ConnectionType.IsNull() {
 		t.Errorf("ConnectionType: expected empty or null, got %q", state.ConnectionType.ValueString())
 	}
-}
-
-// ---------------------------------------------------------------------------
-// mapJobToState
-// ---------------------------------------------------------------------------
-
-func TestMapJobToState_basic(t *testing.T) {
-	job := &redteam.JobResponse{
-		UUID:       "job-123",
-		Name:       "test-scan",
-		TargetID:   "tgt-123",
-		Target:     redteam.JobTargetResponse{UUID: "tgt-123"},
-		JobType:    redteam.JobType("STATIC"),
-		Status:     redteam.JobStatus("COMPLETED"),
-		Total:      100,
-		Completed:  95,
-		Score:      0.85,
-		ASR:        0.05,
-		CreatedAt:  "2026-01-01T00:00:00Z",
-		UpdatedAt:  "2026-01-02T00:00:00Z",
-		FinishedAt: "2026-01-02T01:00:00Z",
-	}
-
-	var state RedTeamScanResourceModel
-	mapJobToState(job, &state)
-
-	assertStringValue(t, "ID", state.ID, "job-123")
-	assertStringValue(t, "JobID", state.JobID, "job-123")
-	assertStringValue(t, "Name", state.Name, "test-scan")
-	assertStringValue(t, "TargetID", state.TargetID, "tgt-123")
-	assertStringValue(t, "JobType", state.JobType, "STATIC")
-	assertStringValue(t, "Status", state.Status, "COMPLETED")
-	assertStringValue(t, "FinishedAt", state.FinishedAt, "2026-01-02T01:00:00Z")
-	assertInt64Value(t, "Total", state.Total, 100)
-	assertInt64Value(t, "Completed", state.Completed, 95)
-	assertFloat64Value(t, "Score", state.Score, 0.85)
-	assertFloat64Value(t, "ASR", state.ASR, 0.05)
-}
-
-func TestMapJobToState_zeroStats(t *testing.T) {
-	job := &redteam.JobResponse{
-		UUID: "job-456",
-		Name: "minimal-job",
-	}
-
-	var state RedTeamScanResourceModel
-	mapJobToState(job, &state)
-
-	assertInt64Value(t, "Total", state.Total, 0)
-	assertInt64Value(t, "Completed", state.Completed, 0)
-	assertFloat64Value(t, "Score", state.Score, 0)
-	assertFloat64Value(t, "ASR", state.ASR, 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -608,21 +459,6 @@ func TestGetRedTeamClient_valid(t *testing.T) {
 	}
 }
 
-func TestGetScanClient_nil(t *testing.T) {
-	_, _, diags := getScanClient(nil)
-	if !diags.HasError() {
-		t.Error("expected error for nil provider data")
-	}
-}
-
-func TestGetScanClient_noScanner(t *testing.T) {
-	pd := &ProviderData{}
-	_, _, diags := getScanClient(pd)
-	if !diags.HasError() {
-		t.Error("expected error when Scanner is nil")
-	}
-}
-
 // ---------------------------------------------------------------------------
 // Schema validation tests
 // ---------------------------------------------------------------------------
@@ -656,20 +492,10 @@ func TestAllResourceSchemas(t *testing.T) {
 		} {
 			return &modelSecurityGroupResource{}
 		},
-		"model_scan": func() interface {
-			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} {
-			return &modelScanResource{}
-		},
 		"red_team_target": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
 		} {
 			return &redTeamTargetResource{}
-		},
-		"red_team_scan": func() interface {
-			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
-		} {
-			return &redTeamScanResource{}
 		},
 		"red_team_custom_prompt_set": func() interface {
 			Schema(context.Context, resource.SchemaRequest, *resource.SchemaResponse)
@@ -715,40 +541,10 @@ func TestAllDataSourceSchemas(t *testing.T) {
 		} {
 			return &deploymentProfilesDataSource{}
 		},
-		"scan_logs": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &scanLogsDataSource{}
-		},
 		"model_security_rules": func() interface {
 			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
 		} {
 			return &modelSecurityRulesDataSource{}
-		},
-		"model_scan_evaluations": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &modelScanEvaluationsDataSource{}
-		},
-		"model_scan_violations": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &modelScanViolationsDataSource{}
-		},
-		"red_team_categories": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &redTeamCategoriesDataSource{}
-		},
-		"red_team_quota": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &redTeamQuotaDataSource{}
-		},
-		"content_scan": func() interface {
-			Schema(context.Context, datasource.SchemaRequest, *datasource.SchemaResponse)
-		} {
-			return &contentScanDataSource{}
 		},
 	}
 
@@ -784,9 +580,7 @@ func TestResourceMetadata(t *testing.T) {
 		"security_profile":           {&securityProfileResource{}, "test_security_profile"},
 		"custom_topic":               {&customTopicResource{}, "test_custom_topic"},
 		"model_security_group":       {&modelSecurityGroupResource{}, "test_model_security_group"},
-		"model_scan":                 {&modelScanResource{}, "test_model_scan"},
 		"red_team_target":            {&redTeamTargetResource{}, "test_red_team_target"},
-		"red_team_scan":              {&redTeamScanResource{}, "test_red_team_scan"},
 		"red_team_custom_prompt_set": {&redTeamCustomPromptSetResource{}, "test_red_team_custom_prompt_set"},
 	}
 
@@ -808,15 +602,9 @@ func TestDataSourceMetadata(t *testing.T) {
 		ds           datasource.DataSource
 		expectedType string
 	}{
-		"dlp_profiles":           {&dlpProfilesDataSource{}, "test_dlp_profiles"},
-		"deployment_profiles":    {&deploymentProfilesDataSource{}, "test_deployment_profiles"},
-		"scan_logs":              {&scanLogsDataSource{}, "test_scan_logs"},
-		"model_security_rules":   {&modelSecurityRulesDataSource{}, "test_model_security_rules"},
-		"model_scan_evaluations": {&modelScanEvaluationsDataSource{}, "test_model_scan_evaluations"},
-		"model_scan_violations":  {&modelScanViolationsDataSource{}, "test_model_scan_violations"},
-		"red_team_categories":    {&redTeamCategoriesDataSource{}, "test_red_team_categories"},
-		"red_team_quota":         {&redTeamQuotaDataSource{}, "test_red_team_quota"},
-		"content_scan":           {&contentScanDataSource{}, "test_content_scan"},
+		"dlp_profiles":         {&dlpProfilesDataSource{}, "test_dlp_profiles"},
+		"deployment_profiles":  {&deploymentProfilesDataSource{}, "test_deployment_profiles"},
+		"model_security_rules": {&modelSecurityRulesDataSource{}, "test_model_security_rules"},
 	}
 
 	for name, tc := range tests {
@@ -843,9 +631,7 @@ func TestResourceConfigure_nilProviderData(t *testing.T) {
 		&securityProfileResource{},
 		&customTopicResource{},
 		&modelSecurityGroupResource{},
-		&modelScanResource{},
 		&redTeamTargetResource{},
-		&redTeamScanResource{},
 		&redTeamCustomPromptSetResource{},
 	}
 
@@ -867,13 +653,7 @@ func TestDataSourceConfigure_nilProviderData(t *testing.T) {
 	dataSources := []datasource.DataSource{
 		&dlpProfilesDataSource{},
 		&deploymentProfilesDataSource{},
-		&scanLogsDataSource{},
 		&modelSecurityRulesDataSource{},
-		&modelScanEvaluationsDataSource{},
-		&modelScanViolationsDataSource{},
-		&redTeamCategoriesDataSource{},
-		&redTeamQuotaDataSource{},
-		&contentScanDataSource{},
 	}
 
 	for _, ds := range dataSources {
@@ -911,9 +691,7 @@ func TestResourceConstructors(t *testing.T) {
 		"security_profile":           NewSecurityProfileResource,
 		"custom_topic":               NewCustomTopicResource,
 		"model_security_group":       NewModelSecurityGroupResource,
-		"model_scan":                 NewModelScanResource,
 		"red_team_target":            NewRedTeamTargetResource,
-		"red_team_scan":              NewRedTeamScanResource,
 		"red_team_custom_prompt_set": NewRedTeamCustomPromptSetResource,
 	}
 
@@ -929,15 +707,9 @@ func TestResourceConstructors(t *testing.T) {
 
 func TestDataSourceConstructors(t *testing.T) {
 	constructors := map[string]func() datasource.DataSource{
-		"dlp_profiles":           NewDlpProfilesDataSource,
-		"deployment_profiles":    NewDeploymentProfilesDataSource,
-		"scan_logs":              NewScanLogsDataSource,
-		"model_security_rules":   NewModelSecurityRulesDataSource,
-		"model_scan_evaluations": NewModelScanEvaluationsDataSource,
-		"model_scan_violations":  NewModelScanViolationsDataSource,
-		"red_team_categories":    NewRedTeamCategoriesDataSource,
-		"red_team_quota":         NewRedTeamQuotaDataSource,
-		"content_scan":           NewContentScanDataSource,
+		"dlp_profiles":         NewDlpProfilesDataSource,
+		"deployment_profiles":  NewDeploymentProfilesDataSource,
+		"model_security_rules": NewModelSecurityRulesDataSource,
 	}
 
 	for name, fn := range constructors {
@@ -965,20 +737,6 @@ func assertBoolValue(t *testing.T, field string, got types.Bool, want bool) {
 	t.Helper()
 	if got.ValueBool() != want {
 		t.Errorf("%s: expected %v, got %v", field, want, got.ValueBool())
-	}
-}
-
-func assertInt64Value(t *testing.T, field string, got types.Int64, want int64) {
-	t.Helper()
-	if got.ValueInt64() != want {
-		t.Errorf("%s: expected %d, got %d", field, want, got.ValueInt64())
-	}
-}
-
-func assertFloat64Value(t *testing.T, field string, got types.Float64, want float64) {
-	t.Helper()
-	if got.ValueFloat64() != want {
-		t.Errorf("%s: expected %f, got %f", field, want, got.ValueFloat64())
 	}
 }
 

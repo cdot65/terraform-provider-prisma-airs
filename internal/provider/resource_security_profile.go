@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -117,6 +118,18 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 
 	profile, err := r.client.Profiles.Create(ctx, createReq)
 	if err != nil {
+		// The API may return 409 even when the profile was actually created
+		// (known API bug with certain policy configurations like toxic-category-list).
+		// Attempt to read back the profile by name before failing.
+		if strings.Contains(err.Error(), "409") {
+			found := findProfileByName(ctx, r.client, plan.ProfileName.ValueString())
+			if found != nil {
+				tflog.Warn(ctx, "profile create returned 409 but profile exists; treating as success")
+				mapProfileToState(found, &plan)
+				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+				return
+			}
+		}
 		resp.Diagnostics.AddError("Failed to create security profile", err.Error())
 		return
 	}

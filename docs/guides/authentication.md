@@ -1,41 +1,10 @@
 # Authentication
 
-The Prisma AIRS Terraform provider supports two authentication methods, depending on which service domain you're using.
-
-## Authentication Methods
-
-| Method | Service Domains | Mechanism |
-|--------|----------------|-----------|
-| **API Key** | AI Runtime Security (Scan) | HMAC-SHA256 request signing |
-| **OAuth2** | Management, Model Security, Red Team | Client credentials grant |
-
-## API Key Authentication
-
-Used exclusively for content scanning via the Scan API.
-
-### Provider Configuration
-
-```hcl
-provider "prisma-airs" {
-  api_key      = var.panw_api_key
-  profile_name = "my-security-profile"
-}
-```
-
-### Environment Variables
-
-```bash
-export PANW_AI_SEC_API_KEY=your-api-key
-export PANW_AI_SEC_PROFILE_NAME=my-security-profile
-```
-
-### How It Works
-
-The API key is used to generate an HMAC-SHA256 hash of the request payload, which is sent as the `x-payload-hash` header alongside the API key in `x-pan-token`.
+The Prisma AIRS Terraform provider uses OAuth2 client credentials for authentication across all service domains.
 
 ## OAuth2 Authentication
 
-Used for Management, Model Security, and Red Team operations.
+Used for all operations (Management, Model Security, Red Team).
 
 ### Provider Configuration
 
