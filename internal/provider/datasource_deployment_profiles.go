@@ -51,7 +51,7 @@ func (d *deploymentProfilesDataSource) Schema(_ context.Context, _ datasource.Sc
 			},
 			"total_count": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Total number of deployment profiles.",
+				Description: "Number of deployment profiles returned.",
 			},
 			"items": schema.ListNestedAttribute{
 				Computed:    true,

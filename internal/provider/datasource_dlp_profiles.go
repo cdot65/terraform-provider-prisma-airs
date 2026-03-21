@@ -51,7 +51,7 @@ func (d *dlpProfilesDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 			},
 			"total_count": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Total number of DLP profiles.",
+				Description: "Number of DLP profiles returned.",
 			},
 			"items": schema.ListNestedAttribute{
 				Computed:    true,

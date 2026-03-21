@@ -156,7 +156,10 @@ func (r *redTeamCustomPromptSetResource) Read(ctx context.Context, req resource.
 		return
 	}
 
+	// Preserve write-only Properties value from prior state (not returned by API).
+	propsVal := state.Properties
 	mapPromptSetToState(promptSet, &state)
+	state.Properties = propsVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
