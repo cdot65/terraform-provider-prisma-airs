@@ -110,6 +110,7 @@ func TestMapAppToState_emptyFields(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestMapProfileToState_basic(t *testing.T) {
+	ctx := context.Background()
 	profile := &management.SecurityProfile{
 		ProfileID:      "prof-123",
 		ProfileName:    "default",
@@ -119,8 +120,12 @@ func TestMapProfileToState_basic(t *testing.T) {
 	}
 
 	var state SecurityProfileResourceModel
-	mapProfileToState(profile, &state)
+	var diags diag.Diagnostics
+	mapProfileToState(ctx, profile, &state, &diags)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
 	assertStringValue(t, "ID", state.ID, "prof-123")
 	assertStringValue(t, "ProfileID", state.ProfileID, "prof-123")
 	assertStringValue(t, "ProfileName", state.ProfileName, "default")
@@ -130,6 +135,7 @@ func TestMapProfileToState_basic(t *testing.T) {
 }
 
 func TestMapProfileToState_nilPolicy(t *testing.T) {
+	ctx := context.Background()
 	profile := &management.SecurityProfile{
 		ProfileID:   "prof-456",
 		ProfileName: "minimal",
@@ -137,12 +143,243 @@ func TestMapProfileToState_nilPolicy(t *testing.T) {
 	}
 
 	var state SecurityProfileResourceModel
-	mapProfileToState(profile, &state)
+	var diags diag.Diagnostics
+	mapProfileToState(ctx, profile, &state, &diags)
 
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
 	assertStringValue(t, "ID", state.ID, "prof-456")
-	// Policy should remain zero value when nil
-	if state.Policy.ValueString() != "" && !state.Policy.IsNull() {
-		t.Errorf("Policy: expected empty or null, got %q", state.Policy.ValueString())
+	if state.AiSecurityProfiles != nil {
+		t.Error("AiSecurityProfiles: expected nil for nil policy")
+	}
+	if state.DlpDataProfiles != nil {
+		t.Error("DlpDataProfiles: expected nil for nil policy")
+	}
+}
+
+func TestMapProfileToState_fullPolicy(t *testing.T) {
+	ctx := context.Background()
+	profile := &management.SecurityProfile{
+		ProfileID:      "prof-789",
+		ProfileName:    "full-test",
+		Active:         true,
+		LastModifiedTs: "2026-03-01T00:00:00Z",
+		Policy: &management.ProfilePolicy{
+			AiSecurityProfiles: []management.AiSecurityProfileConfig{
+				{
+					ModelType: "default",
+					ModelConfiguration: &management.ModelConfiguration{
+						MaskDataInStorage: true,
+						Latency: &management.LatencyConfig{
+							InlineTimeoutAction: "allow",
+							MaxInlineLatency:    30,
+						},
+						ModelProtection: []management.ModelProtectionConfig{
+							{
+								Name:   "prompt-injection",
+								Action: "block",
+							},
+							{
+								Name:   "toxic-content",
+								Action: "alert",
+								ToxicCategoryList: []management.ToxicCategoryConfig{
+									{Category: "harassment", Action: "block"},
+									{Category: "violence", Action: "alert"},
+								},
+							},
+						},
+						AgentProtection: []management.AgentProtectionConfig{
+							{Name: "agent-threat", Action: "block"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	var state SecurityProfileResourceModel
+	var diags diag.Diagnostics
+	mapProfileToState(ctx, profile, &state, &diags)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+
+	if len(state.AiSecurityProfiles) != 1 {
+		t.Fatalf("expected 1 ai_security_profile, got %d", len(state.AiSecurityProfiles))
+	}
+
+	asp := state.AiSecurityProfiles[0]
+	assertStringValue(t, "ModelType", asp.ModelType, "default")
+	assertBoolValue(t, "MaskDataInStorage", asp.MaskDataInStorage, true)
+
+	if asp.Latency == nil {
+		t.Fatal("expected latency block")
+	}
+	assertStringValue(t, "InlineTimeoutAction", asp.Latency.InlineTimeoutAction, "allow")
+	if asp.Latency.MaxInlineLatency.ValueInt64() != 30 {
+		t.Errorf("MaxInlineLatency: expected 30, got %d", asp.Latency.MaxInlineLatency.ValueInt64())
+	}
+
+	if len(asp.ModelProtection) != 2 {
+		t.Fatalf("expected 2 model_protection blocks, got %d", len(asp.ModelProtection))
+	}
+	assertStringValue(t, "ModelProtection[0].Name", asp.ModelProtection[0].Name, "prompt-injection")
+	assertStringValue(t, "ModelProtection[0].Action", asp.ModelProtection[0].Action, "block")
+	assertStringValue(t, "ModelProtection[1].Name", asp.ModelProtection[1].Name, "toxic-content")
+	if len(asp.ModelProtection[1].ToxicCategories) != 2 {
+		t.Fatalf("expected 2 toxic_category blocks, got %d", len(asp.ModelProtection[1].ToxicCategories))
+	}
+	assertStringValue(t, "ToxicCategory[0].Category", asp.ModelProtection[1].ToxicCategories[0].Category, "harassment")
+	assertStringValue(t, "ToxicCategory[0].Action", asp.ModelProtection[1].ToxicCategories[0].Action, "block")
+
+	if len(asp.AgentProtection) != 1 {
+		t.Fatalf("expected 1 agent_protection block, got %d", len(asp.AgentProtection))
+	}
+	assertStringValue(t, "AgentProtection[0].Name", asp.AgentProtection[0].Name, "agent-threat")
+}
+
+func TestPlanToSDKPolicy_minimal(t *testing.T) {
+	ctx := context.Background()
+	plan := &SecurityProfileResourceModel{}
+
+	var diags diag.Diagnostics
+	policy := planToSDKPolicy(ctx, plan, &diags)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if policy != nil {
+		t.Error("expected nil policy for empty plan")
+	}
+}
+
+func TestPlanToSDKPolicy_withModelProtection(t *testing.T) {
+	ctx := context.Background()
+	plan := &SecurityProfileResourceModel{
+		AiSecurityProfiles: []AiSecurityProfileModel{
+			{
+				ModelType: types.StringValue("default"),
+				Latency: &LatencyModel{
+					InlineTimeoutAction: types.StringValue("allow"),
+					MaxInlineLatency:    types.Int64Value(30),
+				},
+				ModelProtection: []ModelProtectionModel{
+					{
+						Name:   types.StringValue("prompt-injection"),
+						Action: types.StringValue("block"),
+					},
+					{
+						Name:   types.StringValue("toxic-content"),
+						Action: types.StringValue("alert"),
+						ToxicCategories: []ToxicCategoryModel{
+							{Category: types.StringValue("harassment"), Action: types.StringValue("block")},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	var diags diag.Diagnostics
+	policy := planToSDKPolicy(ctx, plan, &diags)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if policy == nil {
+		t.Fatal("expected non-nil policy")
+	}
+	if len(policy.AiSecurityProfiles) != 1 {
+		t.Fatalf("expected 1 ai-security-profile, got %d", len(policy.AiSecurityProfiles))
+	}
+
+	asp := policy.AiSecurityProfiles[0]
+	if asp.ModelType != "default" {
+		t.Errorf("ModelType: expected 'default', got %q", asp.ModelType)
+	}
+	if asp.ModelConfiguration == nil {
+		t.Fatal("expected non-nil ModelConfiguration")
+	}
+	if asp.ModelConfiguration.Latency == nil {
+		t.Fatal("expected non-nil Latency")
+	}
+	if asp.ModelConfiguration.Latency.MaxInlineLatency != 30 {
+		t.Errorf("MaxInlineLatency: expected 30, got %d", asp.ModelConfiguration.Latency.MaxInlineLatency)
+	}
+	if len(asp.ModelConfiguration.ModelProtection) != 2 {
+		t.Fatalf("expected 2 model protections, got %d", len(asp.ModelConfiguration.ModelProtection))
+	}
+	if asp.ModelConfiguration.ModelProtection[0].Name != "prompt-injection" {
+		t.Errorf("expected 'prompt-injection', got %q", asp.ModelConfiguration.ModelProtection[0].Name)
+	}
+	if len(asp.ModelConfiguration.ModelProtection[1].ToxicCategoryList) != 1 {
+		t.Fatalf("expected 1 toxic category, got %d", len(asp.ModelConfiguration.ModelProtection[1].ToxicCategoryList))
+	}
+}
+
+func TestPlanToSDKPolicy_roundTrip(t *testing.T) {
+	ctx := context.Background()
+	plan := &SecurityProfileResourceModel{
+		AiSecurityProfiles: []AiSecurityProfileModel{
+			{
+				ModelType:         types.StringValue("default"),
+				MaskDataInStorage: types.BoolValue(true),
+				Latency: &LatencyModel{
+					InlineTimeoutAction: types.StringValue("allow"),
+					MaxInlineLatency:    types.Int64Value(15),
+				},
+				ModelProtection: []ModelProtectionModel{
+					{
+						Name:   types.StringValue("prompt-injection"),
+						Action: types.StringValue("block"),
+					},
+				},
+				AgentProtection: []AgentProtectionModel{
+					{Name: types.StringValue("agent-threat"), Action: types.StringValue("alert")},
+				},
+			},
+		},
+	}
+
+	var diags diag.Diagnostics
+	sdkPolicy := planToSDKPolicy(ctx, plan, &diags)
+	if diags.HasError() {
+		t.Fatalf("planToSDK diagnostics: %v", diags)
+	}
+
+	profile := &management.SecurityProfile{
+		ProfileID:      "rt-001",
+		ProfileName:    "round-trip",
+		Active:         true,
+		Policy:         sdkPolicy,
+		LastModifiedTs: "2026-03-01T00:00:00Z",
+	}
+
+	var state SecurityProfileResourceModel
+	mapProfileToState(ctx, profile, &state, &diags)
+	if diags.HasError() {
+		t.Fatalf("mapToState diagnostics: %v", diags)
+	}
+
+	if len(state.AiSecurityProfiles) != 1 {
+		t.Fatalf("expected 1 profile, got %d", len(state.AiSecurityProfiles))
+	}
+	asp := state.AiSecurityProfiles[0]
+	assertStringValue(t, "ModelType", asp.ModelType, "default")
+	assertBoolValue(t, "MaskDataInStorage", asp.MaskDataInStorage, true)
+	if asp.Latency == nil {
+		t.Fatal("expected latency")
+	}
+	if asp.Latency.MaxInlineLatency.ValueInt64() != 15 {
+		t.Errorf("MaxInlineLatency: expected 15, got %d", asp.Latency.MaxInlineLatency.ValueInt64())
+	}
+	if len(asp.ModelProtection) != 1 {
+		t.Fatalf("expected 1 model protection, got %d", len(asp.ModelProtection))
+	}
+	if len(asp.AgentProtection) != 1 {
+		t.Fatalf("expected 1 agent protection, got %d", len(asp.AgentProtection))
 	}
 }
 

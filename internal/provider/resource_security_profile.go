@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
@@ -28,15 +27,96 @@ type securityProfileResource struct {
 	client *management.Client
 }
 
+// ── Model types ──────────────────────────────────────────────────────
+
 type SecurityProfileResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	ProfileID   types.String `tfsdk:"profile_id"`
-	ProfileName types.String `tfsdk:"profile_name"`
-	Policy      types.String `tfsdk:"policy"`
-	Active      types.Bool   `tfsdk:"active"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
+	ID                 types.String             `tfsdk:"id"`
+	ProfileID          types.String             `tfsdk:"profile_id"`
+	ProfileName        types.String             `tfsdk:"profile_name"`
+	Active             types.Bool               `tfsdk:"active"`
+	CreatedAt          types.String             `tfsdk:"created_at"`
+	UpdatedAt          types.String             `tfsdk:"updated_at"`
+	AiSecurityProfiles []AiSecurityProfileModel `tfsdk:"ai_security_profile"`
+	DlpDataProfiles    []DlpDataProfileModel    `tfsdk:"dlp_data_profile"`
 }
+
+type AiSecurityProfileModel struct {
+	ModelType         types.String           `tfsdk:"model_type"`
+	ContentType       types.String           `tfsdk:"content_type"`
+	MaskDataInStorage types.Bool             `tfsdk:"mask_data_in_storage"`
+	Latency           *LatencyModel          `tfsdk:"latency"`
+	DataProtection    *DataProtectionModel   `tfsdk:"data_protection"`
+	AppProtection     *AppProtectionModel    `tfsdk:"app_protection"`
+	ModelProtection   []ModelProtectionModel `tfsdk:"model_protection"`
+	AgentProtection   []AgentProtectionModel `tfsdk:"agent_protection"`
+}
+
+type LatencyModel struct {
+	InlineTimeoutAction types.String `tfsdk:"inline_timeout_action"`
+	MaxInlineLatency    types.Int64  `tfsdk:"max_inline_latency"`
+}
+
+type DataProtectionModel struct {
+	DataLeakDetection *DataLeakDetectionModel `tfsdk:"data_leak_detection"`
+}
+
+type DataLeakDetectionModel struct {
+	Action         types.String          `tfsdk:"action"`
+	MaskDataInline types.Bool            `tfsdk:"mask_data_inline"`
+	Members        []DataLeakMemberModel `tfsdk:"member"`
+}
+
+type DataLeakMemberModel struct {
+	Text    types.String `tfsdk:"text"`
+	ID      types.String `tfsdk:"id"`
+	Version types.String `tfsdk:"version"`
+}
+
+type AppProtectionModel struct {
+	AlertURLCategory types.List `tfsdk:"alert_url_category"`
+	BlockURLCategory types.List `tfsdk:"block_url_category"`
+	AllowURLCategory types.List `tfsdk:"allow_url_category"`
+}
+
+type ModelProtectionModel struct {
+	Name            types.String         `tfsdk:"name"`
+	Action          types.String         `tfsdk:"action"`
+	ToxicCategories []ToxicCategoryModel `tfsdk:"toxic_category"`
+	TopicLists      []TopicListModel     `tfsdk:"topic_list"`
+}
+
+type ToxicCategoryModel struct {
+	Category types.String `tfsdk:"category"`
+	Action   types.String `tfsdk:"action"`
+}
+
+type TopicListModel struct {
+	Action types.String    `tfsdk:"action"`
+	Topics []TopicRefModel `tfsdk:"topic"`
+}
+
+type TopicRefModel struct {
+	TopicName types.String `tfsdk:"topic_name"`
+	TopicID   types.String `tfsdk:"topic_id"`
+	Revision  types.Int64  `tfsdk:"revision"`
+}
+
+type AgentProtectionModel struct {
+	Name   types.String `tfsdk:"name"`
+	Action types.String `tfsdk:"action"`
+}
+
+type DlpDataProfileModel struct {
+	Name         types.String `tfsdk:"name"`
+	UUID         types.String `tfsdk:"uuid"`
+	ProfileID    types.String `tfsdk:"profile_id"`
+	Version      types.String `tfsdk:"version"`
+	LogSeverity  types.String `tfsdk:"log_severity"`
+	NonFileBased types.String `tfsdk:"non_file_based"`
+	FileBased    types.String `tfsdk:"file_based"`
+}
+
+// ── Schema ───────────────────────────────────────────────────────────
 
 func (r *securityProfileResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_security_profile"
@@ -64,10 +144,6 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 				Required:    true,
 				Description: "Name of the security profile.",
 			},
-			"policy": schema.StringAttribute{
-				Optional:    true,
-				Description: "Policy configuration as a JSON string.",
-			},
 			"active": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the profile is active.",
@@ -81,8 +157,226 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 				Description: "Last update timestamp.",
 			},
 		},
+		Blocks: map[string]schema.Block{
+			"ai_security_profile": schema.ListNestedBlock{
+				Description: "AI security profile configuration.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"model_type": schema.StringAttribute{
+							Optional:    true,
+							Description: "Model type (e.g., 'default').",
+						},
+						"content_type": schema.StringAttribute{
+							Optional:    true,
+							Description: "Content type.",
+						},
+						"mask_data_in_storage": schema.BoolAttribute{
+							Optional:    true,
+							Description: "Whether to mask data in storage.",
+						},
+					},
+					Blocks: map[string]schema.Block{
+						"latency": schema.SingleNestedBlock{
+							Description: "Latency configuration for inline scanning.",
+							Attributes: map[string]schema.Attribute{
+								"inline_timeout_action": schema.StringAttribute{
+									Optional:    true,
+									Description: "Action on inline timeout ('allow' or 'block').",
+								},
+								"max_inline_latency": schema.Int64Attribute{
+									Optional:    true,
+									Description: "Maximum inline latency in seconds.",
+								},
+							},
+						},
+						"data_protection": schema.SingleNestedBlock{
+							Description: "Data protection configuration.",
+							Blocks: map[string]schema.Block{
+								"data_leak_detection": schema.SingleNestedBlock{
+									Description: "Data leak detection configuration.",
+									Attributes: map[string]schema.Attribute{
+										"action": schema.StringAttribute{
+											Optional:    true,
+											Description: "Action on detection ('block', 'alert', 'allow').",
+										},
+										"mask_data_inline": schema.BoolAttribute{
+											Optional:    true,
+											Description: "Whether to mask detected data inline.",
+										},
+									},
+									Blocks: map[string]schema.Block{
+										"member": schema.ListNestedBlock{
+											Description: "Data leak detection members.",
+											NestedObject: schema.NestedBlockObject{
+												Attributes: map[string]schema.Attribute{
+													"text": schema.StringAttribute{
+														Required:    true,
+														Description: "Member text identifier.",
+													},
+													"id": schema.StringAttribute{
+														Optional:    true,
+														Computed:    true,
+														Description: "Member ID.",
+													},
+													"version": schema.StringAttribute{
+														Optional:    true,
+														Computed:    true,
+														Description: "Member version.",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"app_protection": schema.SingleNestedBlock{
+							Description: "Application protection URL category configuration.",
+							Attributes: map[string]schema.Attribute{
+								"alert_url_category": schema.ListAttribute{
+									Optional:    true,
+									ElementType: types.StringType,
+									Description: "URL categories to alert on.",
+								},
+								"block_url_category": schema.ListAttribute{
+									Optional:    true,
+									ElementType: types.StringType,
+									Description: "URL categories to block.",
+								},
+								"allow_url_category": schema.ListAttribute{
+									Optional:    true,
+									ElementType: types.StringType,
+									Description: "URL categories to allow.",
+								},
+							},
+						},
+						"model_protection": schema.ListNestedBlock{
+							Description: "Model protection rules.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"name": schema.StringAttribute{
+										Required:    true,
+										Description: "Protection name (e.g., 'prompt-injection', 'toxic-content', 'url-filtering', 'malicious-url').",
+									},
+									"action": schema.StringAttribute{
+										Required:    true,
+										Description: "Action to take ('block', 'alert', 'allow').",
+									},
+								},
+								Blocks: map[string]schema.Block{
+									"toxic_category": schema.ListNestedBlock{
+										Description: "Per-category overrides for toxic content detection.",
+										NestedObject: schema.NestedBlockObject{
+											Attributes: map[string]schema.Attribute{
+												"category": schema.StringAttribute{
+													Required:    true,
+													Description: "Category name (e.g., 'harassment', 'violence', 'hate-speech', 'sexual-content').",
+												},
+												"action": schema.StringAttribute{
+													Required:    true,
+													Description: "Action for this category.",
+												},
+											},
+										},
+									},
+									"topic_list": schema.ListNestedBlock{
+										Description: "Topic-based detection configuration.",
+										NestedObject: schema.NestedBlockObject{
+											Attributes: map[string]schema.Attribute{
+												"action": schema.StringAttribute{
+													Required:    true,
+													Description: "Action for matched topics.",
+												},
+											},
+											Blocks: map[string]schema.Block{
+												"topic": schema.ListNestedBlock{
+													Description: "Topic references.",
+													NestedObject: schema.NestedBlockObject{
+														Attributes: map[string]schema.Attribute{
+															"topic_name": schema.StringAttribute{
+																Required:    true,
+																Description: "Topic name.",
+															},
+															"topic_id": schema.StringAttribute{
+																Optional:    true,
+																Computed:    true,
+																Description: "Topic ID.",
+															},
+															"revision": schema.Int64Attribute{
+																Optional:    true,
+																Computed:    true,
+																Description: "Topic revision.",
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"agent_protection": schema.ListNestedBlock{
+							Description: "Agent protection rules.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"name": schema.StringAttribute{
+										Required:    true,
+										Description: "Protection name.",
+									},
+									"action": schema.StringAttribute{
+										Required:    true,
+										Description: "Action to take ('block', 'alert', 'allow').",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"dlp_data_profile": schema.ListNestedBlock{
+				Description: "DLP data profile configuration.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							Optional:    true,
+							Description: "Profile name.",
+						},
+						"uuid": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Profile UUID.",
+						},
+						"profile_id": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Profile ID.",
+						},
+						"version": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Profile version.",
+						},
+						"log_severity": schema.StringAttribute{
+							Optional:    true,
+							Description: "Log severity level.",
+						},
+						"non_file_based": schema.StringAttribute{
+							Optional:    true,
+							Description: "Non-file-based detection action.",
+						},
+						"file_based": schema.StringAttribute{
+							Optional:    true,
+							Description: "File-based detection action.",
+						},
+					},
+				},
+			},
+		},
 	}
 }
+
+// ── CRUD ─────────────────────────────────────────────────────────────
 
 func (r *securityProfileResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
@@ -105,27 +399,19 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 
 	createReq := management.CreateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
+		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
 	}
-
-	if !plan.Policy.IsNull() && !plan.Policy.IsUnknown() && plan.Policy.ValueString() != "" {
-		var policy management.ProfilePolicy
-		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policy); err != nil {
-			resp.Diagnostics.AddError("Invalid policy JSON", err.Error())
-			return
-		}
-		createReq.Policy = &policy
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	profile, err := r.client.Profiles.Create(ctx, createReq)
 	if err != nil {
-		// The API may return 409 even when the profile was actually created
-		// (known API bug with certain policy configurations like toxic-category-list).
-		// Attempt to read back the profile by name before failing.
 		if strings.Contains(err.Error(), "409") {
 			found := findProfileByName(ctx, r.client, plan.ProfileName.ValueString())
 			if found != nil {
 				tflog.Warn(ctx, "profile create returned 409 but profile exists; treating as success")
-				mapProfileToState(found, &plan)
+				mapProfileToState(ctx, found, &plan, &resp.Diagnostics)
 				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 				return
 			}
@@ -134,7 +420,7 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	mapProfileToState(profile, &plan)
+	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -151,7 +437,7 @@ func (r *securityProfileResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	mapProfileToState(found, &state)
+	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -170,15 +456,10 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 
 	updateReq := management.UpdateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
+		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
 	}
-
-	if !plan.Policy.IsNull() && !plan.Policy.IsUnknown() && plan.Policy.ValueString() != "" {
-		var policy management.ProfilePolicy
-		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policy); err != nil {
-			resp.Diagnostics.AddError("Invalid policy JSON", err.Error())
-			return
-		}
-		updateReq.Policy = &policy
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	profile, err := r.client.Profiles.Update(ctx, state.ProfileID.ValueString(), updateReq)
@@ -187,7 +468,7 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	mapProfileToState(profile, &plan)
+	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -209,20 +490,257 @@ func (r *securityProfileResource) Delete(ctx context.Context, req resource.Delet
 }
 
 func (r *securityProfileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	profileName := req.ID
-
-	found := findProfileByName(ctx, r.client, profileName)
+	found := findProfileByName(ctx, r.client, req.ID)
 	if found == nil {
-		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+profileName)
+		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+req.ID)
 		return
 	}
 
 	var state SecurityProfileResourceModel
-	mapProfileToState(found, &state)
+	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// findProfileByID searches for a profile by ID using paginated list calls.
+// ── Conversion: Terraform plan → SDK ─────────────────────────────────
+
+func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, diags *diag.Diagnostics) *management.ProfilePolicy {
+	if len(plan.AiSecurityProfiles) == 0 && len(plan.DlpDataProfiles) == 0 {
+		return nil
+	}
+
+	policy := &management.ProfilePolicy{}
+
+	for _, asp := range plan.AiSecurityProfiles {
+		config := management.AiSecurityProfileConfig{
+			ModelType:   asp.ModelType.ValueString(),
+			ContentType: asp.ContentType.ValueString(),
+		}
+
+		mc := &management.ModelConfiguration{
+			MaskDataInStorage: asp.MaskDataInStorage.ValueBool(),
+		}
+
+		if asp.Latency != nil {
+			mc.Latency = &management.LatencyConfig{
+				InlineTimeoutAction: asp.Latency.InlineTimeoutAction.ValueString(),
+				MaxInlineLatency:    int32(asp.Latency.MaxInlineLatency.ValueInt64()),
+			}
+		}
+
+		if asp.DataProtection != nil && asp.DataProtection.DataLeakDetection != nil {
+			dld := asp.DataProtection.DataLeakDetection
+			sdkDLD := management.DataLeakDetectionConfig{
+				Action:         dld.Action.ValueString(),
+				MaskDataInline: dld.MaskDataInline.ValueBool(),
+			}
+			for _, m := range dld.Members {
+				sdkDLD.Member = append(sdkDLD.Member, management.DataLeakMember{
+					Text:    m.Text.ValueString(),
+					ID:      m.ID.ValueString(),
+					Version: m.Version.ValueString(),
+				})
+			}
+			mc.DataProtection = &management.DataProtectionConfig{
+				DataLeakDetection: &sdkDLD,
+			}
+		}
+
+		if asp.AppProtection != nil {
+			mc.AppProtection = &management.AppProtectionConfig{
+				AlertURLCategory: listToURLCategory(ctx, asp.AppProtection.AlertURLCategory, diags),
+				BlockURLCategory: listToURLCategory(ctx, asp.AppProtection.BlockURLCategory, diags),
+				AllowURLCategory: listToURLCategory(ctx, asp.AppProtection.AllowURLCategory, diags),
+			}
+		}
+
+		for _, mp := range asp.ModelProtection {
+			sdkMP := management.ModelProtectionConfig{
+				Name:   mp.Name.ValueString(),
+				Action: mp.Action.ValueString(),
+			}
+			for _, tc := range mp.ToxicCategories {
+				sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, management.ToxicCategoryConfig{
+					Category: tc.Category.ValueString(),
+					Action:   tc.Action.ValueString(),
+				})
+			}
+			for _, tl := range mp.TopicLists {
+				sdkTL := management.TopicArrayConfig{
+					Action: tl.Action.ValueString(),
+				}
+				for _, t := range tl.Topics {
+					sdkTL.Topic = append(sdkTL.Topic, management.TopicRef{
+						TopicName: t.TopicName.ValueString(),
+						TopicID:   t.TopicID.ValueString(),
+						Revision:  t.Revision.ValueInt64(),
+					})
+				}
+				sdkMP.TopicList = append(sdkMP.TopicList, sdkTL)
+			}
+			mc.ModelProtection = append(mc.ModelProtection, sdkMP)
+		}
+
+		for _, ap := range asp.AgentProtection {
+			mc.AgentProtection = append(mc.AgentProtection, management.AgentProtectionConfig{
+				Name:   ap.Name.ValueString(),
+				Action: ap.Action.ValueString(),
+			})
+		}
+
+		config.ModelConfiguration = mc
+		policy.AiSecurityProfiles = append(policy.AiSecurityProfiles, config)
+	}
+
+	for _, dlp := range plan.DlpDataProfiles {
+		policy.DlpDataProfiles = append(policy.DlpDataProfiles, management.DLPDataProfileConfig{
+			Name:         dlp.Name.ValueString(),
+			UUID:         dlp.UUID.ValueString(),
+			ID:           dlp.ProfileID.ValueString(),
+			Version:      dlp.Version.ValueString(),
+			LogSeverity:  dlp.LogSeverity.ValueString(),
+			NonFileBased: dlp.NonFileBased.ValueString(),
+			FileBased:    dlp.FileBased.ValueString(),
+		})
+	}
+
+	return policy
+}
+
+func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnostics) *management.URLCategoryMember {
+	if list.IsNull() || list.IsUnknown() {
+		return nil
+	}
+	var members []string
+	diags.Append(list.ElementsAs(ctx, &members, false)...)
+	if len(members) == 0 {
+		return nil
+	}
+	return &management.URLCategoryMember{Member: members}
+}
+
+// ── Conversion: SDK → Terraform state ────────────────────────────────
+
+func mapProfileToState(ctx context.Context, profile *management.SecurityProfile, state *SecurityProfileResourceModel, diags *diag.Diagnostics) {
+	state.ID = types.StringValue(profile.ProfileID)
+	state.ProfileID = types.StringValue(profile.ProfileID)
+	state.ProfileName = types.StringValue(profile.ProfileName)
+	state.Active = types.BoolValue(profile.Active)
+	state.CreatedAt = types.StringValue(profile.LastModifiedTs)
+	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
+
+	if profile.Policy == nil {
+		state.AiSecurityProfiles = nil
+		state.DlpDataProfiles = nil
+		return
+	}
+
+	state.AiSecurityProfiles = nil
+	for _, asp := range profile.Policy.AiSecurityProfiles {
+		model := AiSecurityProfileModel{
+			ModelType:   types.StringValue(asp.ModelType),
+			ContentType: types.StringValue(asp.ContentType),
+		}
+
+		if asp.ModelConfiguration != nil {
+			mc := asp.ModelConfiguration
+			model.MaskDataInStorage = types.BoolValue(mc.MaskDataInStorage)
+
+			if mc.Latency != nil {
+				model.Latency = &LatencyModel{
+					InlineTimeoutAction: types.StringValue(mc.Latency.InlineTimeoutAction),
+					MaxInlineLatency:    types.Int64Value(int64(mc.Latency.MaxInlineLatency)),
+				}
+			}
+
+			if mc.DataProtection != nil && mc.DataProtection.DataLeakDetection != nil {
+				dld := mc.DataProtection.DataLeakDetection
+				dldModel := &DataLeakDetectionModel{
+					Action:         types.StringValue(dld.Action),
+					MaskDataInline: types.BoolValue(dld.MaskDataInline),
+				}
+				for _, m := range dld.Member {
+					dldModel.Members = append(dldModel.Members, DataLeakMemberModel{
+						Text:    types.StringValue(m.Text),
+						ID:      types.StringValue(m.ID),
+						Version: types.StringValue(m.Version),
+					})
+				}
+				model.DataProtection = &DataProtectionModel{
+					DataLeakDetection: dldModel,
+				}
+			}
+
+			if mc.AppProtection != nil {
+				model.AppProtection = &AppProtectionModel{
+					AlertURLCategory: urlCategoryToList(ctx, mc.AppProtection.AlertURLCategory, diags),
+					BlockURLCategory: urlCategoryToList(ctx, mc.AppProtection.BlockURLCategory, diags),
+					AllowURLCategory: urlCategoryToList(ctx, mc.AppProtection.AllowURLCategory, diags),
+				}
+			}
+
+			for _, mp := range mc.ModelProtection {
+				mpModel := ModelProtectionModel{
+					Name:   types.StringValue(mp.Name),
+					Action: types.StringValue(mp.Action),
+				}
+				for _, tc := range mp.ToxicCategoryList {
+					mpModel.ToxicCategories = append(mpModel.ToxicCategories, ToxicCategoryModel{
+						Category: types.StringValue(tc.Category),
+						Action:   types.StringValue(tc.Action),
+					})
+				}
+				for _, tl := range mp.TopicList {
+					tlModel := TopicListModel{
+						Action: types.StringValue(tl.Action),
+					}
+					for _, t := range tl.Topic {
+						tlModel.Topics = append(tlModel.Topics, TopicRefModel{
+							TopicName: types.StringValue(t.TopicName),
+							TopicID:   types.StringValue(t.TopicID),
+							Revision:  types.Int64Value(t.Revision),
+						})
+					}
+					mpModel.TopicLists = append(mpModel.TopicLists, tlModel)
+				}
+				model.ModelProtection = append(model.ModelProtection, mpModel)
+			}
+
+			for _, ap := range mc.AgentProtection {
+				model.AgentProtection = append(model.AgentProtection, AgentProtectionModel{
+					Name:   types.StringValue(ap.Name),
+					Action: types.StringValue(ap.Action),
+				})
+			}
+		}
+
+		state.AiSecurityProfiles = append(state.AiSecurityProfiles, model)
+	}
+
+	state.DlpDataProfiles = nil
+	for _, dlp := range profile.Policy.DlpDataProfiles {
+		state.DlpDataProfiles = append(state.DlpDataProfiles, DlpDataProfileModel{
+			Name:         types.StringValue(dlp.Name),
+			UUID:         types.StringValue(dlp.UUID),
+			ProfileID:    types.StringValue(dlp.ID),
+			Version:      types.StringValue(dlp.Version),
+			LogSeverity:  types.StringValue(dlp.LogSeverity),
+			NonFileBased: types.StringValue(dlp.NonFileBased),
+			FileBased:    types.StringValue(dlp.FileBased),
+		})
+	}
+}
+
+func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, diags *diag.Diagnostics) types.List {
+	if cat == nil || len(cat.Member) == 0 {
+		return types.ListNull(types.StringType)
+	}
+	list, d := types.ListValueFrom(ctx, types.StringType, cat.Member)
+	diags.Append(d...)
+	return list
+}
+
+// ── Lookup helpers ───────────────────────────────────────────────────
+
 func findProfileByID(ctx context.Context, client *management.Client, profileID string) *management.SecurityProfile {
 	offset := 0
 	limit := 100
@@ -243,7 +761,6 @@ func findProfileByID(ctx context.Context, client *management.Client, profileID s
 	}
 }
 
-// findProfileByName searches for a profile by name using paginated list calls.
 func findProfileByName(ctx context.Context, client *management.Client, profileName string) *management.SecurityProfile {
 	offset := 0
 	limit := 100
@@ -261,36 +778,6 @@ func findProfileByName(ctx context.Context, client *management.Client, profileNa
 			return nil
 		}
 		offset += limit
-	}
-}
-
-func mapProfileToState(profile *management.SecurityProfile, state *SecurityProfileResourceModel) {
-	state.ID = types.StringValue(profile.ProfileID)
-	state.ProfileID = types.StringValue(profile.ProfileID)
-	state.ProfileName = types.StringValue(profile.ProfileName)
-	state.Active = types.BoolValue(profile.Active)
-	state.CreatedAt = types.StringValue(profile.LastModifiedTs)
-	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
-
-	if profile.Policy != nil {
-		policyJSON, err := json.Marshal(profile.Policy)
-		if err == nil {
-			newPolicyStr := string(policyJSON)
-			// Preserve the original JSON string if semantically equivalent
-			// to avoid Terraform detecting a change due to key ordering.
-			if !state.Policy.IsNull() && !state.Policy.IsUnknown() {
-				var existing, returned any
-				if json.Unmarshal([]byte(state.Policy.ValueString()), &existing) == nil &&
-					json.Unmarshal(policyJSON, &returned) == nil {
-					existingNorm, _ := json.Marshal(existing)
-					returnedNorm, _ := json.Marshal(returned)
-					if string(existingNorm) == string(returnedNorm) {
-						return // keep existing policy string
-					}
-				}
-			}
-			state.Policy = types.StringValue(newPolicyStr)
-		}
 	}
 }
 
