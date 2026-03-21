@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
@@ -23,9 +22,10 @@ func TestMapApiKeyToState_basic(t *testing.T) {
 		ApiKeyID:   "key-123",
 		ApiKeyName: "my-key",
 		ApiKey:     "secret-value",
-		Active:     true,
-		CreatedAt:  "2026-01-01T00:00:00Z",
-		ExpiresAt:  time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC),
+		Revoked:    false,
+		Status:     "active",
+		CreationTS: "2026-01-01T00:00:00Z",
+		Expiration: "2027-01-01T00:00:00Z",
 	}
 
 	var state ApiKeyResourceModel
@@ -35,7 +35,8 @@ func TestMapApiKeyToState_basic(t *testing.T) {
 	assertStringValue(t, "ApiKeyID", state.ApiKeyID, "key-123")
 	assertStringValue(t, "ApiKeyName", state.ApiKeyName, "my-key")
 	assertStringValue(t, "ApiKey", state.ApiKey, "secret-value")
-	assertBoolValue(t, "Active", state.Active, true)
+	assertBoolValue(t, "Revoked", state.Revoked, false)
+	assertStringValue(t, "Status", state.Status, "active")
 	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-01-01T00:00:00Z")
 	assertStringValue(t, "ExpiresAt", state.ExpiresAt, "2027-01-01T00:00:00Z")
 }
@@ -45,9 +46,10 @@ func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
 		ApiKeyID:   "key-456",
 		ApiKeyName: "another-key",
 		ApiKey:     "", // empty — should not overwrite
-		Active:     false,
-		CreatedAt:  "2026-02-01T00:00:00Z",
-		ExpiresAt:  time.Date(2027, 6, 15, 12, 0, 0, 0, time.UTC),
+		Revoked:    true,
+		Status:     "revoked",
+		CreationTS: "2026-02-01T00:00:00Z",
+		Expiration: "2027-06-15T12:00:00Z",
 	}
 
 	state := ApiKeyResourceModel{
@@ -57,7 +59,8 @@ func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
 
 	// empty ApiKey should NOT overwrite existing state value
 	assertStringValue(t, "ApiKey", state.ApiKey, "previous-secret")
-	assertBoolValue(t, "Active", state.Active, false)
+	assertBoolValue(t, "Revoked", state.Revoked, true)
+	assertStringValue(t, "Status", state.Status, "revoked")
 }
 
 // ---------------------------------------------------------------------------
@@ -66,27 +69,33 @@ func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
 
 func TestMapAppToState_basic(t *testing.T) {
 	app := &management.CustomerApp{
-		AppID:       "app-789",
-		AppName:     "test-app",
-		Description: "A test application",
-		CreatedAt:   "2026-03-01T00:00:00Z",
-		UpdatedAt:   "2026-03-02T00:00:00Z",
+		CustomerAppID: "app-789",
+		AppName:       "test-app",
+		TsgID:         "tsg-001",
+		ModelName:     "gpt-4",
+		CloudProvider: "aws",
+		Environment:   "production",
+		Status:        "active",
+		CreatedBy:     "user@example.com",
 	}
 
 	var state CustomerAppResourceModel
 	mapAppToState(app, &state)
 
 	assertStringValue(t, "ID", state.ID, "app-789")
-	assertStringValue(t, "AppID", state.AppID, "app-789")
+	assertStringValue(t, "CustomerAppID", state.CustomerAppID, "app-789")
 	assertStringValue(t, "AppName", state.AppName, "test-app")
-	assertStringValue(t, "Description", state.Description, "A test application")
-	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-03-01T00:00:00Z")
-	assertStringValue(t, "UpdatedAt", state.UpdatedAt, "2026-03-02T00:00:00Z")
+	assertStringValue(t, "TsgID", state.TsgID, "tsg-001")
+	assertStringValue(t, "ModelName", state.ModelName, "gpt-4")
+	assertStringValue(t, "CloudProvider", state.CloudProvider, "aws")
+	assertStringValue(t, "Environment", state.Environment, "production")
+	assertStringValue(t, "Status", state.Status, "active")
+	assertStringValue(t, "CreatedBy", state.CreatedBy, "user@example.com")
 }
 
 func TestMapAppToState_emptyFields(t *testing.T) {
 	app := &management.CustomerApp{
-		AppID: "app-000",
+		CustomerAppID: "app-000",
 	}
 
 	var state CustomerAppResourceModel
@@ -94,7 +103,6 @@ func TestMapAppToState_emptyFields(t *testing.T) {
 
 	assertStringValue(t, "ID", state.ID, "app-000")
 	assertStringValue(t, "AppName", state.AppName, "")
-	assertStringValue(t, "Description", state.Description, "")
 }
 
 // ---------------------------------------------------------------------------
@@ -103,12 +111,11 @@ func TestMapAppToState_emptyFields(t *testing.T) {
 
 func TestMapProfileToState_basic(t *testing.T) {
 	profile := &management.SecurityProfile{
-		ProfileID:   "prof-123",
-		ProfileName: "default",
-		Active:      true,
-		Policy:      map[string]any{"key": "value"},
-		CreatedAt:   "2026-01-01T00:00:00Z",
-		UpdatedAt:   "2026-01-02T00:00:00Z",
+		ProfileID:      "prof-123",
+		ProfileName:    "default",
+		Active:         true,
+		Policy:         &management.ProfilePolicy{},
+		LastModifiedTs: "2026-01-02T00:00:00Z",
 	}
 
 	var state SecurityProfileResourceModel
@@ -118,9 +125,8 @@ func TestMapProfileToState_basic(t *testing.T) {
 	assertStringValue(t, "ProfileID", state.ProfileID, "prof-123")
 	assertStringValue(t, "ProfileName", state.ProfileName, "default")
 	assertBoolValue(t, "Active", state.Active, true)
-	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-01-01T00:00:00Z")
+	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-01-02T00:00:00Z")
 	assertStringValue(t, "UpdatedAt", state.UpdatedAt, "2026-01-02T00:00:00Z")
-	assertStringContains(t, "Policy", state.Policy, `"key":"value"`)
 }
 
 func TestMapProfileToState_nilPolicy(t *testing.T) {
@@ -147,12 +153,12 @@ func TestMapProfileToState_nilPolicy(t *testing.T) {
 func TestMapTopicToState_basic(t *testing.T) {
 	ctx := context.Background()
 	topic := &management.CustomTopic{
-		TopicID:     "topic-123",
-		TopicName:   "test-topic",
-		Description: "Test description",
-		Examples:    []string{"example1", "example2"},
-		CreatedAt:   "2026-01-01T00:00:00Z",
-		UpdatedAt:   "2026-01-02T00:00:00Z",
+		TopicID:        "topic-123",
+		TopicName:      "test-topic",
+		Description:    "Test description",
+		Examples:       []string{"example1", "example2"},
+		CreatedTs:      "2026-01-01T00:00:00Z",
+		LastModifiedTs: "2026-01-02T00:00:00Z",
 	}
 
 	var state CustomTopicResourceModel
@@ -167,6 +173,8 @@ func TestMapTopicToState_basic(t *testing.T) {
 	assertStringValue(t, "TopicID", state.TopicID, "topic-123")
 	assertStringValue(t, "TopicName", state.TopicName, "test-topic")
 	assertStringValue(t, "Description", state.Description, "Test description")
+	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-01-01T00:00:00Z")
+	assertStringValue(t, "UpdatedAt", state.UpdatedAt, "2026-01-02T00:00:00Z")
 
 	if state.Examples.IsNull() {
 		t.Error("Examples: expected non-null list")
@@ -252,12 +260,13 @@ func TestMapScanToState_basic(t *testing.T) {
 	ctx := context.Background()
 	scanResp := &modelsecurity.ScanBaseResponse{
 		UUID:              "scan-123",
-		Name:              "test-scan",
+		ModelURI:          "hf://org/model",
+		ScanOrigin:        modelsecurity.ScanOriginHuggingFace,
 		SourceType:        modelsecurity.SourceType("HUGGING_FACE"),
 		SecurityGroupUUID: "sg-456",
 		EvalOutcome:       modelsecurity.EvalOutcome("ALLOWED"),
-		EvalSummary:       &modelsecurity.EvaluationSummary{},
-		Labels:            map[string]string{"env": "prod"},
+		EvalSummary:       &modelsecurity.EvalSummary{RulesPassed: 5, TotalRules: 5},
+		Labels:            []modelsecurity.Label{{Key: "env", Value: "prod"}},
 		CreatedAt:         "2026-01-01T00:00:00Z",
 		UpdatedAt:         "2026-01-02T00:00:00Z",
 	}
@@ -272,7 +281,8 @@ func TestMapScanToState_basic(t *testing.T) {
 
 	assertStringValue(t, "ID", state.ID, "scan-123")
 	assertStringValue(t, "UUID", state.UUID, "scan-123")
-	assertStringValue(t, "Name", state.Name, "test-scan")
+	assertStringValue(t, "ModelURI", state.ModelURI, "hf://org/model")
+	assertStringValue(t, "ScanOrigin", state.ScanOrigin, "HUGGING_FACE")
 	assertStringValue(t, "SourceType", state.SourceType, "HUGGING_FACE")
 	assertStringValue(t, "SecurityGroupUUID", state.SecurityGroupUUID, "sg-456")
 	assertStringValue(t, "EvalOutcome", state.EvalOutcome, "ALLOWED")
@@ -289,7 +299,6 @@ func TestMapScanToState_nilEvalSummaryAndLabels(t *testing.T) {
 	ctx := context.Background()
 	scanResp := &modelsecurity.ScanBaseResponse{
 		UUID:        "scan-456",
-		Name:        "minimal-scan",
 		EvalSummary: nil,
 		Labels:      nil,
 	}
@@ -311,6 +320,36 @@ func TestMapScanToState_nilEvalSummaryAndLabels(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// mapToLabels / labelsToMap
+// ---------------------------------------------------------------------------
+
+func TestMapToLabels(t *testing.T) {
+	m := map[string]string{"env": "prod", "team": "ml"}
+	labels := mapToLabels(m)
+	if len(labels) != 2 {
+		t.Fatalf("expected 2 labels, got %d", len(labels))
+	}
+	found := make(map[string]string)
+	for _, l := range labels {
+		found[l.Key] = l.Value
+	}
+	if found["env"] != "prod" || found["team"] != "ml" {
+		t.Errorf("unexpected labels: %v", found)
+	}
+}
+
+func TestLabelsToMap(t *testing.T) {
+	labels := []modelsecurity.Label{
+		{Key: "env", Value: "prod"},
+		{Key: "team", Value: "ml"},
+	}
+	m := labelsToMap(labels)
+	if m["env"] != "prod" || m["team"] != "ml" {
+		t.Errorf("unexpected map: %v", m)
+	}
+}
+
+// ---------------------------------------------------------------------------
 // mapTargetToState
 // ---------------------------------------------------------------------------
 
@@ -319,9 +358,9 @@ func TestMapTargetToState_basic(t *testing.T) {
 		UUID:             "tgt-123",
 		Name:             "test-target",
 		Description:      "Test target",
-		TargetType:       redteam.TargetType("LLM"),
+		TargetType:       redteam.TargetType("APPLICATION"),
 		Status:           redteam.TargetStatus("ACTIVE"),
-		ConnectionType:   redteam.TargetConnectionType("API"),
+		ConnectionType:   redteam.TargetConnectionType("REST"),
 		ConnectionParams: map[string]any{"url": "https://example.com"},
 		CreatedAt:        "2026-01-01T00:00:00Z",
 		UpdatedAt:        "2026-01-02T00:00:00Z",
@@ -334,9 +373,9 @@ func TestMapTargetToState_basic(t *testing.T) {
 	assertStringValue(t, "UUID", state.UUID, "tgt-123")
 	assertStringValue(t, "Name", state.Name, "test-target")
 	assertStringValue(t, "Description", state.Description, "Test target")
-	assertStringValue(t, "TargetType", state.TargetType, "LLM")
+	assertStringValue(t, "TargetType", state.TargetType, "APPLICATION")
 	assertStringValue(t, "Status", state.Status, "ACTIVE")
-	assertStringValue(t, "ConnectionType", state.ConnectionType, "API")
+	assertStringValue(t, "ConnectionType", state.ConnectionType, "REST")
 	assertStringContains(t, "ConnectionParams", state.ConnectionParams, `"url":"https://example.com"`)
 }
 
@@ -368,12 +407,16 @@ func TestMapTargetToState_emptyOptionalFields(t *testing.T) {
 
 func TestMapJobToState_basic(t *testing.T) {
 	job := &redteam.JobResponse{
-		ID:         "job-123",
+		UUID:       "job-123",
 		Name:       "test-scan",
 		TargetID:   "tgt-123",
-		JobType:    redteam.JobType("ATTACK"),
+		Target:     redteam.JobTargetResponse{UUID: "tgt-123"},
+		JobType:    redteam.JobType("STATIC"),
 		Status:     redteam.JobStatus("COMPLETED"),
-		Stats:      map[string]any{"total": 100, "passed": 95},
+		Total:      100,
+		Completed:  95,
+		Score:      0.85,
+		ASR:        0.05,
 		CreatedAt:  "2026-01-01T00:00:00Z",
 		UpdatedAt:  "2026-01-02T00:00:00Z",
 		FinishedAt: "2026-01-02T01:00:00Z",
@@ -386,25 +429,28 @@ func TestMapJobToState_basic(t *testing.T) {
 	assertStringValue(t, "JobID", state.JobID, "job-123")
 	assertStringValue(t, "Name", state.Name, "test-scan")
 	assertStringValue(t, "TargetID", state.TargetID, "tgt-123")
-	assertStringValue(t, "JobType", state.JobType, "ATTACK")
+	assertStringValue(t, "JobType", state.JobType, "STATIC")
 	assertStringValue(t, "Status", state.Status, "COMPLETED")
 	assertStringValue(t, "FinishedAt", state.FinishedAt, "2026-01-02T01:00:00Z")
-	assertStringContains(t, "Stats", state.Stats, `"total"`)
+	assertInt64Value(t, "Total", state.Total, 100)
+	assertInt64Value(t, "Completed", state.Completed, 95)
+	assertFloat64Value(t, "Score", state.Score, 0.85)
+	assertFloat64Value(t, "ASR", state.ASR, 0.05)
 }
 
-func TestMapJobToState_nilStats(t *testing.T) {
+func TestMapJobToState_zeroStats(t *testing.T) {
 	job := &redteam.JobResponse{
-		ID:    "job-456",
-		Name:  "minimal-job",
-		Stats: nil,
+		UUID: "job-456",
+		Name: "minimal-job",
 	}
 
 	var state RedTeamScanResourceModel
 	mapJobToState(job, &state)
 
-	if !state.Stats.IsNull() {
-		t.Error("Stats: expected null for nil stats")
-	}
+	assertInt64Value(t, "Total", state.Total, 0)
+	assertInt64Value(t, "Completed", state.Completed, 0)
+	assertFloat64Value(t, "Score", state.Score, 0)
+	assertFloat64Value(t, "ASR", state.ASR, 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -919,6 +965,20 @@ func assertBoolValue(t *testing.T, field string, got types.Bool, want bool) {
 	t.Helper()
 	if got.ValueBool() != want {
 		t.Errorf("%s: expected %v, got %v", field, want, got.ValueBool())
+	}
+}
+
+func assertInt64Value(t *testing.T, field string, got types.Int64, want int64) {
+	t.Helper()
+	if got.ValueInt64() != want {
+		t.Errorf("%s: expected %d, got %d", field, want, got.ValueInt64())
+	}
+}
+
+func assertFloat64Value(t *testing.T, field string, got types.Float64, want float64) {
+	t.Helper()
+	if got.ValueFloat64() != want {
+		t.Errorf("%s: expected %f, got %f", field, want, got.ValueFloat64())
 	}
 }
 

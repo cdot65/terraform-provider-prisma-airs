@@ -107,12 +107,12 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	if !plan.Policy.IsNull() && !plan.Policy.IsUnknown() && plan.Policy.ValueString() != "" {
-		var policyMap map[string]any
-		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policyMap); err != nil {
+		var policy management.ProfilePolicy
+		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policy); err != nil {
 			resp.Diagnostics.AddError("Invalid policy JSON", err.Error())
 			return
 		}
-		createReq.Policy = policyMap
+		createReq.Policy = &policy
 	}
 
 	profile, err := r.client.Profiles.Create(ctx, createReq)
@@ -160,12 +160,12 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	if !plan.Policy.IsNull() && !plan.Policy.IsUnknown() && plan.Policy.ValueString() != "" {
-		var policyMap map[string]any
-		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policyMap); err != nil {
+		var policy management.ProfilePolicy
+		if err := json.Unmarshal([]byte(plan.Policy.ValueString()), &policy); err != nil {
 			resp.Diagnostics.AddError("Invalid policy JSON", err.Error())
 			return
 		}
-		updateReq.Policy = policyMap
+		updateReq.Policy = &policy
 	}
 
 	profile, err := r.client.Profiles.Update(ctx, state.ProfileID.ValueString(), updateReq)
@@ -256,8 +256,8 @@ func mapProfileToState(profile *management.SecurityProfile, state *SecurityProfi
 	state.ProfileID = types.StringValue(profile.ProfileID)
 	state.ProfileName = types.StringValue(profile.ProfileName)
 	state.Active = types.BoolValue(profile.Active)
-	state.CreatedAt = types.StringValue(profile.CreatedAt)
-	state.UpdatedAt = types.StringValue(profile.UpdatedAt)
+	state.CreatedAt = types.StringValue(profile.LastModifiedTs)
+	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
 
 	if profile.Policy != nil {
 		policyJSON, err := json.Marshal(profile.Policy)

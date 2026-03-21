@@ -26,12 +26,17 @@ type customerAppResource struct {
 }
 
 type CustomerAppResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	AppID       types.String `tfsdk:"app_id"`
-	AppName     types.String `tfsdk:"app_name"`
-	Description types.String `tfsdk:"description"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
+	ID               types.String `tfsdk:"id"`
+	CustomerAppID    types.String `tfsdk:"customer_app_id"`
+	AppName          types.String `tfsdk:"app_name"`
+	TsgID            types.String `tfsdk:"tsg_id"`
+	ModelName        types.String `tfsdk:"model_name"`
+	CloudProvider    types.String `tfsdk:"cloud_provider"`
+	Environment      types.String `tfsdk:"environment"`
+	Status           types.String `tfsdk:"status"`
+	CreatedBy        types.String `tfsdk:"created_by"`
+	UpdatedBy        types.String `tfsdk:"updated_by"`
+	AiAgentFramework types.String `tfsdk:"ai_agent_framework"`
 }
 
 func (r *customerAppResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -44,12 +49,12 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Terraform resource ID (same as app_id).",
+				Description: "Terraform resource ID (same as customer_app_id).",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"app_id": schema.StringAttribute{
+			"customer_app_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The unique identifier of the customer app.",
 				PlanModifiers: []planmodifier.String{
@@ -60,17 +65,40 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Required:    true,
 				Description: "Name of the customer application.",
 			},
-			"description": schema.StringAttribute{
+			"tsg_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "Description of the customer application.",
+				Description: "Tenant service group ID.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp.",
+			"model_name": schema.StringAttribute{
+				Optional:    true,
+				Description: "Model name associated with the app.",
 			},
-			"updated_at": schema.StringAttribute{
+			"cloud_provider": schema.StringAttribute{
+				Optional:    true,
+				Description: "Cloud provider for the app.",
+			},
+			"environment": schema.StringAttribute{
+				Optional:    true,
+				Description: "Deployment environment.",
+			},
+			"status": schema.StringAttribute{
 				Computed:    true,
-				Description: "Last update timestamp.",
+				Description: "App status.",
+			},
+			"created_by": schema.StringAttribute{
+				Computed:    true,
+				Description: "Identity of the user who created the app.",
+			},
+			"updated_by": schema.StringAttribute{
+				Optional:    true,
+				Description: "Identity of the user updating the app.",
+			},
+			"ai_agent_framework": schema.StringAttribute{
+				Computed:    true,
+				Description: "AI agent framework.",
 			},
 		},
 	}
@@ -96,8 +124,10 @@ func (r *customerAppResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	createReq := management.CreateAppRequest{
-		AppName:     plan.AppName.ValueString(),
-		Description: plan.Description.ValueString(),
+		AppName:       plan.AppName.ValueString(),
+		TsgID:         plan.TsgID.ValueString(),
+		CloudProvider: plan.CloudProvider.ValueString(),
+		Environment:   plan.Environment.ValueString(),
 	}
 
 	app, err := r.client.CustomerApps.Create(ctx, createReq)
@@ -117,7 +147,8 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	app, err := r.client.CustomerApps.Get(ctx, state.AppID.ValueString())
+	// SDK Get uses app_name as the lookup parameter.
+	app, err := r.client.CustomerApps.Get(ctx, state.AppName.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
 			resp.State.RemoveResource(ctx)
@@ -127,7 +158,10 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
+	// Preserve write-only values from state.
+	updatedByVal := state.UpdatedBy
 	mapAppToState(app, &state)
+	state.UpdatedBy = updatedByVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -145,11 +179,14 @@ func (r *customerAppResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	updateReq := management.UpdateAppRequest{
-		AppName:     plan.AppName.ValueString(),
-		Description: plan.Description.ValueString(),
+		AppName:       plan.AppName.ValueString(),
+		ModelName:     plan.ModelName.ValueString(),
+		CloudProvider: plan.CloudProvider.ValueString(),
+		Environment:   plan.Environment.ValueString(),
 	}
 
-	app, err := r.client.CustomerApps.Update(ctx, state.AppID.ValueString(), updateReq)
+	// SDK Update uses customer_app_id as the identifier.
+	app, err := r.client.CustomerApps.Update(ctx, state.CustomerAppID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update customer app", err.Error())
 		return
@@ -166,7 +203,13 @@ func (r *customerAppResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	_, err := r.client.CustomerApps.Delete(ctx, state.AppID.ValueString())
+	updatedBy := state.UpdatedBy.ValueString()
+	if updatedBy == "" {
+		updatedBy = "terraform"
+	}
+
+	// SDK Delete uses app_name and updated_by.
+	_, err := r.client.CustomerApps.Delete(ctx, state.AppName.ValueString(), updatedBy)
 	if err != nil {
 		if strings.Contains(err.Error(), "failed to parse response JSON") {
 			return
@@ -177,9 +220,10 @@ func (r *customerAppResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *customerAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	appID := req.ID
+	// Import by app_name since SDK Get uses app_name.
+	appName := req.ID
 
-	app, err := r.client.CustomerApps.Get(ctx, appID)
+	app, err := r.client.CustomerApps.Get(ctx, appName)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to import customer app", err.Error())
 		return
@@ -191,10 +235,14 @@ func (r *customerAppResource) ImportState(ctx context.Context, req resource.Impo
 }
 
 func mapAppToState(app *management.CustomerApp, state *CustomerAppResourceModel) {
-	state.ID = types.StringValue(app.AppID)
-	state.AppID = types.StringValue(app.AppID)
+	state.ID = types.StringValue(app.CustomerAppID)
+	state.CustomerAppID = types.StringValue(app.CustomerAppID)
 	state.AppName = types.StringValue(app.AppName)
-	state.Description = types.StringValue(app.Description)
-	state.CreatedAt = types.StringValue(app.CreatedAt)
-	state.UpdatedAt = types.StringValue(app.UpdatedAt)
+	state.TsgID = types.StringValue(app.TsgID)
+	state.ModelName = types.StringValue(app.ModelName)
+	state.CloudProvider = types.StringValue(app.CloudProvider)
+	state.Environment = types.StringValue(app.Environment)
+	state.Status = types.StringValue(app.Status)
+	state.CreatedBy = types.StringValue(app.CreatedBy)
+	state.AiAgentFramework = types.StringValue(app.AiAgentFramework)
 }

@@ -117,10 +117,8 @@ func (d *modelScanEvaluationsDataSource) Read(ctx context.Context, req datasourc
 
 	for _, item := range evalsResp.Items {
 		detailsJSON := ""
-		if item.Details != nil {
-			if b, err := json.Marshal(item.Details); err == nil {
-				detailsJSON = string(b)
-			}
+		if b, err := json.Marshal(item); err == nil {
+			detailsJSON = string(b)
 		}
 		state.Evaluations = append(state.Evaluations, ModelScanEvaluationModel{
 			UUID:             types.StringValue(item.UUID),

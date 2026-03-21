@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -97,13 +98,22 @@ func (d *modelSecurityRulesDataSource) Read(ctx context.Context, _ datasource.Re
 
 	var state ModelSecurityRulesDataSourceModel
 	for _, item := range rulesResp.Items {
+		// CompatibleSources is a slice; join for display
+		sourceTypes := ""
+		if len(item.CompatibleSources) > 0 {
+			parts := make([]string, len(item.CompatibleSources))
+			for j, s := range item.CompatibleSources {
+				parts[j] = string(s)
+			}
+			sourceTypes = strings.Join(parts, ",")
+		}
 		state.Rules = append(state.Rules, ModelSecurityRuleModel{
 			UUID:        types.StringValue(item.UUID),
 			Name:        types.StringValue(item.Name),
 			Description: types.StringValue(item.Description),
-			SourceType:  types.StringValue(string(item.SourceType)),
+			SourceType:  types.StringValue(sourceTypes),
 			RuleType:    types.StringValue(string(item.RuleType)),
-			CreatedAt:   types.StringValue(item.CreatedAt),
+			CreatedAt:   types.StringValue(""),
 		})
 	}
 

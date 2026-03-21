@@ -107,14 +107,12 @@ func (d *modelScanViolationsDataSource) Read(ctx context.Context, req datasource
 
 	for _, item := range violResp.Items {
 		detailsJSON := ""
-		if item.Details != nil {
-			if b, err := json.Marshal(item.Details); err == nil {
-				detailsJSON = string(b)
-			}
+		if b, err := json.Marshal(item); err == nil {
+			detailsJSON = string(b)
 		}
 		state.Violations = append(state.Violations, ModelScanViolationModel{
 			UUID:      types.StringValue(item.UUID),
-			ScanUUID:  types.StringValue(item.ScanUUID),
+			ScanUUID:  config.ScanUUID,
 			RuleName:  types.StringValue(item.RuleName),
 			Details:   types.StringValue(detailsJSON),
 			CreatedAt: types.StringValue(item.CreatedAt),

@@ -2,12 +2,14 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -27,16 +29,19 @@ type redTeamScanResource struct {
 }
 
 type RedTeamScanResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	JobID      types.String `tfsdk:"job_id"`
-	Name       types.String `tfsdk:"name"`
-	TargetID   types.String `tfsdk:"target_id"`
-	JobType    types.String `tfsdk:"job_type"`
-	Status     types.String `tfsdk:"status"`
-	Stats      types.String `tfsdk:"stats"`
-	CreatedAt  types.String `tfsdk:"created_at"`
-	UpdatedAt  types.String `tfsdk:"updated_at"`
-	FinishedAt types.String `tfsdk:"finished_at"`
+	ID         types.String  `tfsdk:"id"`
+	JobID      types.String  `tfsdk:"job_id"`
+	Name       types.String  `tfsdk:"name"`
+	TargetID   types.String  `tfsdk:"target_id"`
+	JobType    types.String  `tfsdk:"job_type"`
+	Status     types.String  `tfsdk:"status"`
+	Total      types.Int64   `tfsdk:"total"`
+	Completed  types.Int64   `tfsdk:"completed"`
+	Score      types.Float64 `tfsdk:"score"`
+	ASR        types.Float64 `tfsdk:"asr"`
+	CreatedAt  types.String  `tfsdk:"created_at"`
+	UpdatedAt  types.String  `tfsdk:"updated_at"`
+	FinishedAt types.String  `tfsdk:"finished_at"`
 }
 
 func (r *redTeamScanResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -62,7 +67,7 @@ func (r *redTeamScanResource) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"name": schema.StringAttribute{
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the scan job.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -70,7 +75,7 @@ func (r *redTeamScanResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"target_id": schema.StringAttribute{
 				Required:    true,
-				Description: "ID of the target to scan.",
+				Description: "UUID of the target to scan.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -86,9 +91,30 @@ func (r *redTeamScanResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "Job status.",
 			},
-			"stats": schema.StringAttribute{
+			"total": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Job statistics as JSON.",
+				Description: "Total number of attack prompts.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"completed": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Number of completed attack prompts.",
+			},
+			"score": schema.Float64Attribute{
+				Computed:    true,
+				Description: "Security score.",
+				PlanModifiers: []planmodifier.Float64{
+					float64planmodifier.UseStateForUnknown(),
+				},
+			},
+			"asr": schema.Float64Attribute{
+				Computed:    true,
+				Description: "Attack success rate.",
+				PlanModifiers: []planmodifier.Float64{
+					float64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -126,11 +152,11 @@ func (r *redTeamScanResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	createReq := redteam.JobCreateRequest{
-		TargetID: plan.TargetID.ValueString(),
-		JobType:  redteam.JobType(plan.JobType.ValueString()),
-	}
-	if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
-		createReq.Name = plan.Name.ValueString()
+		Name:    plan.Name.ValueString(),
+		JobType: redteam.JobType(plan.JobType.ValueString()),
+		Target: redteam.TargetJobRequest{
+			UUID: plan.TargetID.ValueString(),
+		},
 	}
 
 	job, err := r.client.Scans.Create(ctx, createReq)
@@ -175,7 +201,7 @@ func (r *redTeamScanResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	// Abort running scans on destroy
+	// Abort running scans on destroy.
 	status := state.Status.ValueString()
 	if status == string(redteam.JobStatusRunning) || status == string(redteam.JobStatusQueued) || status == string(redteam.JobStatusInit) {
 		_, _ = r.client.Scans.Abort(ctx, state.JobID.ValueString())
@@ -188,7 +214,7 @@ func (r *redTeamScanResource) ImportState(ctx context.Context, req resource.Impo
 
 	job, err := r.client.Scans.Get(ctx, jobID)
 	if err != nil {
-		resp.Diagnostics.AddError("Scan not found", "No scan with ID: "+jobID)
+		resp.Diagnostics.AddError("Scan not found", fmt.Sprintf("No scan with ID: %s", jobID))
 		return
 	}
 
@@ -198,22 +224,23 @@ func (r *redTeamScanResource) ImportState(ctx context.Context, req resource.Impo
 }
 
 func mapJobToState(job *redteam.JobResponse, state *RedTeamScanResourceModel) {
-	state.ID = types.StringValue(job.ID)
-	state.JobID = types.StringValue(job.ID)
+	state.ID = types.StringValue(job.UUID)
+	state.JobID = types.StringValue(job.UUID)
 	state.Name = types.StringValue(job.Name)
-	state.TargetID = types.StringValue(job.TargetID)
 	state.JobType = types.StringValue(string(job.JobType))
 	state.Status = types.StringValue(string(job.Status))
+	state.Total = types.Int64Value(int64(job.Total))
+	state.Completed = types.Int64Value(int64(job.Completed))
+	state.Score = types.Float64Value(job.Score)
+	state.ASR = types.Float64Value(job.ASR)
 	state.CreatedAt = types.StringValue(job.CreatedAt)
 	state.UpdatedAt = types.StringValue(job.UpdatedAt)
 	state.FinishedAt = types.StringValue(job.FinishedAt)
 
-	if job.Stats != nil {
-		statsJSON, err := json.Marshal(job.Stats)
-		if err == nil {
-			state.Stats = types.StringValue(string(statsJSON))
-		}
-	} else {
-		state.Stats = types.StringNull()
+	// TargetID from response: prefer Target.UUID, fall back to TargetID field.
+	if job.Target.UUID != "" {
+		state.TargetID = types.StringValue(job.Target.UUID)
+	} else if job.TargetID != "" {
+		state.TargetID = types.StringValue(job.TargetID)
 	}
 }
