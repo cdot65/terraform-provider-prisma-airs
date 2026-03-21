@@ -252,13 +252,9 @@ func mapTargetToState(target *redteam.TargetResponse, state *RedTeamTargetResour
 
 	if string(target.TargetType) != "" {
 		state.TargetType = types.StringValue(string(target.TargetType))
-	} else if state.TargetType.IsNull() {
-		// keep null
 	}
 	if string(target.ConnectionType) != "" {
 		state.ConnectionType = types.StringValue(string(target.ConnectionType))
-	} else if state.ConnectionType.IsNull() {
-		// keep null
 	}
 	if target.ConnectionParams != nil {
 		paramsJSON, err := json.Marshal(target.ConnectionParams)
