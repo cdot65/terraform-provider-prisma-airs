@@ -30,10 +30,10 @@ type modelScanResource struct {
 type ModelScanResourceModel struct {
 	ID                types.String `tfsdk:"id"`
 	UUID              types.String `tfsdk:"uuid"`
-	Name              types.String `tfsdk:"name"`
+	ModelURI          types.String `tfsdk:"model_uri"`
+	ScanOrigin        types.String `tfsdk:"scan_origin"`
 	SourceType        types.String `tfsdk:"source_type"`
 	SecurityGroupUUID types.String `tfsdk:"security_group_uuid"`
-	Source            types.String `tfsdk:"source"`
 	Labels            types.Map    `tfsdk:"labels"`
 	EvalOutcome       types.String `tfsdk:"eval_outcome"`
 	EvalSummary       types.String `tfsdk:"eval_summary"`
@@ -63,27 +63,27 @@ func (r *modelScanResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"name": schema.StringAttribute{
+			"model_uri": schema.StringAttribute{
 				Required:    true,
-				Description: "Name of the model to scan.",
-			},
-			"source_type": schema.StringAttribute{
-				Required:    true,
-				Description: "Source type (LOCAL, HUGGING_FACE, S3, GCS, AZURE, ARTIFACTORY, GITLAB, ALL).",
+				Description: "URI of the model to scan.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"scan_origin": schema.StringAttribute{
+				Required:    true,
+				Description: "Scan origin (MODEL_SECURITY_SDK, HUGGING_FACE).",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"source_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "Source type (LOCAL, HUGGING_FACE, S3, GCS, AZURE, ARTIFACTORY, GITLAB, ALL).",
 			},
 			"security_group_uuid": schema.StringAttribute{
 				Optional:    true,
 				Description: "UUID of the security group to use for this scan.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"source": schema.StringAttribute{
-				Optional:    true,
-				Description: "Source configuration as a JSON string.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -133,30 +133,21 @@ func (r *modelScanResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	createReq := modelsecurity.ScanCreateRequest{
-		Name:       plan.Name.ValueString(),
-		SourceType: modelsecurity.SourceType(plan.SourceType.ValueString()),
+		ModelURI:   plan.ModelURI.ValueString(),
+		ScanOrigin: modelsecurity.ScanOrigin(plan.ScanOrigin.ValueString()),
 	}
 
 	if !plan.SecurityGroupUUID.IsNull() && !plan.SecurityGroupUUID.IsUnknown() {
 		createReq.SecurityGroupUUID = plan.SecurityGroupUUID.ValueString()
 	}
 
-	if !plan.Source.IsNull() && !plan.Source.IsUnknown() && plan.Source.ValueString() != "" {
-		var sourceMap map[string]any
-		if err := json.Unmarshal([]byte(plan.Source.ValueString()), &sourceMap); err != nil {
-			resp.Diagnostics.AddError("Invalid source JSON", err.Error())
-			return
-		}
-		createReq.Source = sourceMap
-	}
-
 	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
-		labels := make(map[string]string)
-		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+		labelsMap := make(map[string]string)
+		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labelsMap, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		createReq.Labels = labels
+		createReq.Labels = mapToLabels(labelsMap)
 	}
 
 	scan, err := r.client.Scans.Create(ctx, createReq)
@@ -186,10 +177,7 @@ func (r *modelScanResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	// Preserve write-only Source value from prior state (not returned by API).
-	sourceVal := state.Source
 	mapScanToState(ctx, scan, &state, &resp.Diagnostics)
-	state.Source = sourceVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -206,15 +194,15 @@ func (r *modelScanResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	// Only labels can be updated on a scan
+	// Only labels can be updated on a scan.
 	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
-		labels := make(map[string]string)
-		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
+		labelsMap := make(map[string]string)
+		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labelsMap, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 		_, err := r.client.Scans.SetLabels(ctx, state.UUID.ValueString(), modelsecurity.LabelsCreateRequest{
-			Labels: labels,
+			Labels: mapToLabels(labelsMap),
 		})
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to update scan labels", err.Error())
@@ -222,7 +210,7 @@ func (r *modelScanResource) Update(ctx context.Context, req resource.UpdateReque
 		}
 	}
 
-	// Re-read the scan
+	// Re-read the scan.
 	scan, err := r.client.Scans.Get(ctx, state.UUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read model scan after update", err.Error())
@@ -253,10 +241,29 @@ func (r *modelScanResource) ImportState(ctx context.Context, req resource.Import
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+// mapToLabels converts a map[string]string to []modelsecurity.Label.
+func mapToLabels(m map[string]string) []modelsecurity.Label {
+	labels := make([]modelsecurity.Label, 0, len(m))
+	for k, v := range m {
+		labels = append(labels, modelsecurity.Label{Key: k, Value: v})
+	}
+	return labels
+}
+
+// labelsToMap converts []modelsecurity.Label to map[string]string.
+func labelsToMap(labels []modelsecurity.Label) map[string]string {
+	m := make(map[string]string, len(labels))
+	for _, l := range labels {
+		m[l.Key] = l.Value
+	}
+	return m
+}
+
 func mapScanToState(ctx context.Context, scan *modelsecurity.ScanBaseResponse, state *ModelScanResourceModel, diags *diag.Diagnostics) {
 	state.ID = types.StringValue(scan.UUID)
 	state.UUID = types.StringValue(scan.UUID)
-	state.Name = types.StringValue(scan.Name)
+	state.ModelURI = types.StringValue(scan.ModelURI)
+	state.ScanOrigin = types.StringValue(string(scan.ScanOrigin))
 	state.SourceType = types.StringValue(string(scan.SourceType))
 	state.SecurityGroupUUID = types.StringValue(scan.SecurityGroupUUID)
 	state.EvalOutcome = types.StringValue(string(scan.EvalOutcome))
@@ -272,8 +279,8 @@ func mapScanToState(ctx context.Context, scan *modelsecurity.ScanBaseResponse, s
 		state.EvalSummary = types.StringNull()
 	}
 
-	if scan.Labels != nil {
-		labelsMap, d := types.MapValueFrom(ctx, types.StringType, scan.Labels)
+	if len(scan.Labels) > 0 {
+		labelsMap, d := types.MapValueFrom(ctx, types.StringType, labelsToMap(scan.Labels))
 		diags.Append(d...)
 		state.Labels = labelsMap
 	} else {

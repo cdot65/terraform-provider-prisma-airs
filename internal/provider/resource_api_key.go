@@ -30,8 +30,9 @@ type ApiKeyResourceModel struct {
 	ApiKeyID   types.String `tfsdk:"api_key_id"`
 	ApiKeyName types.String `tfsdk:"api_key_name"`
 	ApiKey     types.String `tfsdk:"api_key"`
-	UpdatedBy  types.String `tfsdk:"updated_by"`
-	Active     types.Bool   `tfsdk:"active"`
+	CreatedBy  types.String `tfsdk:"created_by"`
+	Status     types.String `tfsdk:"status"`
+	Revoked    types.Bool   `tfsdk:"revoked"`
 	CreatedAt  types.String `tfsdk:"created_at"`
 	ExpiresAt  types.String `tfsdk:"expires_at"`
 }
@@ -70,13 +71,17 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Sensitive:   true,
 				Description: "The API key value. Only available at creation time.",
 			},
-			"updated_by": schema.StringAttribute{
+			"created_by": schema.StringAttribute{
 				Optional:    true,
-				Description: "Identity of the user performing the operation.",
+				Description: "Identity of the user creating the key.",
 			},
-			"active": schema.BoolAttribute{
+			"status": schema.StringAttribute{
 				Computed:    true,
-				Description: "Whether the API key is active.",
+				Description: "API key status.",
+			},
+			"revoked": schema.BoolAttribute{
+				Computed:    true,
+				Description: "Whether the API key is revoked.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -111,7 +116,7 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	createReq := management.CreateApiKeyRequest{
 		ApiKeyName: plan.ApiKeyName.ValueString(),
-		UpdatedBy:  plan.UpdatedBy.ValueString(),
+		CreatedBy:  plan.CreatedBy.ValueString(),
 	}
 
 	key, err := r.client.ApiKeys.Create(ctx, createReq)
@@ -139,10 +144,10 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	// Preserve write-only values from state since they're not returned by the API.
 	apiKeyVal := state.ApiKey
-	updatedByVal := state.UpdatedBy
+	createdByVal := state.CreatedBy
 	mapApiKeyToState(found, &state)
 	state.ApiKey = apiKeyVal
-	state.UpdatedBy = updatedByVal
+	state.CreatedBy = createdByVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -158,12 +163,12 @@ func (r *apiKeyResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	updatedBy := state.UpdatedBy.ValueString()
-	if updatedBy == "" {
-		updatedBy = "terraform"
+	createdBy := state.CreatedBy.ValueString()
+	if createdBy == "" {
+		createdBy = "terraform"
 	}
 
-	_, err := r.client.ApiKeys.Delete(ctx, state.ApiKeyName.ValueString(), updatedBy)
+	_, err := r.client.ApiKeys.Delete(ctx, state.ApiKeyName.ValueString(), createdBy)
 	if err != nil {
 		if strings.Contains(err.Error(), "failed to parse response JSON") {
 			return
@@ -214,9 +219,10 @@ func mapApiKeyToState(key *management.ApiKey, state *ApiKeyResourceModel) {
 	state.ID = types.StringValue(key.ApiKeyID)
 	state.ApiKeyID = types.StringValue(key.ApiKeyID)
 	state.ApiKeyName = types.StringValue(key.ApiKeyName)
-	state.Active = types.BoolValue(key.Active)
-	state.CreatedAt = types.StringValue(key.CreatedAt)
-	state.ExpiresAt = types.StringValue(key.ExpiresAt.Format("2006-01-02T15:04:05Z"))
+	state.Revoked = types.BoolValue(key.Revoked)
+	state.Status = types.StringValue(key.Status)
+	state.CreatedAt = types.StringValue(key.CreationTS)
+	state.ExpiresAt = types.StringValue(key.Expiration)
 	if key.ApiKey != "" {
 		state.ApiKey = types.StringValue(key.ApiKey)
 	}

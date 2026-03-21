@@ -241,8 +241,8 @@ func mapTopicToState(ctx context.Context, topic *management.CustomTopic, state *
 	state.TopicID = types.StringValue(topic.TopicID)
 	state.TopicName = types.StringValue(topic.TopicName)
 	state.Description = types.StringValue(topic.Description)
-	state.CreatedAt = types.StringValue(topic.CreatedAt)
-	state.UpdatedAt = types.StringValue(topic.UpdatedAt)
+	state.CreatedAt = types.StringValue(topic.CreatedTs)
+	state.UpdatedAt = types.StringValue(topic.LastModifiedTs)
 
 	if len(topic.Examples) > 0 {
 		examplesList, d := types.ListValueFrom(ctx, types.StringType, topic.Examples)

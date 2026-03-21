@@ -60,10 +60,8 @@ func (d *redTeamQuotaDataSource) Read(ctx context.Context, _ datasource.ReadRequ
 	}
 
 	var state RedTeamQuotaDataSourceModel
-	if quota.Details != nil {
-		if b, err := json.Marshal(quota.Details); err == nil {
-			state.Details = types.StringValue(string(b))
-		}
+	if b, err := json.Marshal(quota); err == nil {
+		state.Details = types.StringValue(string(b))
 	} else {
 		state.Details = types.StringValue("{}")
 	}

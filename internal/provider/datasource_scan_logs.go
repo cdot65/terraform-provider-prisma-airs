@@ -98,10 +98,10 @@ func (d *scanLogsDataSource) Read(ctx context.Context, req datasource.ReadReques
 
 	opts := management.ScanLogListOpts{}
 	if !config.Limit.IsNull() && !config.Limit.IsUnknown() {
-		opts.Limit = int(config.Limit.ValueInt64())
+		opts.PageSize = int32(config.Limit.ValueInt64())
 	}
 	if !config.Offset.IsNull() && !config.Offset.IsUnknown() {
-		opts.Offset = int(config.Offset.ValueInt64())
+		opts.PageNumber = int32(config.Offset.ValueInt64())
 	}
 
 	listResp, err := d.client.ScanLogs.List(ctx, opts)
@@ -110,20 +110,22 @@ func (d *scanLogsDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	config.TotalCount = types.Int64Value(int64(listResp.TotalCount))
-	config.Items = make([]ScanLogItemModel, len(listResp.Items))
-	for i, item := range listResp.Items {
+	var entries []management.ScanLog
+	if listResp.ScanResultForDashboard != nil {
+		entries = listResp.ScanResultForDashboard.ScanResultEntries
+	}
+	config.TotalCount = types.Int64Value(int64(len(entries)))
+	config.Items = make([]ScanLogItemModel, len(entries))
+	for i, item := range entries {
 		detailsJSON := ""
-		if item.Details != nil {
-			b, err := json.Marshal(item.Details)
-			if err == nil {
-				detailsJSON = string(b)
-			}
+		b, err := json.Marshal(item)
+		if err == nil {
+			detailsJSON = string(b)
 		}
 		config.Items[i] = ScanLogItemModel{
-			LogID:     types.StringValue(item.LogID),
+			LogID:     types.StringValue(item.ScanID),
 			Details:   types.StringValue(detailsJSON),
-			CreatedAt: types.StringValue(item.CreatedAt),
+			CreatedAt: types.StringValue(item.ReceivedTS),
 		}
 	}
 
