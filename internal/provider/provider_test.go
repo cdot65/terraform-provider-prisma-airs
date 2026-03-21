@@ -25,10 +25,3 @@ func testAccPreCheck(t *testing.T) {
 		t.Skip("PANW_MGMT_TSG_ID not set")
 	}
 }
-
-func testAccPreCheckScan(t *testing.T) {
-	t.Helper()
-	if os.Getenv("PANW_AI_SEC_API_KEY") == "" {
-		t.Skip("PANW_AI_SEC_API_KEY not set")
-	}
-}

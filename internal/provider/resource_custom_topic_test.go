@@ -45,13 +45,3 @@ resource "prisma-airs_custom_topic" "test" {
 }
 `, name)
 }
-
-func testAccCustomTopicConfigUpdated(name string) string {
-	return fmt.Sprintf(`
-resource "prisma-airs_custom_topic" "test" {
-  topic_name  = %[1]q
-  description = "updated topic"
-  examples    = ["example one", "example two", "example three"]
-}
-`, name)
-}

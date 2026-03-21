@@ -264,8 +264,6 @@ func mapProfileToState(profile *management.SecurityProfile, state *SecurityProfi
 		if err == nil {
 			state.Policy = types.StringValue(string(policyJSON))
 		}
-	} else if state.Policy.IsNull() {
-		// keep null
 	}
 }
 
