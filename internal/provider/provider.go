@@ -4,9 +4,11 @@ import (
 	"context"
 	"os"
 
+	"github.com/cdot65/prisma-airs-go/aisec"
 	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
+	"github.com/cdot65/prisma-airs-go/aisec/scan"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -208,6 +210,17 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 		providerData.RedTeamClient = rtClient
 	}
 
+	// Initialize scan API client if API key is available.
+	if apiKey != "" {
+		opts := []aisec.ConfigOption{aisec.WithAPIKey(apiKey)}
+		if endpoint != "" {
+			opts = append(opts, aisec.WithEndpoint(endpoint))
+		}
+		cfg := aisec.NewConfig(opts...)
+		providerData.Scanner = scan.NewScanner(cfg)
+		providerData.ScanProfileName = profileName
+	}
+
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 }
@@ -236,6 +249,7 @@ func (p *PrismaAIRSProvider) DataSources(_ context.Context) []func() datasource.
 		NewModelScanViolationsDataSource,
 		NewRedTeamCategoriesDataSource,
 		NewRedTeamQuotaDataSource,
+		NewContentScanDataSource,
 	}
 }
 
@@ -253,6 +267,8 @@ type ProviderData struct {
 	MgmtClient           *management.Client
 	ModelSecClient       *modelsecurity.Client
 	RedTeamClient        *redteam.Client
+	Scanner              *scan.Scanner
+	ScanProfileName      string
 	APIKey               string
 	APIToken             string
 	ProfileName          string
