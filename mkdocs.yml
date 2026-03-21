@@ -1,0 +1,107 @@
+site_name: Prisma AIRS Terraform Provider
+site_url: https://cdot65.github.io/prisma-airs-provider/
+site_description: Terraform provider for Palo Alto Networks AI Runtime Security (AIRS)
+repo_name: cdot65/prisma-airs-provider
+repo_url: https://github.com/cdot65/prisma-airs-provider
+
+theme:
+  name: material
+  logo: images/logo.svg
+  favicon: images/logo.svg
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - css/custom.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+      - Quick Start: getting-started/quick-start.md
+  - Resources:
+      - Security Profile: resources/security-profile.md
+      - Custom Topic: resources/custom-topic.md
+      - API Key: resources/api-key.md
+      - Customer App: resources/customer-app.md
+      - Model Security Group: resources/model-security-group.md
+      - Model Scan: resources/model-scan.md
+      - Red Team Target: resources/red-team-target.md
+      - Red Team Scan: resources/red-team-scan.md
+      - Red Team Custom Prompt Set: resources/red-team-custom-prompt-set.md
+  - Data Sources:
+      - Content Scan: data-sources/content-scan.md
+      - DLP Profiles: data-sources/dlp-profiles.md
+      - Deployment Profiles: data-sources/deployment-profiles.md
+      - Scan Logs: data-sources/scan-logs.md
+      - Model Security Rules: data-sources/model-security-rules.md
+      - Model Scan Evaluations: data-sources/model-scan-evaluations.md
+      - Model Scan Violations: data-sources/model-scan-violations.md
+      - Red Team Reports: data-sources/red-team-reports.md
+      - Red Team Categories: data-sources/red-team-categories.md
+      - Red Team Quota: data-sources/red-team-quota.md
+  - Guides:
+      - Authentication: guides/authentication.md
+      - Managing Security Profiles: guides/managing-security-profiles.md
+      - Model Security Workflow: guides/model-security-workflow.md
+      - Red Team Testing: guides/red-team-testing.md
+  - Reference:
+      - Provider Configuration: reference/provider-configuration.md
+      - Environment Variables: reference/environment-variables.md
+      - Error Handling: reference/error-handling.md
+  - About:
+      - Release Notes: about/release-notes.md
+      - License: about/license.md
