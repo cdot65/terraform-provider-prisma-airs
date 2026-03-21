@@ -4,11 +4,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/cdot65/prisma-airs-go/aisec"
 	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
-	"github.com/cdot65/prisma-airs-go/aisec/scan"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -25,12 +23,6 @@ type PrismaAIRSProvider struct {
 
 // PrismaAIRSProviderModel describes the provider data model.
 type PrismaAIRSProviderModel struct {
-	// Scan API (API Key auth)
-	APIKey      types.String `tfsdk:"api_key"`
-	APIToken    types.String `tfsdk:"api_token"`
-	ProfileName types.String `tfsdk:"profile_name"`
-	Endpoint    types.String `tfsdk:"endpoint"`
-
 	// Management / Model Security / Red Team (OAuth2 auth)
 	ClientID      types.String `tfsdk:"client_id"`
 	ClientSecret  types.String `tfsdk:"client_secret"`
@@ -56,26 +48,6 @@ func (p *PrismaAIRSProvider) Schema(_ context.Context, _ provider.SchemaRequest,
 	resp.Schema = schema.Schema{
 		Description: "Terraform provider for Palo Alto Networks Prisma AI Runtime Security (AIRS).",
 		Attributes: map[string]schema.Attribute{
-			// Scan API
-			"api_key": schema.StringAttribute{
-				Description: "API key for AI Runtime Security scan operations. Can also be set via PANW_AI_SEC_API_KEY.",
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"api_token": schema.StringAttribute{
-				Description: "Bearer token for AI Runtime Security scan operations. Can also be set via PANW_AI_SEC_API_TOKEN.",
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"profile_name": schema.StringAttribute{
-				Description: "Default AI security profile name for scan operations. Can also be set via PANW_AI_SEC_PROFILE_NAME.",
-				Optional:    true,
-			},
-			"endpoint": schema.StringAttribute{
-				Description: "Scan API endpoint override. Can also be set via PANW_AI_SEC_API_ENDPOINT.",
-				Optional:    true,
-			},
-
 			// OAuth2
 			"client_id": schema.StringAttribute{
 				Description: "OAuth2 client ID for management APIs. Can also be set via PANW_MGMT_CLIENT_ID.",
@@ -130,10 +102,6 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	// Resolve values: provider config takes precedence over env vars
-	apiKey := stringValueOrEnv(config.APIKey, "PANW_AI_SEC_API_KEY")
-	apiToken := stringValueOrEnv(config.APIToken, "PANW_AI_SEC_API_TOKEN")
-	profileName := stringValueOrEnv(config.ProfileName, "PANW_AI_SEC_PROFILE_NAME")
-	endpoint := stringValueOrEnv(config.Endpoint, "PANW_AI_SEC_API_ENDPOINT")
 	clientID := stringValueOrEnv(config.ClientID, "PANW_MGMT_CLIENT_ID")
 	clientSecret := stringValueOrEnv(config.ClientSecret, "PANW_MGMT_CLIENT_SECRET")
 	tsgID := stringValueOrEnv(config.TsgID, "PANW_MGMT_TSG_ID")
@@ -145,10 +113,6 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 	redTeamMgmtEndpoint := stringValueOrEnv(config.RedTeamMgmtEndpoint, "PANW_RED_TEAM_MGMT_ENDPOINT")
 
 	providerData := &ProviderData{
-		APIKey:               apiKey,
-		APIToken:             apiToken,
-		ProfileName:          profileName,
-		Endpoint:             endpoint,
 		ClientID:             clientID,
 		ClientSecret:         clientSecret,
 		TsgID:                tsgID,
@@ -210,17 +174,6 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 		providerData.RedTeamClient = rtClient
 	}
 
-	// Initialize scan API client if API key is available.
-	if apiKey != "" {
-		opts := []aisec.ConfigOption{aisec.WithAPIKey(apiKey)}
-		if endpoint != "" {
-			opts = append(opts, aisec.WithEndpoint(endpoint))
-		}
-		cfg := aisec.NewConfig(opts...)
-		providerData.Scanner = scan.NewScanner(cfg)
-		providerData.ScanProfileName = profileName
-	}
-
 	resp.DataSourceData = providerData
 	resp.ResourceData = providerData
 }
@@ -232,9 +185,7 @@ func (p *PrismaAIRSProvider) Resources(_ context.Context) []func() resource.Reso
 		NewApiKeyResource,
 		NewCustomerAppResource,
 		NewModelSecurityGroupResource,
-		NewModelScanResource,
 		NewRedTeamTargetResource,
-		NewRedTeamScanResource,
 		NewRedTeamCustomPromptSetResource,
 	}
 }
@@ -243,13 +194,7 @@ func (p *PrismaAIRSProvider) DataSources(_ context.Context) []func() datasource.
 	return []func() datasource.DataSource{
 		NewDlpProfilesDataSource,
 		NewDeploymentProfilesDataSource,
-		NewScanLogsDataSource,
 		NewModelSecurityRulesDataSource,
-		NewModelScanEvaluationsDataSource,
-		NewModelScanViolationsDataSource,
-		NewRedTeamCategoriesDataSource,
-		NewRedTeamQuotaDataSource,
-		NewContentScanDataSource,
 	}
 }
 
@@ -267,12 +212,6 @@ type ProviderData struct {
 	MgmtClient           *management.Client
 	ModelSecClient       *modelsecurity.Client
 	RedTeamClient        *redteam.Client
-	Scanner              *scan.Scanner
-	ScanProfileName      string
-	APIKey               string
-	APIToken             string
-	ProfileName          string
-	Endpoint             string
 	ClientID             string
 	ClientSecret         string
 	TsgID                string

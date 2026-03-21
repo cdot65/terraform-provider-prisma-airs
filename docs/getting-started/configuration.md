@@ -1,16 +1,11 @@
 # Configuration
 
-The provider supports two authentication methods depending on the service domain being used.
+The provider uses OAuth2 client credentials for authentication across all service domains.
 
 ## Provider Block
 
 ```hcl
 provider "prisma-airs" {
-  # ── Scan API (API Key auth) ──────────────────────────
-  api_key      = var.panw_api_key
-  profile_name = var.panw_profile_name
-
-  # ── Management / Model Security / Red Team (OAuth2) ──
   client_id     = var.panw_client_id
   client_secret = var.panw_client_secret
   tsg_id        = var.panw_tsg_id
@@ -19,24 +14,11 @@ provider "prisma-airs" {
 
 All attributes support environment variable fallback — see [Environment Variables](../reference/environment-variables.md).
 
-## Authentication Methods
+## Authentication
 
-### API Key (AI Runtime Security)
+### OAuth2 Client Credentials
 
-Used exclusively for content scanning operations.
-
-```hcl
-provider "prisma-airs" {
-  api_key      = var.panw_api_key
-  profile_name = "my-security-profile"
-}
-```
-
-The API key is used with HMAC-SHA256 for request signing.
-
-### OAuth2 Client Credentials (Management, Model Security, Red Team)
-
-Used for all configuration management and red team operations.
+Used for all operations (Management, Model Security, Red Team).
 
 ```hcl
 provider "prisma-airs" {

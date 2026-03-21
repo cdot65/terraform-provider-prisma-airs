@@ -9,18 +9,27 @@ resource "prisma-airs_security_profile" "production" {
   profile_name = "production-ai-security"
 
   policy = jsonencode({
-    injection = {
-      action = "block"
-    }
-    toxic_content = {
-      action = "block"
-    }
-    dlp = {
-      action = "alert"
-    }
-    url_cats = {
-      action = "alert"
-    }
+    ai-security-profiles = [{
+      latency-config = {
+        inline-timeout-action = "allow"
+        max-inline-latency    = 5000
+      }
+      model-protection = {
+        prompt-injection = {
+          action = "block"
+        }
+        toxic-content = {
+          action = "block"
+          toxic-category-list = [
+            { category = "profanity", threshold = "low" },
+            { category = "hate-speech", threshold = "low" }
+          ]
+        }
+        url-filtering = {
+          action = "alert"
+        }
+      }
+    }]
   })
 }
 ```

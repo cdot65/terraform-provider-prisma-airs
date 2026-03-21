@@ -2,7 +2,6 @@
 # Prisma AIRS Provider — End-to-End Validation
 # ---------------------------------------------------------------------------
 # All credentials come from environment variables (source ../.env first):
-#   PANW_AI_SEC_API_KEY, PANW_AI_SEC_PROFILE_NAME
 #   PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID
 # ---------------------------------------------------------------------------
 
@@ -18,8 +17,12 @@ terraform {
 provider "prisma-airs" {}
 
 # Unique suffix to avoid name collisions across runs.
-resource "terraform_data" "run_id" {}
+variable "run_id" {
+  description = "Short unique ID appended to resource names to prevent collisions."
+  type        = string
+  default     = ""
+}
 
 locals {
-  prefix = "e2e-tf"
+  prefix = var.run_id != "" ? "e2e-tf-${var.run_id}" : "e2e-tf"
 }

@@ -3,7 +3,7 @@
 ## Prerequisites
 
 1. [Install Terraform](https://www.terraform.io/downloads.html) (>= 1.0)
-2. Obtain Prisma AIRS credentials (API key for scans, OAuth2 credentials for management)
+2. Obtain Prisma AIRS OAuth2 credentials (client ID, client secret, TSG ID)
 
 ## Example: Manage a Security Profile
 
@@ -33,12 +33,26 @@ resource "prisma-airs_security_profile" "example" {
   profile_name = "my-ai-security-profile"
 
   policy = jsonencode({
-    injection = {
-      action = "block"
-    }
-    toxic_content = {
-      action = "alert"
-    }
+    ai-security-profiles = [{
+      latency-config = {
+        inline-timeout-action = "allow"
+        max-inline-latency    = 5000
+      }
+      model-protection = {
+        prompt-injection = {
+          action = "block"
+        }
+        toxic-content = {
+          action        = "alert"
+          toxic-category-list = [
+            { category = "profanity", threshold = "low" }
+          ]
+        }
+        url-filtering = {
+          action = "alert"
+        }
+      }
+    }]
   })
 }
 ```
@@ -62,28 +76,6 @@ resource "prisma-airs_red_team_target" "my_app" {
     type     = "REST"
     endpoint = "https://my-app.example.com/api/chat"
   }
-}
-
-resource "prisma-airs_red_team_scan" "security_test" {
-  target_uuid = prisma-airs_red_team_target.my_app.id
-  job_type    = "STATIC"
-
-  categories = ["SECURITY", "SAFETY"]
-}
-```
-
-## Example: Content Scanning (Data Source)
-
-```hcl
-data "prisma-airs_content_scan" "check" {
-  profile_name = "my-security-profile"
-
-  prompt   = "What is the capital of France?"
-  response = "The capital of France is Paris."
-}
-
-output "scan_verdict" {
-  value = data.prisma-airs_content_scan.check.category
 }
 ```
 

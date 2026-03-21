@@ -7,7 +7,7 @@ Manages a model security group in Prisma AIRS Model Security API.
 ```hcl
 resource "prisma-airs_model_security_group" "ml_models" {
   name        = "production-ml-models"
-  description = "Security group for production ML model scanning"
+  description = "Security group for production ML models"
   source_type = "HUGGING_FACE"
 }
 ```

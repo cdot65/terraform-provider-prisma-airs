@@ -35,6 +35,11 @@ warn() { echo -e "${YELLOW}WARN${NC}  $1"; }
 
 FAILURES=0
 
+# Generate a short unique run ID to avoid name collisions across runs.
+RUN_ID=$(printf '%04x' $RANDOM)
+TF_VAR_ARGS="-var=run_id=$RUN_ID"
+info "Run ID: $RUN_ID"
+
 # ── Source credentials ──────────────────────────────────────────────────
 if [[ -f "$REPO_ROOT/.env" ]]; then
   info "Loading credentials from .env"
@@ -45,7 +50,7 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
   done < "$REPO_ROOT/.env"
 else
   echo -e "${RED}ERROR${NC}: $REPO_ROOT/.env not found"
-  echo "Create .env with: PANW_AI_SEC_API_KEY, PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID"
+  echo "Create .env with: PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID"
   exit 1
 fi
 
@@ -70,7 +75,7 @@ cd "$E2E_DIR"
 # ── Destroy-only mode ──────────────────────────────────────────────────
 if $DESTROY_ONLY; then
   info "Destroying resources"
-  terraform destroy -auto-approve
+  terraform destroy -auto-approve $TF_VAR_ARGS
   rm -f "$TF_CLI_CONFIG_FILE"
   info "Done"
   exit 0
@@ -78,7 +83,7 @@ fi
 
 # ── Plan ───────────────────────────────────────────────────────────────
 info "Running terraform plan"
-terraform plan -out=e2e.tfplan
+terraform plan $TF_VAR_ARGS -out=e2e.tfplan
 
 # ── Apply ──────────────────────────────────────────────────────────────
 info "Running terraform apply"
@@ -122,34 +127,21 @@ check_output "security_profile_id"   "Security Profile ID"
 check_output "security_profile_name" "Security Profile Name"
 check_output "custom_topic_id"       "Custom Topic ID"
 check_output "custom_topic_name"     "Custom Topic Name"
-# api_key excluded — requires customer app with no existing key
-# check_output "api_key_id"            "API Key ID"
-# check_output "api_key_name"          "API Key Name"
-# check_output "api_key_status"        "API Key Status"
-# customer_app excluded — upstream API hangs on create
-# check_output "customer_app_id"       "Customer App ID"
-# check_output "customer_app_name"     "Customer App Name"
 
 echo ""
 echo "─── Management Data Sources ─────────────────────────────────────"
 check_output_gte "dlp_profile_count"        0 "DLP Profiles"
 check_output_gte "deployment_profile_count" 0 "Deployment Profiles"
-# scan_log_count excluded — upstream API endpoint is unreliable
-# check_output_gte "scan_log_count"           0 "Scan Logs"
 
 echo ""
 echo "─── Model Security Resources ────────────────────────────────────"
 check_output "model_security_group_id"    "Security Group ID"
 check_output "model_security_group_name"  "Security Group Name"
 check_output "model_security_group_state" "Security Group State"
-check_output "model_scan_id"              "Model Scan ID"
-check_output "model_scan_eval_outcome"    "Model Scan Eval Outcome"
 
 echo ""
 echo "─── Model Security Data Sources ─────────────────────────────────"
-check_output_gte "model_security_rule_count"    0 "Security Rules"
-check_output_gte "model_scan_evaluation_count"  0 "Scan Evaluations"
-check_output_gte "model_scan_violation_count"   0 "Scan Violations"
+check_output_gte "model_security_rule_count" 0 "Security Rules"
 
 echo ""
 echo "─── Red Team Resources ──────────────────────────────────────────"
@@ -157,21 +149,6 @@ check_output "red_team_prompt_set_id"     "Custom Prompt Set ID"
 check_output "red_team_prompt_set_status" "Custom Prompt Set Status"
 check_output "red_team_target_id"         "Target ID"
 check_output "red_team_target_status"     "Target Status"
-# red_team_scan excluded — requires validated target (httpbin can't validate)
-# check_output "red_team_scan_id"           "Scan Job ID"
-# check_output "red_team_scan_status"       "Scan Job Status"
-
-echo ""
-echo "─── Red Team Data Sources ───────────────────────────────────────"
-check_output_gte "red_team_category_count" 1 "Attack Categories"
-check_output     "red_team_quota"            "Quota Details"
-
-echo ""
-echo "─── Scan API ────────────────────────────────────────────────────"
-check_output "content_scan_benign_category"    "Benign Scan Category"
-check_output "content_scan_benign_action"      "Benign Scan Action"
-check_output "content_scan_injection_category" "Injection Scan Category"
-check_output "content_scan_injection_action"   "Injection Scan Action"
 
 # ── Summary ────────────────────────────────────────────────────────────
 echo ""
@@ -187,7 +164,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if ! $NO_DESTROY; then
   echo ""
   info "Destroying resources"
-  terraform destroy -auto-approve
+  terraform destroy -auto-approve $TF_VAR_ARGS
 fi
 
 # ── Cleanup ────────────────────────────────────────────────────────────

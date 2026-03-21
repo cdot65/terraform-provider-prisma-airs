@@ -2,15 +2,6 @@
 
 All provider configuration attributes can be set via environment variables.
 
-## Scan API
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PANW_AI_SEC_API_KEY` | For scan operations | API key for content scanning |
-| `PANW_AI_SEC_API_TOKEN` | Alternative to API key | Bearer token for content scanning |
-| `PANW_AI_SEC_PROFILE_NAME` | Optional | Default security profile name |
-| `PANW_AI_SEC_API_ENDPOINT` | Optional | Scan API endpoint override |
-
 ## Management API (OAuth2)
 
 | Variable | Required | Description |
