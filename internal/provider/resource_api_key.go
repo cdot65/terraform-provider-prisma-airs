@@ -26,15 +26,19 @@ type apiKeyResource struct {
 }
 
 type ApiKeyResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	ApiKeyID   types.String `tfsdk:"api_key_id"`
-	ApiKeyName types.String `tfsdk:"api_key_name"`
-	ApiKey     types.String `tfsdk:"api_key"`
-	CreatedBy  types.String `tfsdk:"created_by"`
-	Status     types.String `tfsdk:"status"`
-	Revoked    types.Bool   `tfsdk:"revoked"`
-	CreatedAt  types.String `tfsdk:"created_at"`
-	ExpiresAt  types.String `tfsdk:"expires_at"`
+	ID                   types.String `tfsdk:"id"`
+	ApiKeyID             types.String `tfsdk:"api_key_id"`
+	ApiKeyName           types.String `tfsdk:"api_key_name"`
+	ApiKey               types.String `tfsdk:"api_key"`
+	AuthCode             types.String `tfsdk:"auth_code"`
+	CustApp              types.String `tfsdk:"cust_app"`
+	CreatedBy            types.String `tfsdk:"created_by"`
+	Status               types.String `tfsdk:"status"`
+	Revoked              types.Bool   `tfsdk:"revoked"`
+	CreatedAt            types.String `tfsdk:"created_at"`
+	ExpiresAt            types.String `tfsdk:"expires_at"`
+	RotationTimeInterval types.Int64  `tfsdk:"rotation_time_interval"`
+	RotationTimeUnit     types.String `tfsdk:"rotation_time_unit"`
 }
 
 func (r *apiKeyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -71,9 +75,28 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Sensitive:   true,
 				Description: "The API key value. Only available at creation time.",
 			},
+			"auth_code": schema.StringAttribute{
+				Required:    true,
+				Description: "Deployment profile auth code for API key creation.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"cust_app": schema.StringAttribute{
+				Optional:    true,
+				Description: "Customer application name to associate with the key.",
+			},
 			"created_by": schema.StringAttribute{
 				Optional:    true,
 				Description: "Identity of the user creating the key.",
+			},
+			"rotation_time_interval": schema.Int64Attribute{
+				Required:    true,
+				Description: "Rotation interval value (e.g. 90 for 90 days).",
+			},
+			"rotation_time_unit": schema.StringAttribute{
+				Required:    true,
+				Description: "Rotation time unit (days, months).",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -114,9 +137,18 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	custApp := ""
+	if !plan.CustApp.IsNull() && !plan.CustApp.IsUnknown() {
+		custApp = plan.CustApp.ValueString()
+	}
+
 	createReq := management.CreateApiKeyRequest{
-		ApiKeyName: plan.ApiKeyName.ValueString(),
-		CreatedBy:  plan.CreatedBy.ValueString(),
+		ApiKeyName:           plan.ApiKeyName.ValueString(),
+		AuthCode:             plan.AuthCode.ValueString(),
+		CustApp:              custApp,
+		CreatedBy:            plan.CreatedBy.ValueString(),
+		RotationTimeInterval: int32(plan.RotationTimeInterval.ValueInt64()),
+		RotationTimeUnit:     plan.RotationTimeUnit.ValueString(),
 	}
 
 	key, err := r.client.ApiKeys.Create(ctx, createReq)
@@ -142,12 +174,20 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// Preserve write-only values from state since they're not returned by the API.
+	// Preserve write-only/input values from state since they may not be returned.
 	apiKeyVal := state.ApiKey
 	createdByVal := state.CreatedBy
+	authCodeVal := state.AuthCode
+	custAppVal := state.CustApp
+	rotationIntervalVal := state.RotationTimeInterval
+	rotationUnitVal := state.RotationTimeUnit
 	mapApiKeyToState(found, &state)
 	state.ApiKey = apiKeyVal
 	state.CreatedBy = createdByVal
+	state.AuthCode = authCodeVal
+	state.CustApp = custAppVal
+	state.RotationTimeInterval = rotationIntervalVal
+	state.RotationTimeUnit = rotationUnitVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -189,8 +229,9 @@ func (r *apiKeyResource) ImportState(ctx context.Context, req resource.ImportSta
 
 	var state ApiKeyResourceModel
 	mapApiKeyToState(found, &state)
-	// api_key value is not available during import
+	// api_key and auth_code values are not available during import
 	state.ApiKey = types.StringValue("")
+	state.AuthCode = types.StringValue(found.AuthCode)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
