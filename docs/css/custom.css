@@ -146,10 +146,9 @@
 /* ── Badges ───────────────────────────────────────────────────────── */
 
 .md-typeset img[alt='CI'],
-.md-typeset img[alt='npm'],
-.md-typeset img[alt='License: MIT'],
-.md-typeset img[alt='Node 18+'],
-.md-typeset img[alt='TypeScript'] {
+.md-typeset img[alt='Tests'],
+.md-typeset img[alt='Go 1.24+'],
+.md-typeset img[alt='License: MIT'] {
   display: inline-block;
   vertical-align: middle;
   margin-right: 4px;

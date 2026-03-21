@@ -31,13 +31,13 @@ Error: missing required configuration: PANW_MGMT_CLIENT_ID
 
 Set the required environment variables or provider attributes.
 
-### Invalid API Key
+### OAuth2 Authentication Failure
 
 ```
-Error: server returned 403: invalid API key
+Error: Token request failed with status 401
 ```
 
-Verify your API key is valid and not expired.
+Verify your `client_id`, `client_secret`, and `tsg_id` are correct.
 
 ### Rate Limiting
 

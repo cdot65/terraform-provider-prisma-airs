@@ -9,6 +9,9 @@ terraform-provider-prisma-airs
 # Test binary
 *.test
 
+# Debug binary (delve)
+__debug_bin*
+
 # Coverage
 coverage/
 *.out
@@ -37,6 +40,7 @@ REVIEW-*.md
 
 # Terraform
 .terraform/
+.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfplan
@@ -48,9 +52,7 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+.dev.tfrc
 
 # GoReleaser
 dist/
-
-# Vendor (optional — we use Go modules)
-# vendor/
