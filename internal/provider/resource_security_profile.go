@@ -408,8 +408,8 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 	profile, err := r.client.Profiles.Create(ctx, createReq)
 	if err != nil {
 		if strings.Contains(err.Error(), "409") {
-			found := findProfileByName(ctx, r.client, plan.ProfileName.ValueString())
-			if found != nil {
+			found, lookupErr := r.client.Profiles.GetByName(ctx, plan.ProfileName.ValueString())
+			if lookupErr == nil && found != nil {
 				tflog.Warn(ctx, "profile create returned 409 but profile exists; treating as success")
 				mapProfileToState(ctx, found, &plan, &resp.Diagnostics)
 				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -431,9 +431,13 @@ func (r *securityProfileResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	found := findProfileByID(ctx, r.client, state.ProfileID.ValueString())
-	if found == nil {
-		resp.State.RemoveResource(ctx)
+	found, err := r.client.Profiles.GetByID(ctx, state.ProfileID.ValueString())
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Failed to read security profile", err.Error())
 		return
 	}
 
@@ -490,9 +494,9 @@ func (r *securityProfileResource) Delete(ctx context.Context, req resource.Delet
 }
 
 func (r *securityProfileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	found := findProfileByName(ctx, r.client, req.ID)
-	if found == nil {
-		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+req.ID)
+	found, err := r.client.Profiles.GetByName(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+req.ID+": "+err.Error())
 		return
 	}
 
@@ -522,7 +526,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 
 		if asp.Latency != nil {
 			mc.Latency = &management.LatencyConfig{
-				InlineTimeoutAction: asp.Latency.InlineTimeoutAction.ValueString(),
+				InlineTimeoutAction: management.ProfileAction(asp.Latency.InlineTimeoutAction.ValueString()),
 				MaxInlineLatency:    int32(asp.Latency.MaxInlineLatency.ValueInt64()),
 			}
 		}
@@ -530,7 +534,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 		if asp.DataProtection != nil && asp.DataProtection.DataLeakDetection != nil {
 			dld := asp.DataProtection.DataLeakDetection
 			sdkDLD := management.DataLeakDetectionConfig{
-				Action:         dld.Action.ValueString(),
+				Action:         management.ProfileAction(dld.Action.ValueString()),
 				MaskDataInline: dld.MaskDataInline.ValueBool(),
 			}
 			for _, m := range dld.Members {
@@ -556,7 +560,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 		for _, mp := range asp.ModelProtection {
 			sdkMP := management.ModelProtectionConfig{
 				Name:   mp.Name.ValueString(),
-				Action: mp.Action.ValueString(),
+				Action: management.ProfileAction(mp.Action.ValueString()),
 			}
 			for _, tc := range mp.ToxicCategories {
 				sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, management.ToxicCategoryConfig{
@@ -566,7 +570,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 			}
 			for _, tl := range mp.TopicLists {
 				sdkTL := management.TopicArrayConfig{
-					Action: tl.Action.ValueString(),
+					Action: management.ProfileAction(tl.Action.ValueString()),
 				}
 				for _, t := range tl.Topics {
 					sdkTL.Topic = append(sdkTL.Topic, management.TopicRef{
@@ -583,7 +587,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 		for _, ap := range asp.AgentProtection {
 			mc.AgentProtection = append(mc.AgentProtection, management.AgentProtectionConfig{
 				Name:   ap.Name.ValueString(),
-				Action: ap.Action.ValueString(),
+				Action: management.ProfileAction(ap.Action.ValueString()),
 			})
 		}
 
@@ -647,7 +651,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 
 			if mc.Latency != nil {
 				model.Latency = &LatencyModel{
-					InlineTimeoutAction: types.StringValue(mc.Latency.InlineTimeoutAction),
+					InlineTimeoutAction: types.StringValue(string(mc.Latency.InlineTimeoutAction)),
 					MaxInlineLatency:    types.Int64Value(int64(mc.Latency.MaxInlineLatency)),
 				}
 			}
@@ -655,7 +659,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 			if mc.DataProtection != nil && mc.DataProtection.DataLeakDetection != nil {
 				dld := mc.DataProtection.DataLeakDetection
 				dldModel := &DataLeakDetectionModel{
-					Action:         types.StringValue(dld.Action),
+					Action:         types.StringValue(string(dld.Action)),
 					MaskDataInline: types.BoolValue(dld.MaskDataInline),
 				}
 				for _, m := range dld.Member {
@@ -681,7 +685,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 			for _, mp := range mc.ModelProtection {
 				mpModel := ModelProtectionModel{
 					Name:   types.StringValue(mp.Name),
-					Action: types.StringValue(mp.Action),
+					Action: types.StringValue(string(mp.Action)),
 				}
 				for _, tc := range mp.ToxicCategoryList {
 					mpModel.ToxicCategories = append(mpModel.ToxicCategories, ToxicCategoryModel{
@@ -691,7 +695,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 				}
 				for _, tl := range mp.TopicList {
 					tlModel := TopicListModel{
-						Action: types.StringValue(tl.Action),
+						Action: types.StringValue(string(tl.Action)),
 					}
 					for _, t := range tl.Topic {
 						tlModel.Topics = append(tlModel.Topics, TopicRefModel{
@@ -708,7 +712,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 			for _, ap := range mc.AgentProtection {
 				model.AgentProtection = append(model.AgentProtection, AgentProtectionModel{
 					Name:   types.StringValue(ap.Name),
-					Action: types.StringValue(ap.Action),
+					Action: types.StringValue(string(ap.Action)),
 				})
 			}
 		}
@@ -737,48 +741,6 @@ func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, d
 	list, d := types.ListValueFrom(ctx, types.StringType, cat.Member)
 	diags.Append(d...)
 	return list
-}
-
-// ── Lookup helpers ───────────────────────────────────────────────────
-
-func findProfileByID(ctx context.Context, client *management.Client, profileID string) *management.SecurityProfile {
-	offset := 0
-	limit := 100
-	for {
-		listResp, err := client.Profiles.List(ctx, management.ListOpts{Limit: limit, Offset: offset})
-		if err != nil {
-			return nil
-		}
-		for i := range listResp.Items {
-			if listResp.Items[i].ProfileID == profileID {
-				return &listResp.Items[i]
-			}
-		}
-		if len(listResp.Items) < limit {
-			return nil
-		}
-		offset += limit
-	}
-}
-
-func findProfileByName(ctx context.Context, client *management.Client, profileName string) *management.SecurityProfile {
-	offset := 0
-	limit := 100
-	for {
-		listResp, err := client.Profiles.List(ctx, management.ListOpts{Limit: limit, Offset: offset})
-		if err != nil {
-			return nil
-		}
-		for i := range listResp.Items {
-			if listResp.Items[i].ProfileName == profileName {
-				return &listResp.Items[i]
-			}
-		}
-		if len(listResp.Items) < limit {
-			return nil
-		}
-		offset += limit
-	}
 }
 
 func getMgmtClient(data any) (*management.Client, diag.Diagnostics) {
