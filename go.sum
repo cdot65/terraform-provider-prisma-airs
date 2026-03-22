@@ -11,12 +11,8 @@ github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
-github.com/cdot65/prisma-airs-go v0.0.0-20260321024740-dffbffc995c1 h1:pnr3pPdmcyYW+I0fqecN7yKS9l56CvZCwiQYTCudrq0=
-github.com/cdot65/prisma-airs-go v0.0.0-20260321024740-dffbffc995c1/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
-github.com/cdot65/prisma-airs-go v0.0.0-20260321174120-e7d9fe6c973f h1:26bX3H5xZBUQaTkRZl0UnK/48pbXRCaWJlxlHqmCnoQ=
-github.com/cdot65/prisma-airs-go v0.0.0-20260321174120-e7d9fe6c973f/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
-github.com/cdot65/prisma-airs-go v0.2.0 h1:ouohod2DaizROw5wcDA1Aog7NQWvJ3rk+2uUZk7SoWI=
-github.com/cdot65/prisma-airs-go v0.2.0/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
+github.com/cdot65/prisma-airs-go v0.2.1 h1:/SLp9qR50wvJ1Xph1opsUpdJJgWqypO1dcN81okFiTo=
+github.com/cdot65/prisma-airs-go v0.2.1/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
