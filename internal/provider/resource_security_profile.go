@@ -790,7 +790,24 @@ func priorTopicsFromSlice(priorProfiles []AiSecurityProfileModel, mpIdx, tlIdx i
 	if tlIdx >= len(mp.TopicLists) {
 		return nil
 	}
-	return mp.TopicLists[tlIdx].Topics
+	// Resolve any unknown values (from plan) to concrete defaults
+	topics := make([]TopicRefModel, len(mp.TopicLists[tlIdx].Topics))
+	for i, t := range mp.TopicLists[tlIdx].Topics {
+		topics[i] = TopicRefModel{
+			TopicName: t.TopicName,
+		}
+		if t.TopicID.IsUnknown() {
+			topics[i].TopicID = types.StringValue("")
+		} else {
+			topics[i].TopicID = t.TopicID
+		}
+		if t.Revision.IsUnknown() {
+			topics[i].Revision = types.Int64Value(0)
+		} else {
+			topics[i].Revision = t.Revision
+		}
+	}
+	return topics
 }
 
 func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, diags *diag.Diagnostics) types.List {
