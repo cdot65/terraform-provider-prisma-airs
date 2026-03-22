@@ -6,16 +6,24 @@ Manages a red team target in Prisma AIRS Red Team API.
 
 ```hcl
 resource "prisma-airs_red_team_target" "my_app" {
-  name        = "production-chatbot"
-  target_type = "APPLICATION"
-  description = "Production customer-facing chatbot"
+  name            = "production-chatbot"
+  target_type     = "APPLICATION"
+  description     = "Production customer-facing chatbot"
+  connection_type = "REST"
 
-  connection = jsonencode({
-    type     = "REST"
-    endpoint = "https://my-app.example.com/api/chat"
+  connection_params = jsonencode({
+    url = "https://my-app.example.com/api/chat"
     headers = {
       "Authorization" = "Bearer ${var.app_token}"
+      "Content-Type"  = "application/json"
     }
+    request_json = {
+      prompt = "{INPUT}"
+    }
+    response_json = {
+      output = "{RESPONSE}"
+    }
+    response_key = "output"
   })
 }
 ```
@@ -23,10 +31,10 @@ resource "prisma-airs_red_team_target" "my_app" {
 ## Argument Reference
 
 - `name` - (Required) Name of the target.
-- `target_type` - (Required) Type of target. Valid values: `APPLICATION`, `AGENT`, `MODEL`.
+- `target_type` - (Optional) Type of target: `APPLICATION`, `AGENT`, `MODEL`.
 - `description` - (Optional) Description of the target.
-- `connection` - (Required) JSON-encoded connection configuration.
-- `validate` - (Optional) Whether to validate the target connection on create/update. Default: `true`.
+- `connection_type` - (Optional) Connection type: `REST`, `STREAMING`, `OPENAI`, `BEDROCK`, `DATABRICKS`, `HUGGING_FACE`, `CUSTOM`.
+- `connection_params` - (Optional, Sensitive) JSON-encoded connection parameters.
 
 ## Attribute Reference
 

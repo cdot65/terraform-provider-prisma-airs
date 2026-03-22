@@ -6,17 +6,24 @@ This guide covers managing red team targets and custom prompt sets with the Pris
 
 ```hcl
 resource "prisma-airs_red_team_target" "chatbot" {
-  name        = "customer-chatbot"
-  target_type = "APPLICATION"
-  description = "Customer-facing chatbot application"
+  name            = "customer-chatbot"
+  target_type     = "APPLICATION"
+  description     = "Customer-facing chatbot application"
+  connection_type = "REST"
 
-  connection = jsonencode({
-    type     = "REST"
-    endpoint = "https://chatbot.example.com/api/chat"
+  connection_params = jsonencode({
+    url = "https://chatbot.example.com/api/chat"
     headers = {
       "Authorization" = "Bearer ${var.chatbot_api_key}"
       "Content-Type"  = "application/json"
     }
+    request_json = {
+      prompt = "{INPUT}"
+    }
+    response_json = {
+      output = "{RESPONSE}"
+    }
+    response_key = "output"
   })
 }
 ```
