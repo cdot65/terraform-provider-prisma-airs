@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -189,13 +188,8 @@ func (r *customTopicResource) Delete(ctx context.Context, req resource.DeleteReq
 		return
 	}
 
-	_, err := r.client.Topics.Delete(ctx, state.TopicID.ValueString())
+	_, err := r.client.Topics.ForceDelete(ctx, state.TopicID.ValueString(), "terraform")
 	if err != nil {
-		// The Delete API may return non-JSON responses which the SDK can't parse.
-		// If the error is a JSON parse error but the delete succeeded, ignore it.
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
-		}
 		resp.Diagnostics.AddError("Failed to delete custom topic", err.Error())
 		return
 	}
