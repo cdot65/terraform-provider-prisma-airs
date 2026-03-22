@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -106,6 +107,152 @@ func TestMapAppToState_emptyFields(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Schema validator tests (TDD: should fail until validators added)
+// ---------------------------------------------------------------------------
+
+func TestSecurityProfileSchema_ModelProtectionValidators(t *testing.T) {
+	r := &securityProfileResource{}
+	var resp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+
+	aspBlock := resp.Schema.Blocks["ai_security_profile"].(schema.ListNestedBlock)
+	mpBlock := aspBlock.NestedObject.Blocks["model_protection"].(schema.ListNestedBlock)
+
+	nameAttr := mpBlock.NestedObject.Attributes["name"].(schema.StringAttribute)
+	if len(nameAttr.Validators) == 0 {
+		t.Error("model_protection.name: expected validators, got none")
+	}
+
+	actionAttr := mpBlock.NestedObject.Attributes["action"].(schema.StringAttribute)
+	if len(actionAttr.Validators) == 0 {
+		t.Error("model_protection.action: expected validators, got none")
+	}
+}
+
+func TestSecurityProfileSchema_AgentProtectionValidators(t *testing.T) {
+	r := &securityProfileResource{}
+	var resp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+
+	aspBlock := resp.Schema.Blocks["ai_security_profile"].(schema.ListNestedBlock)
+	apBlock := aspBlock.NestedObject.Blocks["agent_protection"].(schema.ListNestedBlock)
+
+	nameAttr := apBlock.NestedObject.Attributes["name"].(schema.StringAttribute)
+	if len(nameAttr.Validators) == 0 {
+		t.Error("agent_protection.name: expected validators, got none")
+	}
+
+	actionAttr := apBlock.NestedObject.Attributes["action"].(schema.StringAttribute)
+	if len(actionAttr.Validators) == 0 {
+		t.Error("agent_protection.action: expected validators, got none")
+	}
+}
+
+func TestSecurityProfileSchema_LatencyValidators(t *testing.T) {
+	r := &securityProfileResource{}
+	var resp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+
+	aspBlock := resp.Schema.Blocks["ai_security_profile"].(schema.ListNestedBlock)
+	latencyBlock := aspBlock.NestedObject.Blocks["latency"].(schema.SingleNestedBlock)
+
+	actionAttr := latencyBlock.Attributes["inline_timeout_action"].(schema.StringAttribute)
+	if len(actionAttr.Validators) == 0 {
+		t.Error("latency.inline_timeout_action: expected validators, got none")
+	}
+}
+
+func TestSecurityProfileSchema_NoAlertInDescriptions(t *testing.T) {
+	r := &securityProfileResource{}
+	var resp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &resp)
+
+	aspBlock := resp.Schema.Blocks["ai_security_profile"].(schema.ListNestedBlock)
+	mpBlock := aspBlock.NestedObject.Blocks["model_protection"].(schema.ListNestedBlock)
+
+	actionAttr := mpBlock.NestedObject.Attributes["action"].(schema.StringAttribute)
+	if containsSubstring(actionAttr.Description, "alert") {
+		t.Errorf("model_protection.action description should not mention 'alert', got: %s", actionAttr.Description)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// ToxicContentAction compound value tests
+// ---------------------------------------------------------------------------
+
+func TestPlanToSDKPolicy_compoundToxicContentAction(t *testing.T) {
+	ctx := context.Background()
+	plan := &SecurityProfileResourceModel{
+		AiSecurityProfiles: []AiSecurityProfileModel{
+			{
+				ModelType: types.StringValue("default"),
+				ModelProtection: []ModelProtectionModel{
+					{
+						Name:   types.StringValue("toxic-content"),
+						Action: types.StringValue("high:block, moderate:allow"),
+					},
+				},
+			},
+		},
+	}
+
+	var diags diag.Diagnostics
+	policy := planToSDKPolicy(ctx, plan, &diags)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if policy == nil {
+		t.Fatal("expected non-nil policy")
+	}
+
+	mp := policy.AiSecurityProfiles[0].ModelConfiguration.ModelProtection[0]
+	if mp.Name != "toxic-content" {
+		t.Errorf("expected 'toxic-content', got %q", mp.Name)
+	}
+	if string(mp.Action) != "high:block, moderate:allow" {
+		t.Errorf("expected 'high:block, moderate:allow', got %q", string(mp.Action))
+	}
+}
+
+func TestMapProfileToState_compoundToxicContentAction(t *testing.T) {
+	ctx := context.Background()
+	profile := &management.SecurityProfile{
+		ProfileID:      "prof-tc",
+		ProfileName:    "toxic-compound",
+		Active:         true,
+		LastModifiedTs: "2026-03-01T00:00:00Z",
+		Policy: &management.ProfilePolicy{
+			AiSecurityProfiles: []management.AiSecurityProfileConfig{
+				{
+					ModelType: "default",
+					ModelConfiguration: &management.ModelConfiguration{
+						ModelProtection: []management.ModelProtectionConfig{
+							{
+								Name:   "toxic-content",
+								Action: "high:block, moderate:block",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	var state SecurityProfileResourceModel
+	var diags diag.Diagnostics
+	mapProfileToState(ctx, profile, &state, &diags)
+
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+
+	mp := state.AiSecurityProfiles[0].ModelProtection[0]
+	assertStringValue(t, "Name", mp.Name, "toxic-content")
+	assertStringValue(t, "Action", mp.Action, "high:block, moderate:block")
+}
+
+// ---------------------------------------------------------------------------
 // mapProfileToState
 // ---------------------------------------------------------------------------
 
@@ -182,15 +329,15 @@ func TestMapProfileToState_fullPolicy(t *testing.T) {
 							},
 							{
 								Name:   "toxic-content",
-								Action: "alert",
+								Action: "high:block, moderate:allow",
 								ToxicCategoryList: []management.ToxicCategoryConfig{
 									{Category: "harassment", Action: "block"},
-									{Category: "violence", Action: "alert"},
+									{Category: "violence", Action: "block"},
 								},
 							},
 						},
 						AgentProtection: []management.AgentProtectionConfig{
-							{Name: "agent-threat", Action: "block"},
+							{Name: "agent-security", Action: "block"},
 						},
 					},
 				},
@@ -228,6 +375,7 @@ func TestMapProfileToState_fullPolicy(t *testing.T) {
 	assertStringValue(t, "ModelProtection[0].Name", asp.ModelProtection[0].Name, "prompt-injection")
 	assertStringValue(t, "ModelProtection[0].Action", asp.ModelProtection[0].Action, "block")
 	assertStringValue(t, "ModelProtection[1].Name", asp.ModelProtection[1].Name, "toxic-content")
+	assertStringValue(t, "ModelProtection[1].Action", asp.ModelProtection[1].Action, "high:block, moderate:allow")
 	if len(asp.ModelProtection[1].ToxicCategories) != 2 {
 		t.Fatalf("expected 2 toxic_category blocks, got %d", len(asp.ModelProtection[1].ToxicCategories))
 	}
@@ -237,7 +385,7 @@ func TestMapProfileToState_fullPolicy(t *testing.T) {
 	if len(asp.AgentProtection) != 1 {
 		t.Fatalf("expected 1 agent_protection block, got %d", len(asp.AgentProtection))
 	}
-	assertStringValue(t, "AgentProtection[0].Name", asp.AgentProtection[0].Name, "agent-threat")
+	assertStringValue(t, "AgentProtection[0].Name", asp.AgentProtection[0].Name, "agent-security")
 }
 
 func TestPlanToSDKPolicy_minimal(t *testing.T) {
@@ -272,7 +420,7 @@ func TestPlanToSDKPolicy_withModelProtection(t *testing.T) {
 					},
 					{
 						Name:   types.StringValue("toxic-content"),
-						Action: types.StringValue("alert"),
+						Action: types.StringValue("high:block, moderate:allow"),
 						ToxicCategories: []ToxicCategoryModel{
 							{Category: types.StringValue("harassment"), Action: types.StringValue("block")},
 						},
@@ -337,7 +485,7 @@ func TestPlanToSDKPolicy_roundTrip(t *testing.T) {
 					},
 				},
 				AgentProtection: []AgentProtectionModel{
-					{Name: types.StringValue("agent-threat"), Action: types.StringValue("alert")},
+					{Name: types.StringValue("agent-security"), Action: types.StringValue("block")},
 				},
 			},
 		},

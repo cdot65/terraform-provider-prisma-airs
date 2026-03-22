@@ -64,6 +64,28 @@ resource "prisma-airs_security_profile" "full" {
 }
 ```
 
+### Compound Toxic Content Action
+
+```hcl
+resource "prisma-airs_security_profile" "toxic" {
+  profile_name = "toxic-compound"
+
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "block"
+    }
+
+    model_protection {
+      name   = "toxic-content"
+      action = "high:block, moderate:allow"
+    }
+  }
+}
+```
+
 ### With Topic-Based Detection
 
 ```hcl
@@ -126,7 +148,10 @@ resource "prisma-airs_security_profile" "topics" {
 ### `model_protection` Block (inside `ai_security_profile`)
 
 - `name` - (Required) Protection name. Values: `"prompt-injection"`, `"toxic-content"`, `"contextual-grounding"`, `"topic-guardrails"`.
-- `action` - (Required) Action to take: `"block"` or `"allow"`.
+- `action` - (Required) Action to take. For most protections: `"block"` or `"allow"`. For `toxic-content`, also accepts compound `ToxicContentAction` values:
+    - `"high:block, moderate:allow"` — block high-severity, allow moderate
+    - `"high:block, moderate:block"` — block both severity levels
+    - `"high:allow, moderate:allow"` — allow both severity levels
 
 ### `toxic_category` Block (inside `model_protection`)
 
@@ -147,8 +172,8 @@ Per-category overrides for toxic content detection.
 
 ### `agent_protection` Block (inside `ai_security_profile`)
 
-- `name` - (Required) Protection name (e.g., `"agent-security"`).
-- `action` - (Required) Action to take: `"block"` or `"allow"`.
+- `name` - (Required) Protection name: `"agent-security"`.
+- `action` - (Required) Action to take: `"block"`.
 
 ### `app_protection` Block (inside `ai_security_profile`)
 
@@ -161,7 +186,7 @@ Contains a `data_leak_detection` sub-block.
 
 ### `data_leak_detection` Block (inside `data_protection`)
 
-- `action` - (Optional) Action on detection: `"block"` or `"allow"`.
+- `action` - (Optional) Action on detection: `"block"` or allow (empty string disables).
 - `mask_data_inline` - (Optional) Whether to mask detected data inline.
 
 ### `member` Block (inside `data_leak_detection`)

@@ -5,12 +5,14 @@ import (
 	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/management"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -183,6 +185,9 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 								"inline_timeout_action": schema.StringAttribute{
 									Optional:    true,
 									Description: "Action on inline timeout ('allow' or 'block').",
+									Validators: []validator.String{
+										stringvalidator.OneOf("allow", "block"),
+									},
 								},
 								"max_inline_latency": schema.Int64Attribute{
 									Optional:    true,
@@ -198,7 +203,7 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									Attributes: map[string]schema.Attribute{
 										"action": schema.StringAttribute{
 											Optional:    true,
-											Description: "Action on detection ('block', 'alert', 'allow').",
+											Description: "Action on detection: 'block' or 'allow'.",
 										},
 										"mask_data_inline": schema.BoolAttribute{
 											Optional:    true,
@@ -257,11 +262,22 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 								Attributes: map[string]schema.Attribute{
 									"name": schema.StringAttribute{
 										Required:    true,
-										Description: "Protection name (e.g., 'prompt-injection', 'toxic-content', 'url-filtering', 'malicious-url').",
+										Description: "Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'.",
+										Validators: []validator.String{
+											stringvalidator.OneOf("prompt-injection", "toxic-content", "contextual-grounding", "topic-guardrails"),
+										},
 									},
 									"action": schema.StringAttribute{
 										Required:    true,
-										Description: "Action to take ('block', 'alert', 'allow').",
+										Description: "Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'.",
+										Validators: []validator.String{
+											stringvalidator.OneOf(
+												"block", "allow",
+												string(management.ToxicContentHighBlockModerateAllow),
+												string(management.ToxicContentHighBlockModerateBlock),
+												string(management.ToxicContentHighAllowModerateAllow),
+											),
+										},
 									},
 								},
 								Blocks: map[string]schema.Block{
@@ -323,11 +339,17 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 								Attributes: map[string]schema.Attribute{
 									"name": schema.StringAttribute{
 										Required:    true,
-										Description: "Protection name.",
+										Description: "Protection name: 'agent-security'.",
+										Validators: []validator.String{
+											stringvalidator.OneOf("agent-security"),
+										},
 									},
 									"action": schema.StringAttribute{
 										Required:    true,
-										Description: "Action to take ('block', 'alert', 'allow').",
+										Description: "Action to take: 'block'.",
+										Validators: []validator.String{
+											stringvalidator.OneOf("block"),
+										},
 									},
 								},
 							},
@@ -484,11 +506,8 @@ func (r *securityProfileResource) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	_, err := r.client.Profiles.Delete(ctx, state.ProfileID.ValueString())
+	_, err := r.client.Profiles.ForceDelete(ctx, state.ProfileID.ValueString(), "terraform")
 	if err != nil {
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
-		}
 		resp.Diagnostics.AddError("Failed to delete security profile", err.Error())
 		return
 	}
