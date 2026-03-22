@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -147,14 +148,23 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 			"active": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the profile is active.",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"updated_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Last update timestamp.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -641,13 +651,17 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 	state.AiSecurityProfiles = nil
 	for _, asp := range profile.Policy.AiSecurityProfiles {
 		model := AiSecurityProfileModel{
-			ModelType:   types.StringValue(asp.ModelType),
-			ContentType: types.StringValue(asp.ContentType),
+			ModelType: types.StringValue(asp.ModelType),
+		}
+		if asp.ContentType != "" {
+			model.ContentType = types.StringValue(asp.ContentType)
 		}
 
 		if asp.ModelConfiguration != nil {
 			mc := asp.ModelConfiguration
-			model.MaskDataInStorage = types.BoolValue(mc.MaskDataInStorage)
+			if mc.MaskDataInStorage {
+				model.MaskDataInStorage = types.BoolValue(true)
+			}
 
 			if mc.Latency != nil {
 				model.Latency = &LatencyModel{
@@ -663,11 +677,16 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 					MaskDataInline: types.BoolValue(dld.MaskDataInline),
 				}
 				for _, m := range dld.Member {
-					dldModel.Members = append(dldModel.Members, DataLeakMemberModel{
-						Text:    types.StringValue(m.Text),
-						ID:      types.StringValue(m.ID),
-						Version: types.StringValue(m.Version),
-					})
+					member := DataLeakMemberModel{
+						Text: types.StringValue(m.Text),
+					}
+					if m.ID != "" {
+						member.ID = types.StringValue(m.ID)
+					}
+					if m.Version != "" {
+						member.Version = types.StringValue(m.Version)
+					}
+					dldModel.Members = append(dldModel.Members, member)
 				}
 				model.DataProtection = &DataProtectionModel{
 					DataLeakDetection: dldModel,
