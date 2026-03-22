@@ -1,0 +1,9 @@
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+
+litellm_api_key       = "sk-..."
+worf_api_key          = "your-worf-api-key"
+bedrock_access_id     = "AKIA..."
+bedrock_access_secret = "your-aws-secret-key"
+qwen_api_key          = "sk-..."
+talkdesk_api_key      = "your-talkdesk-api-key"
