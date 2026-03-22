@@ -1,5 +1,17 @@
 # Release Notes
 
+## v0.5.0 — Customer App Import-Only, SDK v0.3.1
+
+- **Breaking:** `prisma-airs_customer_app` no longer supports `terraform apply` for new apps — use `terraform import` instead. The AIRS API has no POST endpoint for customer apps; they are created externally.
+- Upgrade `prisma-airs-go` SDK to v0.3.1 (removes `Create`, fixes List endpoint, adds new fields)
+- Add computed attributes: `agent_app`, `ai_sec_profile_name`
+- `tsg_id` is now computed-only (set by the API, not the user)
+- Update docs and sandbox examples to reflect import-only workflow
+
+## v0.4.1 — SDK v0.3.0
+
+- Upgrade `prisma-airs-go` SDK to v0.3.0 (docs/examples only, no API changes)
+
 ## v0.4.0 — SDK v0.2.1, ForceDelete, Schema Validators, Doc Overhaul
 
 - Upgrade `prisma-airs-go` SDK to v0.2.1

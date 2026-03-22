@@ -11,8 +11,8 @@ github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
-github.com/cdot65/prisma-airs-go v0.3.0 h1:uQo3ZWQ/5+BRjlu8K4DU6jJy/ldlIN6GxKqI9L0QBnU=
-github.com/cdot65/prisma-airs-go v0.3.0/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
+github.com/cdot65/prisma-airs-go v0.3.1 h1:5ncr4nkNiFHoDCU7l6EgPg9VlZhtMdt+PuUEegsf0dM=
+github.com/cdot65/prisma-airs-go v0.3.1/go.mod h1:+bG+LuYsBiy/+60UY91/g6RZmsyl3GjknBhJg11tMEg=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
