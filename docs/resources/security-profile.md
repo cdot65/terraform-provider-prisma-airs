@@ -177,6 +177,7 @@ Per-category overrides for toxic content detection.
 
 ### `app_protection` Block (inside `ai_security_profile`)
 
+- `alert_url_category` - (Optional) List of URL categories to alert on.
 - `allow_url_category` - (Optional) List of URL categories to allow.
 - `block_url_category` - (Optional) List of URL categories to block.
 

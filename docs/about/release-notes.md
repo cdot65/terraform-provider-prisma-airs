@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.4.0 — SDK v0.2.1, ForceDelete, Schema Validators, Doc Overhaul
+
+- Upgrade `prisma-airs-go` SDK to v0.2.1
+- Use `ForceDelete` for security profile and custom topic deletion (removes JSON parse workaround)
+- Add `ToxicContentAction` compound values for toxic-content model protection (`high:block, moderate:allow`, etc.)
+- Add schema validation via `stringvalidator.OneOf` for all protection names and actions
+- Add `terraform-plugin-framework-validators` dependency
+- Comprehensive documentation audit: fix all resource/data source docs to match Go schemas
+- Fix API key docs: add missing required fields (`auth_code`, `rotation_time_interval`, `rotation_time_unit`)
+- Fix model security rules docs: remove non-existent filter arguments, correct attribute name (`rules` not `items`)
+- Fix deployment profiles docs: add missing `auth_code` attribute
+- Fix red team custom prompt set docs: add missing `properties`, `status`, `active`, `archive` attributes
+- Fix security profile docs: add `alert_url_category` to app_protection reference
+- Update all version references to `~> 0.4`
+
 ## v0.3.2 — Fix Profile ID Revision Handling
 
 - Fix: handle API revision model that changes `profile_id` on update

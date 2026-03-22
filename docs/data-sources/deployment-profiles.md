@@ -5,10 +5,12 @@ Reads deployment profiles from Prisma AIRS Management API.
 ## Example Usage
 
 ```hcl
-data "prisma-airs_deployment_profiles" "all" {}
+data "prisma-airs_deployment_profiles" "all" {
+  limit = 10
+}
 
 output "profiles" {
-  value = data.prisma-airs_deployment_profiles.all.items
+  value = [for p in data.prisma-airs_deployment_profiles.all.items : p.profile_name]
 }
 ```
 
@@ -20,7 +22,8 @@ output "profiles" {
 ## Attribute Reference
 
 - `items` - List of deployment profiles. Each item contains:
-    - `profile_id` - Profile ID.
-    - `profile_name` - Profile name.
-    - `details` - Profile details (JSON).
-- `total_count` - Total number of profiles.
+    - `profile_id` - Deployment profile ID (same value as `auth_code`).
+    - `profile_name` - Deployment profile name.
+    - `auth_code` - Auth code for API key creation.
+    - `details` - Full profile details as a JSON string.
+- `total_count` - Number of profiles returned.

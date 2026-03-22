@@ -22,7 +22,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.3"
+      version = "~> 0.4"
     }
   }
 }
@@ -69,11 +69,11 @@ Terraform will perform the following actions:
   # prisma-airs_security_profile.example will be created
   + resource "prisma-airs_security_profile" "example" {
       + active       = (known after apply)
+      + created_at   = (known after apply)
       + id           = (known after apply)
       + profile_id   = (known after apply)
       + profile_name = "my-ai-security-profile"
-      + profile_type = (known after apply)
-      + updated_by   = (known after apply)
+      + updated_at   = (known after apply)
 
       + ai_security_profile {
           + model_type = "default"

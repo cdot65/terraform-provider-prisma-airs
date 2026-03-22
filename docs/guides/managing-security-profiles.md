@@ -91,10 +91,19 @@ resource "prisma-airs_security_profile" "with_topics" {
 
 ## Managing API Keys
 
+API keys require a deployment profile auth code, a rotation interval, and a rotation time unit:
+
 ```hcl
+data "prisma-airs_deployment_profiles" "all" {
+  limit = 10
+}
+
 resource "prisma-airs_api_key" "scanner" {
-  api_key_name = "production-scanner-key"
-  created_by   = "terraform"
+  api_key_name           = "production-scanner-key"
+  auth_code              = data.prisma-airs_deployment_profiles.all.items[0].auth_code
+  rotation_time_interval = 90
+  rotation_time_unit     = "days"
+  created_by             = "terraform"
 }
 
 output "api_key_value" {
