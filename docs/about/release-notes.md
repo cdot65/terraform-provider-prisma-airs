@@ -1,5 +1,26 @@
 # Release Notes
 
+## v0.3.2 — Fix Profile ID Revision Handling
+
+- Fix: handle API revision model that changes `profile_id` on update
+- Profile reads now reconcile server-assigned IDs after update operations
+
+## v0.3.1 — State Consistency Fixes
+
+- Fix: state consistency bugs in security profile resource
+- Ensure Terraform state stays in sync with API after create/update
+
+## v0.3.0 — SDK v0.2.0, GetByID/GetByName Lookups
+
+- Refactor: use SDK v0.2.0 `GetByID`/`GetByName` for profile lookups
+- Upgrade `prisma-airs-go` SDK to v0.2.0
+
+## v0.2.0 — Native HCL Security Profile Schema
+
+- **Breaking:** replace `policy = jsonencode(...)` with native HCL blocks (`ai_security_profile`, `model_protection`, `agent_protection`, `data_protection`)
+- Security profiles now use typed nested blocks instead of opaque JSON strings
+- Enables Terraform plan diffs, validation, and auto-complete for all profile fields
+
 ## v0.1.0 — Initial Release
 
 ### Resources (7)
