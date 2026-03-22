@@ -57,13 +57,13 @@ resource "prisma-airs_custom_topic" "main" {
 }
 
 # --- Customer App ---
-# Registers an application that will use AI Runtime Security.
-resource "prisma-airs_customer_app" "main" {
-  app_name       = "sandbox-app"
-  model_name     = "gpt-4"
-  cloud_provider = "AWS"
-  environment    = "development"
-}
+# Customer apps are created externally (AIRS console / app registration).
+# Use `terraform import` to bring an existing app under management:
+#   terraform import prisma-airs_customer_app.main <app_name>
+#
+# resource "prisma-airs_customer_app" "main" {
+#   app_name = "my-existing-app"
+# }
 
 # --- API Key ---
 # Creates an API key for the registered app.

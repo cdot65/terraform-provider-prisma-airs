@@ -70,14 +70,16 @@ func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
 
 func TestMapAppToState_basic(t *testing.T) {
 	app := &management.CustomerApp{
-		CustomerAppID: "app-789",
-		AppName:       "test-app",
-		TsgID:         "tsg-001",
-		ModelName:     "gpt-4",
-		CloudProvider: "aws",
-		Environment:   "production",
-		Status:        "active",
-		CreatedBy:     "user@example.com",
+		CustomerAppID:    "app-789",
+		AppName:          "test-app",
+		TsgID:            "tsg-001",
+		ModelName:        "gpt-4",
+		CloudProvider:    "aws",
+		Environment:      "production",
+		Status:           "active",
+		CreatedBy:        "user@example.com",
+		AgentApp:         true,
+		AiSecProfileName: "my-profile",
 	}
 
 	var state CustomerAppResourceModel
@@ -92,6 +94,10 @@ func TestMapAppToState_basic(t *testing.T) {
 	assertStringValue(t, "Environment", state.Environment, "production")
 	assertStringValue(t, "Status", state.Status, "active")
 	assertStringValue(t, "CreatedBy", state.CreatedBy, "user@example.com")
+	assertStringValue(t, "AiSecProfileName", state.AiSecProfileName, "my-profile")
+	if !state.AgentApp.ValueBool() {
+		t.Errorf("AgentApp = false, want true")
+	}
 }
 
 func TestMapAppToState_emptyFields(t *testing.T) {

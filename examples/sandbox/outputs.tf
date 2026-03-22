@@ -21,14 +21,15 @@ output "custom_topic" {
   }
 }
 
-output "customer_app" {
-  description = "Customer app details"
-  value = {
-    id     = prisma-airs_customer_app.main.customer_app_id
-    name   = prisma-airs_customer_app.main.app_name
-    status = prisma-airs_customer_app.main.status
-  }
-}
+# Customer app output — uncomment after importing an existing app:
+# output "customer_app" {
+#   description = "Customer app details"
+#   value = {
+#     id     = prisma-airs_customer_app.main.customer_app_id
+#     name   = prisma-airs_customer_app.main.app_name
+#     status = prisma-airs_customer_app.main.status
+#   }
+# }
 
 output "dlp_profiles" {
   description = "Available DLP profiles"

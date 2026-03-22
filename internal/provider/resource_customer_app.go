@@ -36,7 +36,9 @@ type CustomerAppResourceModel struct {
 	Status           types.String `tfsdk:"status"`
 	CreatedBy        types.String `tfsdk:"created_by"`
 	UpdatedBy        types.String `tfsdk:"updated_by"`
+	AgentApp         types.Bool   `tfsdk:"agent_app"`
 	AiAgentFramework types.String `tfsdk:"ai_agent_framework"`
+	AiSecProfileName types.String `tfsdk:"ai_sec_profile_name"`
 }
 
 func (r *customerAppResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -45,7 +47,7 @@ func (r *customerAppResource) Metadata(_ context.Context, req resource.MetadataR
 
 func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a customer application registration.",
+		Description: "Manages an existing customer application in Prisma AIRS. Customer apps are created externally (via the AIRS console or when apps register); use `terraform import` to bring them under management.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -66,22 +68,22 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Description: "Name of the customer application.",
 			},
 			"tsg_id": schema.StringAttribute{
-				Optional:    true,
+				Computed:    true,
 				Description: "Tenant service group ID.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"model_name": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Model name associated with the app.",
 			},
 			"cloud_provider": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Cloud provider for the app.",
 			},
 			"environment": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Deployment environment.",
 			},
 			"status": schema.StringAttribute{
@@ -96,9 +98,17 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Description: "Identity of the user updating the app.",
 			},
+			"agent_app": schema.BoolAttribute{
+				Computed:    true,
+				Description: "Whether this is an agent application.",
+			},
 			"ai_agent_framework": schema.StringAttribute{
 				Computed:    true,
 				Description: "AI agent framework.",
+			},
+			"ai_sec_profile_name": schema.StringAttribute{
+				Computed:    true,
+				Description: "Associated AI security profile name.",
 			},
 		},
 	}
@@ -116,28 +126,11 @@ func (r *customerAppResource) Configure(_ context.Context, req resource.Configur
 	r.client = client
 }
 
-func (r *customerAppResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan CustomerAppResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	createReq := management.CreateAppRequest{
-		AppName:       plan.AppName.ValueString(),
-		TsgID:         plan.TsgID.ValueString(),
-		CloudProvider: plan.CloudProvider.ValueString(),
-		Environment:   plan.Environment.ValueString(),
-	}
-
-	app, err := r.client.CustomerApps.Create(ctx, createReq)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to create customer app", err.Error())
-		return
-	}
-
-	mapAppToState(app, &plan)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+func (r *customerAppResource) Create(_ context.Context, _ resource.CreateRequest, resp *resource.CreateResponse) {
+	resp.Diagnostics.AddError(
+		"Create not supported",
+		"Customer apps cannot be created via the API. Use `terraform import prisma-airs_customer_app.<name> <app_name>` to manage an existing app.",
+	)
 }
 
 func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -147,7 +140,6 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	// SDK Get uses app_name as the lookup parameter.
 	app, err := r.client.CustomerApps.Get(ctx, state.AppName.ValueString())
 	if err != nil {
 		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
@@ -158,7 +150,6 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	// Preserve write-only values from state.
 	updatedByVal := state.UpdatedBy
 	mapAppToState(app, &state)
 	state.UpdatedBy = updatedByVal
@@ -185,7 +176,6 @@ func (r *customerAppResource) Update(ctx context.Context, req resource.UpdateReq
 		Environment:   plan.Environment.ValueString(),
 	}
 
-	// SDK Update uses customer_app_id as the identifier.
 	app, err := r.client.CustomerApps.Update(ctx, state.CustomerAppID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update customer app", err.Error())
@@ -208,7 +198,6 @@ func (r *customerAppResource) Delete(ctx context.Context, req resource.DeleteReq
 		updatedBy = "terraform"
 	}
 
-	// SDK Delete uses app_name and updated_by.
 	_, err := r.client.CustomerApps.Delete(ctx, state.AppName.ValueString(), updatedBy)
 	if err != nil {
 		if strings.Contains(err.Error(), "failed to parse response JSON") {
@@ -220,7 +209,6 @@ func (r *customerAppResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *customerAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Import by app_name since SDK Get uses app_name.
 	appName := req.ID
 
 	app, err := r.client.CustomerApps.Get(ctx, appName)
@@ -244,5 +232,7 @@ func mapAppToState(app *management.CustomerApp, state *CustomerAppResourceModel)
 	state.Environment = types.StringValue(app.Environment)
 	state.Status = types.StringValue(app.Status)
 	state.CreatedBy = types.StringValue(app.CreatedBy)
+	state.AgentApp = types.BoolValue(app.AgentApp)
 	state.AiAgentFramework = types.StringValue(app.AiAgentFramework)
+	state.AiSecProfileName = types.StringValue(app.AiSecProfileName)
 }
