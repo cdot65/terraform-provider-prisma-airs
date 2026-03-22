@@ -130,16 +130,10 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "Terraform resource ID (same as profile_id).",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"profile_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The unique identifier of the security profile.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"profile_name": schema.StringAttribute{
 				Required:    true,
@@ -162,9 +156,6 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 			"updated_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Last update timestamp.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -639,7 +630,9 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 	state.ProfileID = types.StringValue(profile.ProfileID)
 	state.ProfileName = types.StringValue(profile.ProfileName)
 	state.Active = types.BoolValue(profile.Active)
-	state.CreatedAt = types.StringValue(profile.LastModifiedTs)
+	if state.CreatedAt.IsNull() || state.CreatedAt.IsUnknown() || state.CreatedAt.ValueString() == "" {
+		state.CreatedAt = types.StringValue(profile.LastModifiedTs)
+	}
 	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
 
 	if profile.Policy == nil {
