@@ -685,8 +685,10 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 			if mc.DataProtection != nil && mc.DataProtection.DataLeakDetection != nil {
 				dld := mc.DataProtection.DataLeakDetection
 				dldModel := &DataLeakDetectionModel{
-					Action:         types.StringValue(string(dld.Action)),
-					MaskDataInline: types.BoolValue(dld.MaskDataInline),
+					Action: types.StringValue(string(dld.Action)),
+				}
+				if dld.MaskDataInline {
+					dldModel.MaskDataInline = types.BoolValue(true)
 				}
 				for _, m := range dld.Member {
 					member := DataLeakMemberModel{
@@ -713,7 +715,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 				}
 			}
 
-			for _, mp := range mc.ModelProtection {
+			for mpIdx, mp := range mc.ModelProtection {
 				mpModel := ModelProtectionModel{
 					Name:   types.StringValue(mp.Name),
 					Action: types.StringValue(string(mp.Action)),
@@ -724,16 +726,21 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 						Action:   types.StringValue(tc.Action),
 					})
 				}
-				for _, tl := range mp.TopicList {
+				for tlIdx, tl := range mp.TopicList {
 					tlModel := TopicListModel{
 						Action: types.StringValue(string(tl.Action)),
 					}
-					for _, t := range tl.Topic {
-						tlModel.Topics = append(tlModel.Topics, TopicRefModel{
-							TopicName: types.StringValue(t.TopicName),
-							TopicID:   types.StringValue(t.TopicID),
-							Revision:  types.Int64Value(t.Revision),
-						})
+					if len(tl.Topic) > 0 {
+						for _, t := range tl.Topic {
+							tlModel.Topics = append(tlModel.Topics, TopicRefModel{
+								TopicName: types.StringValue(t.TopicName),
+								TopicID:   types.StringValue(t.TopicID),
+								Revision:  types.Int64Value(t.Revision),
+							})
+						}
+					} else {
+						// API may not return topics; preserve from prior state
+						tlModel.Topics = priorTopics(state, mpIdx, tlIdx)
 					}
 					mpModel.TopicLists = append(mpModel.TopicLists, tlModel)
 				}
@@ -753,16 +760,36 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 
 	state.DlpDataProfiles = nil
 	for _, dlp := range profile.Policy.DlpDataProfiles {
-		state.DlpDataProfiles = append(state.DlpDataProfiles, DlpDataProfileModel{
-			Name:         types.StringValue(dlp.Name),
-			UUID:         types.StringValue(dlp.UUID),
-			ProfileID:    types.StringValue(dlp.ID),
-			Version:      types.StringValue(dlp.Version),
-			LogSeverity:  types.StringValue(dlp.LogSeverity),
-			NonFileBased: types.StringValue(dlp.NonFileBased),
-			FileBased:    types.StringValue(dlp.FileBased),
-		})
+		dlpModel := DlpDataProfileModel{
+			Name:        types.StringValue(dlp.Name),
+			UUID:        types.StringValue(dlp.UUID),
+			ProfileID:   types.StringValue(dlp.ID),
+			Version:     types.StringValue(dlp.Version),
+			LogSeverity: types.StringValue(dlp.LogSeverity),
+		}
+		if dlp.NonFileBased != "" {
+			dlpModel.NonFileBased = types.StringValue(dlp.NonFileBased)
+		}
+		if dlp.FileBased != "" {
+			dlpModel.FileBased = types.StringValue(dlp.FileBased)
+		}
+		state.DlpDataProfiles = append(state.DlpDataProfiles, dlpModel)
 	}
+}
+
+func priorTopics(state *SecurityProfileResourceModel, mpIdx, tlIdx int) []TopicRefModel {
+	if len(state.AiSecurityProfiles) == 0 {
+		return nil
+	}
+	asp := state.AiSecurityProfiles[0]
+	if mpIdx >= len(asp.ModelProtection) {
+		return nil
+	}
+	mp := asp.ModelProtection[mpIdx]
+	if tlIdx >= len(mp.TopicLists) {
+		return nil
+	}
+	return mp.TopicLists[tlIdx].Topics
 }
 
 func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, diags *diag.Diagnostics) types.List {
