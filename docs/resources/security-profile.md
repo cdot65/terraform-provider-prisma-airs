@@ -21,7 +21,7 @@ resource "prisma-airs_security_profile" "basic" {
 }
 ```
 
-### Full — Multiple Protections with Toxic Content Categories
+### Full — Multiple Protections with Data Leak Detection
 
 ```hcl
 resource "prisma-airs_security_profile" "full" {
@@ -31,8 +31,8 @@ resource "prisma-airs_security_profile" "full" {
     model_type = "default"
 
     latency {
-      inline_timeout_action = "allow"
-      max_inline_latency    = 30
+      inline_timeout_action = "block"
+      max_inline_latency    = 25
     }
 
     model_protection {
@@ -42,56 +42,21 @@ resource "prisma-airs_security_profile" "full" {
 
     model_protection {
       name   = "toxic-content"
-      action = "alert"
-
-      toxic_category {
-        category = "harassment"
-        action   = "block"
-      }
-
-      toxic_category {
-        category = "violence"
-        action   = "block"
-      }
-
-      toxic_category {
-        category = "hate-speech"
-        action   = "block"
-      }
-
-      toxic_category {
-        category = "sexual-content"
-        action   = "alert"
-      }
-    }
-
-    model_protection {
-      name   = "url-filtering"
-      action = "alert"
-    }
-
-    model_protection {
-      name   = "malicious-url"
       action = "block"
     }
 
     agent_protection {
-      name   = "agent-threat"
+      name   = "agent-security"
       action = "block"
-    }
-
-    app_protection {
-      block_url_category = ["malware", "phishing"]
-      alert_url_category = ["news", "social-media"]
     }
 
     data_protection {
       data_leak_detection {
-        action         = "block"
+        action           = "block"
         mask_data_inline = true
 
         member {
-          text = "SSN Pattern"
+          text = "sensitive content"
         }
       }
     }
@@ -111,13 +76,28 @@ resource "prisma-airs_security_profile" "topics" {
     model_protection {
       name   = "prompt-injection"
       action = "block"
+    }
+
+    model_protection {
+      name   = "topic-guardrails"
+      action = "allow"
+
+      topic_list {
+        action = "allow"
+
+        topic {
+          topic_name = "Recipe Generation"
+          topic_id   = prisma-airs_custom_topic.recipes.topic_id
+          revision   = 1
+        }
+      }
 
       topic_list {
         action = "block"
 
         topic {
-          topic_name = "proprietary-data"
-          topic_id   = prisma-airs_custom_topic.proprietary.topic_id
+          topic_name = "Restricted Content"
+          topic_id   = prisma-airs_custom_topic.restricted.topic_id
           revision   = 1
         }
       }
@@ -140,24 +120,24 @@ resource "prisma-airs_security_profile" "topics" {
 
 ### `latency` Block (inside `ai_security_profile`)
 
-- `inline_timeout_action` - (Optional) Action on inline timeout (`"allow"` or `"block"`).
+- `inline_timeout_action` - (Optional) Action on inline timeout: `"allow"` or `"block"`.
 - `max_inline_latency` - (Optional) Maximum inline latency in seconds.
 
 ### `model_protection` Block (inside `ai_security_profile`)
 
-- `name` - (Required) Protection name. Values: `"prompt-injection"`, `"toxic-content"`, `"url-filtering"`, `"malicious-url"`.
-- `action` - (Required) Action to take: `"block"`, `"alert"`, or `"allow"`.
+- `name` - (Required) Protection name. Values: `"prompt-injection"`, `"toxic-content"`, `"contextual-grounding"`, `"topic-guardrails"`.
+- `action` - (Required) Action to take: `"block"` or `"allow"`.
 
 ### `toxic_category` Block (inside `model_protection`)
 
 Per-category overrides for toxic content detection.
 
 - `category` - (Required) Category name: `"harassment"`, `"violence"`, `"hate-speech"`, `"sexual-content"`.
-- `action` - (Required) Action for this category.
+- `action` - (Required) Action for this category: `"block"` or `"allow"`.
 
 ### `topic_list` Block (inside `model_protection`)
 
-- `action` - (Required) Action for matched topics.
+- `action` - (Required) Action for matched topics: `"block"` or `"allow"`.
 
 ### `topic` Block (inside `topic_list`)
 
@@ -167,14 +147,13 @@ Per-category overrides for toxic content detection.
 
 ### `agent_protection` Block (inside `ai_security_profile`)
 
-- `name` - (Required) Protection name.
-- `action` - (Required) Action to take.
+- `name` - (Required) Protection name (e.g., `"agent-security"`).
+- `action` - (Required) Action to take: `"block"` or `"allow"`.
 
 ### `app_protection` Block (inside `ai_security_profile`)
 
-- `alert_url_category` - (Optional) List of URL categories to alert on.
-- `block_url_category` - (Optional) List of URL categories to block.
 - `allow_url_category` - (Optional) List of URL categories to allow.
+- `block_url_category` - (Optional) List of URL categories to block.
 
 ### `data_protection` Block (inside `ai_security_profile`)
 
@@ -182,7 +161,7 @@ Contains a `data_leak_detection` sub-block.
 
 ### `data_leak_detection` Block (inside `data_protection`)
 
-- `action` - (Optional) Action on detection: `"block"`, `"alert"`, `"allow"`.
+- `action` - (Optional) Action on detection: `"block"` or `"allow"`.
 - `mask_data_inline` - (Optional) Whether to mask detected data inline.
 
 ### `member` Block (inside `data_leak_detection`)
