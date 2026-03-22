@@ -8,29 +8,40 @@ This guide walks through managing AI security profiles with the Prisma AIRS Terr
 resource "prisma-airs_security_profile" "production" {
   profile_name = "production-ai-security"
 
-  policy = jsonencode({
-    ai-security-profiles = [{
-      latency-config = {
-        inline-timeout-action = "allow"
-        max-inline-latency    = 5000
+  ai_security_profile {
+    model_type = "default"
+
+    latency {
+      inline_timeout_action = "block"
+      max_inline_latency    = 30
+    }
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "block"
+    }
+
+    model_protection {
+      name   = "toxic-content"
+      action = "high:block, moderate:block"
+    }
+
+    agent_protection {
+      name   = "agent-security"
+      action = "block"
+    }
+
+    data_protection {
+      data_leak_detection {
+        action           = "block"
+        mask_data_inline = true
+
+        member {
+          text = "sensitive content"
+        }
       }
-      model-protection = {
-        prompt-injection = {
-          action = "block"
-        }
-        toxic-content = {
-          action = "block"
-          toxic-category-list = [
-            { category = "profanity", threshold = "low" },
-            { category = "hate-speech", threshold = "low" }
-          ]
-        }
-        url-filtering = {
-          action = "alert"
-        }
-      }
-    }]
-  })
+    }
+  }
 }
 ```
 
@@ -52,12 +63,29 @@ resource "prisma-airs_custom_topic" "financial" {
 resource "prisma-airs_security_profile" "with_topics" {
   profile_name = "finance-team-profile"
 
-  policy = jsonencode({
-    topic_violation = {
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "prompt-injection"
       action = "block"
-      topics = [prisma-airs_custom_topic.financial.topic_id]
     }
-  })
+
+    model_protection {
+      name   = "topic-guardrails"
+      action = "block"
+
+      topic_list {
+        action = "block"
+
+        topic {
+          topic_name = prisma-airs_custom_topic.financial.topic_name
+          topic_id   = prisma-airs_custom_topic.financial.topic_id
+          revision   = 1
+        }
+      }
+    }
+  }
 }
 ```
 

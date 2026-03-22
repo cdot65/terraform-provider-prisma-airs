@@ -1,31 +1,38 @@
 resource "prisma-airs_security_profile" "example" {
   profile_name = "example-profile"
 
-  policy = jsonencode({
-    "ai-security-profiles" = [
-      {
-        "model-type" = "default"
-        "model-configuration" = {
-          "latency" = {
-            "inline-timeout-action" = "allow"
-            "max-inline-latency"    = 30
-          }
-          "model-protection" = [
-            {
-              name   = "prompt-injection"
-              action = "block"
-            },
-            {
-              name   = "toxic-content"
-              action = "alert"
-              "toxic-category-list" = [
-                { category = "harassment", action = "alert" },
-                { category = "violence", action = "block" }
-              ]
-            }
-          ]
+  ai_security_profile {
+    model_type = "default"
+
+    latency {
+      inline_timeout_action = "block"
+      max_inline_latency    = 30
+    }
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "block"
+    }
+
+    model_protection {
+      name   = "toxic-content"
+      action = "high:block, moderate:allow"
+    }
+
+    agent_protection {
+      name   = "agent-security"
+      action = "block"
+    }
+
+    data_protection {
+      data_leak_detection {
+        action           = "block"
+        mask_data_inline = true
+
+        member {
+          text = "sensitive content"
         }
       }
-    ]
-  })
+    }
+  }
 }
