@@ -23,7 +23,7 @@ func TestAccSecurityProfileResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("prisma-airs_security_profile.test", "profile_id"),
 					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_type", "default"),
 					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_protection.0.name", "prompt-injection"),
-					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_protection.0.action", "alert"),
+					resource.TestCheckResourceAttr("prisma-airs_security_profile.test", "ai_security_profile.0.model_protection.0.action", "block"),
 				),
 			},
 		},
@@ -40,7 +40,7 @@ resource "prisma-airs_security_profile" "test" {
 
     model_protection {
       name   = "prompt-injection"
-      action = "alert"
+      action = "block"
     }
   }
 }
