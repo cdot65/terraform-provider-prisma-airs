@@ -660,6 +660,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 		return
 	}
 
+	priorAiProfiles := state.AiSecurityProfiles
 	state.AiSecurityProfiles = nil
 	for _, asp := range profile.Policy.AiSecurityProfiles {
 		model := AiSecurityProfileModel{
@@ -740,7 +741,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 						}
 					} else {
 						// API may not return topics; preserve from prior state
-						tlModel.Topics = priorTopics(state, mpIdx, tlIdx)
+						tlModel.Topics = priorTopicsFromSlice(priorAiProfiles, mpIdx, tlIdx)
 					}
 					mpModel.TopicLists = append(mpModel.TopicLists, tlModel)
 				}
@@ -777,11 +778,11 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 	}
 }
 
-func priorTopics(state *SecurityProfileResourceModel, mpIdx, tlIdx int) []TopicRefModel {
-	if len(state.AiSecurityProfiles) == 0 {
+func priorTopicsFromSlice(priorProfiles []AiSecurityProfileModel, mpIdx, tlIdx int) []TopicRefModel {
+	if len(priorProfiles) == 0 {
 		return nil
 	}
-	asp := state.AiSecurityProfiles[0]
+	asp := priorProfiles[0]
 	if mpIdx >= len(asp.ModelProtection) {
 		return nil
 	}
