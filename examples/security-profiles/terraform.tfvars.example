@@ -1,0 +1,5 @@
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+
+# Optional prefix for all profile names (useful for testing)
+profile_prefix = ""
