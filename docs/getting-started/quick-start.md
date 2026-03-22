@@ -61,6 +61,60 @@ terraform plan
 terraform apply
 ```
 
+#### Sample `terraform plan` output
+
+```
+Terraform will perform the following actions:
+
+  # prisma-airs_security_profile.example will be created
+  + resource "prisma-airs_security_profile" "example" {
+      + active       = (known after apply)
+      + id           = (known after apply)
+      + profile_id   = (known after apply)
+      + profile_name = "my-ai-security-profile"
+      + profile_type = (known after apply)
+      + updated_by   = (known after apply)
+
+      + ai_security_profile {
+          + model_type = "default"
+
+          + latency {
+              + inline_timeout_action = "block"
+              + max_inline_latency    = 30
+            }
+
+          + model_protection {
+              + action = "block"
+              + name   = "prompt-injection"
+            }
+          + model_protection {
+              + action = "high:block, moderate:allow"
+              + name   = "toxic-content"
+            }
+        }
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+#### Sample `terraform apply` output
+
+```
+prisma-airs_security_profile.example: Creating...
+prisma-airs_security_profile.example: Creation complete after 2s [id=abcd1234-5678-90ef-ghij-klmnopqrstuv]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+#### Sample `terraform destroy` output
+
+```
+prisma-airs_security_profile.example: Destroying... [id=abcd1234-5678-90ef-ghij-klmnopqrstuv]
+prisma-airs_security_profile.example: Destruction complete after 2s
+
+Destroy complete! Resources: 1 destroyed.
+```
+
 ## Example: Create a Red Team Target
 
 ```hcl
