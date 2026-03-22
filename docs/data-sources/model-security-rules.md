@@ -1,31 +1,31 @@
 # prisma-airs_model_security_rules
 
-Reads model security rules from Prisma AIRS Model Security API.
+Reads the catalog of model security rules from Prisma AIRS Model Security API. Returns all available rules — no filter parameters are accepted.
 
 ## Example Usage
 
 ```hcl
 data "prisma-airs_model_security_rules" "all" {}
 
-data "prisma-airs_model_security_rules" "huggingface" {
-  source_type = "HUGGING_FACE"
+output "rule_count" {
+  value = length(data.prisma-airs_model_security_rules.all.rules)
+}
+
+output "rule_names" {
+  value = [for r in data.prisma-airs_model_security_rules.all.rules : r.name]
 }
 ```
 
 ## Argument Reference
 
-- `limit` - (Optional) Maximum number of rules to return.
-- `skip` - (Optional) Number of rules to skip.
-- `source_type` - (Optional) Filter by source type.
-- `search_query` - (Optional) Search query string.
+This data source takes no arguments.
 
 ## Attribute Reference
 
-- `items` - List of security rules. Each item contains:
+- `rules` - List of security rules. Each item contains:
     - `uuid` - Rule UUID.
     - `name` - Rule name.
     - `description` - Rule description.
-    - `source_type` - Source type.
+    - `source_type` - Compatible source types (comma-separated).
     - `rule_type` - Rule type (`METADATA`, `ARTIFACT`).
-    - `created_at` - Timestamp.
-- `total` - Total number of rules.
+    - `created_at` - Creation timestamp.
