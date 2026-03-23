@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -27,7 +27,7 @@ func NewSecurityProfileResource() resource.Resource {
 }
 
 type securityProfileResource struct {
-	client *management.Client
+	client *airsruntime.Client
 }
 
 // ── Model types ──────────────────────────────────────────────────────
@@ -61,6 +61,12 @@ type LatencyModel struct {
 
 type DataProtectionModel struct {
 	DataLeakDetection *DataLeakDetectionModel `tfsdk:"data_leak_detection"`
+	DatabaseSecurity  []DatabaseSecurityModel `tfsdk:"database_security"`
+}
+
+type DatabaseSecurityModel struct {
+	Name   types.String `tfsdk:"name"`
+	Action types.String `tfsdk:"action"`
 }
 
 type DataLeakDetectionModel struct {
@@ -76,9 +82,17 @@ type DataLeakMemberModel struct {
 }
 
 type AppProtectionModel struct {
-	AlertURLCategory types.List `tfsdk:"alert_url_category"`
-	BlockURLCategory types.List `tfsdk:"block_url_category"`
-	AllowURLCategory types.List `tfsdk:"allow_url_category"`
+	AlertURLCategory        types.List                    `tfsdk:"alert_url_category"`
+	BlockURLCategory        types.List                    `tfsdk:"block_url_category"`
+	AllowURLCategory        types.List                    `tfsdk:"allow_url_category"`
+	DefaultURLCategory      types.List                    `tfsdk:"default_url_category"`
+	UrlDetectedAction       types.String                  `tfsdk:"url_detected_action"`
+	MaliciousCodeProtection *MaliciousCodeProtectionModel `tfsdk:"malicious_code_protection"`
+}
+
+type MaliciousCodeProtectionModel struct {
+	Name   types.String `tfsdk:"name"`
+	Action types.String `tfsdk:"action"`
 }
 
 type ModelProtectionModel struct {
@@ -175,6 +189,7 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 						},
 						"mask_data_in_storage": schema.BoolAttribute{
 							Optional:    true,
+							Computed:    true,
 							Description: "Whether to mask data in storage.",
 						},
 					},
@@ -234,6 +249,24 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 										},
 									},
 								},
+								"database_security": schema.ListNestedBlock{
+									Description: "Database security CRUD action configuration.",
+									NestedObject: schema.NestedBlockObject{
+										Attributes: map[string]schema.Attribute{
+											"name": schema.StringAttribute{
+												Required:    true,
+												Description: "Database operation name (e.g., 'database-security-create').",
+											},
+											"action": schema.StringAttribute{
+												Required:    true,
+												Description: "Action: 'block' or 'allow'.",
+												Validators: []validator.String{
+													stringvalidator.OneOf("block", "allow"),
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 						"app_protection": schema.SingleNestedBlock{
@@ -254,6 +287,37 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									ElementType: types.StringType,
 									Description: "URL categories to allow.",
 								},
+								"default_url_category": schema.ListAttribute{
+									Optional:    true,
+									Computed:    true,
+									ElementType: types.StringType,
+									Description: "Default URL categories (e.g., 'malicious').",
+								},
+								"url_detected_action": schema.StringAttribute{
+									Optional:    true,
+									Computed:    true,
+									Description: "Action when a URL matches configured categories: 'block' or empty to disable.",
+								},
+							},
+							Blocks: map[string]schema.Block{
+								"malicious_code_protection": schema.SingleNestedBlock{
+									Description: "Malicious code protection configuration.",
+									Attributes: map[string]schema.Attribute{
+										"name": schema.StringAttribute{
+											Optional:    true,
+											Computed:    true,
+											Description: "Protection name (e.g., 'malicious-code').",
+										},
+										"action": schema.StringAttribute{
+											Optional:    true,
+											Computed:    true,
+											Description: "Action to take: 'block' or 'allow'.",
+											Validators: []validator.String{
+												stringvalidator.OneOf("block", "allow"),
+											},
+										},
+									},
+								},
 							},
 						},
 						"model_protection": schema.ListNestedBlock{
@@ -273,9 +337,9 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 										Validators: []validator.String{
 											stringvalidator.OneOf(
 												"block", "allow",
-												string(management.ToxicContentHighBlockModerateAllow),
-												string(management.ToxicContentHighBlockModerateBlock),
-												string(management.ToxicContentHighAllowModerateAllow),
+												string(airsruntime.ToxicContentHighBlockModerateAllow),
+												string(airsruntime.ToxicContentHighBlockModerateBlock),
+												string(airsruntime.ToxicContentHighAllowModerateAllow),
 											),
 										},
 									},
@@ -420,7 +484,7 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	createReq := management.CreateProfileRequest{
+	createReq := airsruntime.CreateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
 		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
 	}
@@ -481,7 +545,7 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	updateReq := management.UpdateProfileRequest{
+	updateReq := airsruntime.UpdateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
 		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
 	}
@@ -527,73 +591,92 @@ func (r *securityProfileResource) ImportState(ctx context.Context, req resource.
 
 // ── Conversion: Terraform plan → SDK ─────────────────────────────────
 
-func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, diags *diag.Diagnostics) *management.ProfilePolicy {
+func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, diags *diag.Diagnostics) *airsruntime.ProfilePolicy {
 	if len(plan.AiSecurityProfiles) == 0 && len(plan.DlpDataProfiles) == 0 {
 		return nil
 	}
 
-	policy := &management.ProfilePolicy{}
+	policy := &airsruntime.ProfilePolicy{}
 
 	for _, asp := range plan.AiSecurityProfiles {
-		config := management.AiSecurityProfileConfig{
+		config := airsruntime.AiSecurityProfileConfig{
 			ModelType:   asp.ModelType.ValueString(),
 			ContentType: asp.ContentType.ValueString(),
 		}
 
-		mc := &management.ModelConfiguration{
+		mc := &airsruntime.ModelConfiguration{
 			MaskDataInStorage: asp.MaskDataInStorage.ValueBool(),
 		}
 
 		if asp.Latency != nil {
-			mc.Latency = &management.LatencyConfig{
-				InlineTimeoutAction: management.ProfileAction(asp.Latency.InlineTimeoutAction.ValueString()),
+			mc.Latency = &airsruntime.LatencyConfig{
+				InlineTimeoutAction: airsruntime.ProfileAction(asp.Latency.InlineTimeoutAction.ValueString()),
 				MaxInlineLatency:    int32(asp.Latency.MaxInlineLatency.ValueInt64()),
 			}
 		}
 
-		if asp.DataProtection != nil && asp.DataProtection.DataLeakDetection != nil {
-			dld := asp.DataProtection.DataLeakDetection
-			sdkDLD := management.DataLeakDetectionConfig{
-				Action:         management.ProfileAction(dld.Action.ValueString()),
-				MaskDataInline: dld.MaskDataInline.ValueBool(),
+		if asp.DataProtection != nil {
+			dpConfig := &airsruntime.DataProtectionConfig{}
+
+			if asp.DataProtection.DataLeakDetection != nil {
+				dld := asp.DataProtection.DataLeakDetection
+				sdkDLD := airsruntime.DataLeakDetectionConfig{
+					Action:         airsruntime.ProfileAction(dld.Action.ValueString()),
+					MaskDataInline: dld.MaskDataInline.ValueBool(),
+				}
+				for _, m := range dld.Members {
+					sdkDLD.Member = append(sdkDLD.Member, airsruntime.DataLeakMember{
+						Text:    m.Text.ValueString(),
+						ID:      m.ID.ValueString(),
+						Version: m.Version.ValueString(),
+					})
+				}
+				dpConfig.DataLeakDetection = &sdkDLD
 			}
-			for _, m := range dld.Members {
-				sdkDLD.Member = append(sdkDLD.Member, management.DataLeakMember{
-					Text:    m.Text.ValueString(),
-					ID:      m.ID.ValueString(),
-					Version: m.Version.ValueString(),
+
+			for _, ds := range asp.DataProtection.DatabaseSecurity {
+				dpConfig.DatabaseSecurity = append(dpConfig.DatabaseSecurity, airsruntime.DatabaseSecurityConfig{
+					Name:   ds.Name.ValueString(),
+					Action: ds.Action.ValueString(),
 				})
 			}
-			mc.DataProtection = &management.DataProtectionConfig{
-				DataLeakDetection: &sdkDLD,
-			}
+
+			mc.DataProtection = dpConfig
 		}
 
 		if asp.AppProtection != nil {
-			mc.AppProtection = &management.AppProtectionConfig{
-				AlertURLCategory: listToURLCategory(ctx, asp.AppProtection.AlertURLCategory, diags),
-				BlockURLCategory: listToURLCategory(ctx, asp.AppProtection.BlockURLCategory, diags),
-				AllowURLCategory: listToURLCategory(ctx, asp.AppProtection.AllowURLCategory, diags),
+			mc.AppProtection = &airsruntime.AppProtectionConfig{
+				AlertURLCategory:   listToURLCategory(ctx, asp.AppProtection.AlertURLCategory, diags),
+				BlockURLCategory:   listToURLCategory(ctx, asp.AppProtection.BlockURLCategory, diags),
+				AllowURLCategory:   listToURLCategory(ctx, asp.AppProtection.AllowURLCategory, diags),
+				DefaultURLCategory: listToURLCategory(ctx, asp.AppProtection.DefaultURLCategory, diags),
+				UrlDetectedAction:  asp.AppProtection.UrlDetectedAction.ValueString(),
+			}
+			if asp.AppProtection.MaliciousCodeProtection != nil {
+				mc.AppProtection.MaliciousCodeProtection = &airsruntime.MaliciousCodeProtectionConfig{
+					Name:   asp.AppProtection.MaliciousCodeProtection.Name.ValueString(),
+					Action: asp.AppProtection.MaliciousCodeProtection.Action.ValueString(),
+				}
 			}
 		}
 
 		for _, mp := range asp.ModelProtection {
-			sdkMP := management.ModelProtectionConfig{
+			sdkMP := airsruntime.ModelProtectionConfig{
 				Name:   mp.Name.ValueString(),
-				Action: management.ProfileAction(mp.Action.ValueString()),
+				Action: airsruntime.ProfileAction(mp.Action.ValueString()),
 			}
 			for _, tc := range mp.ToxicCategories {
-				sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, management.ToxicCategoryConfig{
+				sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, airsruntime.ToxicCategoryConfig{
 					Category: tc.Category.ValueString(),
 					Action:   tc.Action.ValueString(),
 				})
 			}
 			for _, tl := range mp.TopicLists {
-				sdkTL := management.TopicArrayConfig{
-					Action: management.ProfileAction(tl.Action.ValueString()),
+				sdkTL := airsruntime.TopicArrayConfig{
+					Action: airsruntime.ProfileAction(tl.Action.ValueString()),
 				}
 				for _, t := range tl.Topics {
-					sdkTL.Topic = append(sdkTL.Topic, management.TopicRef{
+					sdkTL.Topic = append(sdkTL.Topic, airsruntime.TopicRef{
 						TopicName: t.TopicName.ValueString(),
 						TopicID:   t.TopicID.ValueString(),
 						Revision:  t.Revision.ValueInt64(),
@@ -605,9 +688,9 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 		}
 
 		for _, ap := range asp.AgentProtection {
-			mc.AgentProtection = append(mc.AgentProtection, management.AgentProtectionConfig{
+			mc.AgentProtection = append(mc.AgentProtection, airsruntime.AgentProtectionConfig{
 				Name:   ap.Name.ValueString(),
-				Action: management.ProfileAction(ap.Action.ValueString()),
+				Action: airsruntime.ProfileAction(ap.Action.ValueString()),
 			})
 		}
 
@@ -616,7 +699,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 	}
 
 	for _, dlp := range plan.DlpDataProfiles {
-		policy.DlpDataProfiles = append(policy.DlpDataProfiles, management.DLPDataProfileConfig{
+		policy.DlpDataProfiles = append(policy.DlpDataProfiles, airsruntime.DLPDataProfileConfig{
 			Name:         dlp.Name.ValueString(),
 			UUID:         dlp.UUID.ValueString(),
 			ID:           dlp.ProfileID.ValueString(),
@@ -630,7 +713,7 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 	return policy
 }
 
-func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnostics) *management.URLCategoryMember {
+func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnostics) *airsruntime.URLCategoryMember {
 	if list.IsNull() || list.IsUnknown() {
 		return nil
 	}
@@ -639,12 +722,12 @@ func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnos
 	if len(members) == 0 {
 		return nil
 	}
-	return &management.URLCategoryMember{Member: members}
+	return &airsruntime.URLCategoryMember{Member: members}
 }
 
 // ── Conversion: SDK → Terraform state ────────────────────────────────
 
-func mapProfileToState(ctx context.Context, profile *management.SecurityProfile, state *SecurityProfileResourceModel, diags *diag.Diagnostics) {
+func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile, state *SecurityProfileResourceModel, diags *diag.Diagnostics) {
 	state.ID = types.StringValue(profile.ProfileID)
 	state.ProfileID = types.StringValue(profile.ProfileID)
 	state.ProfileName = types.StringValue(profile.ProfileName)
@@ -672,9 +755,7 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 
 		if asp.ModelConfiguration != nil {
 			mc := asp.ModelConfiguration
-			if mc.MaskDataInStorage {
-				model.MaskDataInStorage = types.BoolValue(true)
-			}
+			model.MaskDataInStorage = types.BoolValue(mc.MaskDataInStorage)
 
 			if mc.Latency != nil {
 				model.Latency = &LatencyModel{
@@ -683,36 +764,55 @@ func mapProfileToState(ctx context.Context, profile *management.SecurityProfile,
 				}
 			}
 
-			if mc.DataProtection != nil && mc.DataProtection.DataLeakDetection != nil {
-				dld := mc.DataProtection.DataLeakDetection
-				dldModel := &DataLeakDetectionModel{
-					Action: types.StringValue(string(dld.Action)),
-				}
-				if dld.MaskDataInline {
-					dldModel.MaskDataInline = types.BoolValue(true)
-				}
-				for _, m := range dld.Member {
-					member := DataLeakMemberModel{
-						Text: types.StringValue(m.Text),
+			if mc.DataProtection != nil {
+				dpModel := &DataProtectionModel{}
+
+				if mc.DataProtection.DataLeakDetection != nil {
+					dld := mc.DataProtection.DataLeakDetection
+					dldModel := &DataLeakDetectionModel{
+						Action: types.StringValue(string(dld.Action)),
 					}
-					if m.ID != "" {
-						member.ID = types.StringValue(m.ID)
+					if dld.MaskDataInline {
+						dldModel.MaskDataInline = types.BoolValue(true)
 					}
-					if m.Version != "" {
-						member.Version = types.StringValue(m.Version)
+					for _, m := range dld.Member {
+						member := DataLeakMemberModel{
+							Text: types.StringValue(m.Text),
+						}
+						if m.ID != "" {
+							member.ID = types.StringValue(m.ID)
+						}
+						if m.Version != "" {
+							member.Version = types.StringValue(m.Version)
+						}
+						dldModel.Members = append(dldModel.Members, member)
 					}
-					dldModel.Members = append(dldModel.Members, member)
+					dpModel.DataLeakDetection = dldModel
 				}
-				model.DataProtection = &DataProtectionModel{
-					DataLeakDetection: dldModel,
+
+				for _, ds := range mc.DataProtection.DatabaseSecurity {
+					dpModel.DatabaseSecurity = append(dpModel.DatabaseSecurity, DatabaseSecurityModel{
+						Name:   types.StringValue(ds.Name),
+						Action: types.StringValue(ds.Action),
+					})
 				}
+
+				model.DataProtection = dpModel
 			}
 
 			if mc.AppProtection != nil {
 				model.AppProtection = &AppProtectionModel{
-					AlertURLCategory: urlCategoryToList(ctx, mc.AppProtection.AlertURLCategory, diags),
-					BlockURLCategory: urlCategoryToList(ctx, mc.AppProtection.BlockURLCategory, diags),
-					AllowURLCategory: urlCategoryToList(ctx, mc.AppProtection.AllowURLCategory, diags),
+					AlertURLCategory:   urlCategoryToList(ctx, mc.AppProtection.AlertURLCategory, diags),
+					BlockURLCategory:   urlCategoryToList(ctx, mc.AppProtection.BlockURLCategory, diags),
+					AllowURLCategory:   urlCategoryToList(ctx, mc.AppProtection.AllowURLCategory, diags),
+					DefaultURLCategory: urlCategoryToList(ctx, mc.AppProtection.DefaultURLCategory, diags),
+					UrlDetectedAction:  types.StringValue(mc.AppProtection.UrlDetectedAction),
+				}
+				if mc.AppProtection.MaliciousCodeProtection != nil {
+					model.AppProtection.MaliciousCodeProtection = &MaliciousCodeProtectionModel{
+						Name:   types.StringValue(mc.AppProtection.MaliciousCodeProtection.Name),
+						Action: types.StringValue(mc.AppProtection.MaliciousCodeProtection.Action),
+					}
 				}
 			}
 
@@ -810,7 +910,7 @@ func priorTopicsFromSlice(priorProfiles []AiSecurityProfileModel, mpIdx, tlIdx i
 	return topics
 }
 
-func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, diags *diag.Diagnostics) types.List {
+func urlCategoryToList(ctx context.Context, cat *airsruntime.URLCategoryMember, diags *diag.Diagnostics) types.List {
 	if cat == nil || len(cat.Member) == 0 {
 		return types.ListNull(types.StringType)
 	}
@@ -819,7 +919,7 @@ func urlCategoryToList(ctx context.Context, cat *management.URLCategoryMember, d
 	return list
 }
 
-func getMgmtClient(data any) (*management.Client, diag.Diagnostics) {
+func getMgmtClient(data any) (*airsruntime.Client, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	pd, ok := data.(*ProviderData)
 	if !ok || pd == nil {

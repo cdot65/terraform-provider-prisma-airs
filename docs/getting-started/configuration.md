@@ -81,3 +81,30 @@ export PANW_MGMT_CLIENT_ID=your-client-id
 export PANW_MGMT_CLIENT_SECRET=your-client-secret
 export PANW_MGMT_TSG_ID=1234567890
 ```
+
+## Using .env Files
+
+For local development, store credentials in a `.env` file instead of exporting them manually:
+
+```bash
+# .env
+PANW_MGMT_CLIENT_ID=your-client-id
+PANW_MGMT_CLIENT_SECRET=your-client-secret
+PANW_MGMT_TSG_ID=1234567890
+```
+
+Then either source it before running Terraform:
+
+```bash
+source .env
+terraform plan
+```
+
+Or use the provided helper script which loads `.env` automatically:
+
+```bash
+../../scripts/terraform-env.sh plan
+../../scripts/terraform-env.sh apply
+```
+
+**Important:** Never commit `.env` files — add them to `.gitignore`.

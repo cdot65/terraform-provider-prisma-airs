@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -126,7 +126,7 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 
 	// Initialize management client if OAuth2 credentials are available.
 	if clientID != "" && clientSecret != "" && tsgID != "" {
-		mgmtClient, err := management.NewClient(management.Opts{
+		mgmtClient, err := airsruntime.NewClient(airsruntime.Opts{
 			ClientID:      clientID,
 			ClientSecret:  clientSecret,
 			TsgID:         tsgID,
@@ -209,7 +209,7 @@ func New(version string) func() provider.Provider {
 
 // ProviderData holds resolved configuration passed to resources and data sources.
 type ProviderData struct {
-	MgmtClient           *management.Client
+	MgmtClient           *airsruntime.Client
 	ModelSecClient       *modelsecurity.Client
 	RedTeamClient        *redteam.Client
 	ClientID             string

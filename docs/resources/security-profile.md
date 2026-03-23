@@ -28,10 +28,11 @@ resource "prisma-airs_security_profile" "full" {
   profile_name = "full-protection"
 
   ai_security_profile {
-    model_type = "default"
+    model_type          = "default"
+    mask_data_in_storage = false
 
     latency {
-      inline_timeout_action = "block"
+      inline_timeout_action = "allow"
       max_inline_latency    = 25
     }
 
@@ -50,6 +51,18 @@ resource "prisma-airs_security_profile" "full" {
       action = "block"
     }
 
+    app_protection {
+      block_url_category = ["malicious"]
+      url_detected_action = "block"
+
+      default_url_category = ["malicious"]
+
+      malicious_code_protection {
+        name   = "malicious-code"
+        action = "block"
+      }
+    }
+
     data_protection {
       data_leak_detection {
         action           = "block"
@@ -58,6 +71,23 @@ resource "prisma-airs_security_profile" "full" {
         member {
           text = "sensitive content"
         }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "block"
+      }
+      database_security {
+        name   = "database-security-read"
+        action = "allow"
+      }
+      database_security {
+        name   = "database-security-update"
+        action = "block"
+      }
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
       }
     }
   }
@@ -180,10 +210,17 @@ Per-category overrides for toxic content detection.
 - `alert_url_category` - (Optional) List of URL categories to alert on.
 - `allow_url_category` - (Optional) List of URL categories to allow.
 - `block_url_category` - (Optional) List of URL categories to block.
+- `default_url_category` - (Optional, Computed) List of default URL categories (e.g., `["malicious"]`).
+- `url_detected_action` - (Optional, Computed) Action when a URL is detected: `"block"` or `""` (disabled).
+
+### `malicious_code_protection` Block (inside `app_protection`)
+
+- `name` - (Optional, Computed) Protection name (value: `"malicious-code"`).
+- `action` - (Optional, Computed) Action to take: `"block"`.
 
 ### `data_protection` Block (inside `ai_security_profile`)
 
-Contains a `data_leak_detection` sub-block.
+Contains `data_leak_detection` and `database_security` sub-blocks.
 
 ### `data_leak_detection` Block (inside `data_protection`)
 
@@ -195,6 +232,11 @@ Contains a `data_leak_detection` sub-block.
 - `text` - (Required) Member text identifier.
 - `id` - (Optional) Member ID.
 - `version` - (Optional) Member version.
+
+### `database_security` Block (inside `data_protection`)
+
+- `name` - (Required) Database operation name: `"database-security-create"`, `"database-security-read"`, `"database-security-update"`, `"database-security-delete"`.
+- `action` - (Required) Action to take: `"block"` or `"allow"`.
 
 ### `dlp_data_profile` Block
 

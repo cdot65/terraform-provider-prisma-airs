@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -22,7 +22,7 @@ func NewCustomTopicResource() resource.Resource {
 }
 
 type customTopicResource struct {
-	client *management.Client
+	client *airsruntime.Client
 }
 
 type CustomTopicResourceModel struct {
@@ -101,7 +101,7 @@ func (r *customTopicResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	createReq := management.CreateTopicRequest{
+	createReq := airsruntime.CreateTopicRequest{
 		TopicName:   plan.TopicName.ValueString(),
 		Description: plan.Description.ValueString(),
 	}
@@ -157,7 +157,7 @@ func (r *customTopicResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	updateReq := management.UpdateTopicRequest{
+	updateReq := airsruntime.UpdateTopicRequest{
 		TopicName:   plan.TopicName.ValueString(),
 		Description: plan.Description.ValueString(),
 	}
@@ -210,11 +210,11 @@ func (r *customTopicResource) ImportState(ctx context.Context, req resource.Impo
 }
 
 // findTopicByID searches for a topic by ID using paginated list calls.
-func findTopicByID(ctx context.Context, client *management.Client, topicID string) *management.CustomTopic {
+func findTopicByID(ctx context.Context, client *airsruntime.Client, topicID string) *airsruntime.CustomTopic {
 	offset := 0
 	limit := 100
 	for {
-		listResp, err := client.Topics.List(ctx, management.ListOpts{Limit: limit, Offset: offset})
+		listResp, err := client.Topics.List(ctx, airsruntime.ListOpts{Limit: limit, Offset: offset})
 		if err != nil {
 			return nil
 		}
@@ -230,7 +230,7 @@ func findTopicByID(ctx context.Context, client *management.Client, topicID strin
 	}
 }
 
-func mapTopicToState(ctx context.Context, topic *management.CustomTopic, state *CustomTopicResourceModel, diags *diag.Diagnostics) {
+func mapTopicToState(ctx context.Context, topic *airsruntime.CustomTopic, state *CustomTopicResourceModel, diags *diag.Diagnostics) {
 	state.ID = types.StringValue(topic.TopicID)
 	state.TopicID = types.StringValue(topic.TopicID)
 	state.TopicName = types.StringValue(topic.TopicName)

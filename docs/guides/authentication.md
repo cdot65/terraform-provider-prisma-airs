@@ -49,6 +49,27 @@ export PANW_RED_TEAM_CLIENT_SECRET=...
 export PANW_RED_TEAM_TSG_ID=...
 ```
 
+## Using .env Files
+
+For local development, store credentials in a `.env` file instead of exporting them in your shell:
+
+```bash
+# .env
+PANW_MGMT_CLIENT_ID=your-client-id
+PANW_MGMT_CLIENT_SECRET=your-client-secret
+PANW_MGMT_TSG_ID=1234567890
+```
+
+Load it manually or use the repo helper:
+
+```bash
+source .env && terraform plan
+# or
+../../scripts/terraform-env.sh plan
+```
+
+Never commit `.env` files to version control.
+
 ## Precedence
 
 Provider config attributes always take precedence over environment variables:

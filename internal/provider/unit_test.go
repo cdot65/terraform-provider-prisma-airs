@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,7 +19,7 @@ import (
 // ---------------------------------------------------------------------------
 
 func TestMapApiKeyToState_basic(t *testing.T) {
-	key := &management.ApiKey{
+	key := &airsruntime.ApiKey{
 		ApiKeyID:   "key-123",
 		ApiKeyName: "my-key",
 		ApiKey:     "secret-value",
@@ -43,7 +43,7 @@ func TestMapApiKeyToState_basic(t *testing.T) {
 }
 
 func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
-	key := &management.ApiKey{
+	key := &airsruntime.ApiKey{
 		ApiKeyID:   "key-456",
 		ApiKeyName: "another-key",
 		ApiKey:     "", // empty — should not overwrite
@@ -69,7 +69,7 @@ func TestMapApiKeyToState_emptyApiKey(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestMapAppToState_basic(t *testing.T) {
-	app := &management.CustomerApp{
+	app := &airsruntime.CustomerApp{
 		CustomerAppID:    "app-789",
 		AppName:          "test-app",
 		TsgID:            "tsg-001",
@@ -101,7 +101,7 @@ func TestMapAppToState_basic(t *testing.T) {
 }
 
 func TestMapAppToState_emptyFields(t *testing.T) {
-	app := &management.CustomerApp{
+	app := &airsruntime.CustomerApp{
 		CustomerAppID: "app-000",
 	}
 
@@ -223,17 +223,17 @@ func TestPlanToSDKPolicy_compoundToxicContentAction(t *testing.T) {
 
 func TestMapProfileToState_compoundToxicContentAction(t *testing.T) {
 	ctx := context.Background()
-	profile := &management.SecurityProfile{
+	profile := &airsruntime.SecurityProfile{
 		ProfileID:      "prof-tc",
 		ProfileName:    "toxic-compound",
 		Active:         true,
 		LastModifiedTs: "2026-03-01T00:00:00Z",
-		Policy: &management.ProfilePolicy{
-			AiSecurityProfiles: []management.AiSecurityProfileConfig{
+		Policy: &airsruntime.ProfilePolicy{
+			AiSecurityProfiles: []airsruntime.AiSecurityProfileConfig{
 				{
 					ModelType: "default",
-					ModelConfiguration: &management.ModelConfiguration{
-						ModelProtection: []management.ModelProtectionConfig{
+					ModelConfiguration: &airsruntime.ModelConfiguration{
+						ModelProtection: []airsruntime.ModelProtectionConfig{
 							{
 								Name:   "toxic-content",
 								Action: "high:block, moderate:block",
@@ -264,11 +264,11 @@ func TestMapProfileToState_compoundToxicContentAction(t *testing.T) {
 
 func TestMapProfileToState_basic(t *testing.T) {
 	ctx := context.Background()
-	profile := &management.SecurityProfile{
+	profile := &airsruntime.SecurityProfile{
 		ProfileID:      "prof-123",
 		ProfileName:    "default",
 		Active:         true,
-		Policy:         &management.ProfilePolicy{},
+		Policy:         &airsruntime.ProfilePolicy{},
 		LastModifiedTs: "2026-01-02T00:00:00Z",
 	}
 
@@ -289,7 +289,7 @@ func TestMapProfileToState_basic(t *testing.T) {
 
 func TestMapProfileToState_nilPolicy(t *testing.T) {
 	ctx := context.Background()
-	profile := &management.SecurityProfile{
+	profile := &airsruntime.SecurityProfile{
 		ProfileID:   "prof-456",
 		ProfileName: "minimal",
 		Policy:      nil,
@@ -313,22 +313,22 @@ func TestMapProfileToState_nilPolicy(t *testing.T) {
 
 func TestMapProfileToState_fullPolicy(t *testing.T) {
 	ctx := context.Background()
-	profile := &management.SecurityProfile{
+	profile := &airsruntime.SecurityProfile{
 		ProfileID:      "prof-789",
 		ProfileName:    "full-test",
 		Active:         true,
 		LastModifiedTs: "2026-03-01T00:00:00Z",
-		Policy: &management.ProfilePolicy{
-			AiSecurityProfiles: []management.AiSecurityProfileConfig{
+		Policy: &airsruntime.ProfilePolicy{
+			AiSecurityProfiles: []airsruntime.AiSecurityProfileConfig{
 				{
 					ModelType: "default",
-					ModelConfiguration: &management.ModelConfiguration{
+					ModelConfiguration: &airsruntime.ModelConfiguration{
 						MaskDataInStorage: true,
-						Latency: &management.LatencyConfig{
+						Latency: &airsruntime.LatencyConfig{
 							InlineTimeoutAction: "allow",
 							MaxInlineLatency:    30,
 						},
-						ModelProtection: []management.ModelProtectionConfig{
+						ModelProtection: []airsruntime.ModelProtectionConfig{
 							{
 								Name:   "prompt-injection",
 								Action: "block",
@@ -336,13 +336,13 @@ func TestMapProfileToState_fullPolicy(t *testing.T) {
 							{
 								Name:   "toxic-content",
 								Action: "high:block, moderate:allow",
-								ToxicCategoryList: []management.ToxicCategoryConfig{
+								ToxicCategoryList: []airsruntime.ToxicCategoryConfig{
 									{Category: "harassment", Action: "block"},
 									{Category: "violence", Action: "block"},
 								},
 							},
 						},
-						AgentProtection: []management.AgentProtectionConfig{
+						AgentProtection: []airsruntime.AgentProtectionConfig{
 							{Name: "agent-security", Action: "block"},
 						},
 					},
@@ -503,7 +503,7 @@ func TestPlanToSDKPolicy_roundTrip(t *testing.T) {
 		t.Fatalf("planToSDK diagnostics: %v", diags)
 	}
 
-	profile := &management.SecurityProfile{
+	profile := &airsruntime.SecurityProfile{
 		ProfileID:      "rt-001",
 		ProfileName:    "round-trip",
 		Active:         true,
@@ -543,7 +543,7 @@ func TestPlanToSDKPolicy_roundTrip(t *testing.T) {
 
 func TestMapTopicToState_basic(t *testing.T) {
 	ctx := context.Background()
-	topic := &management.CustomTopic{
+	topic := &airsruntime.CustomTopic{
 		TopicID:        "topic-123",
 		TopicName:      "test-topic",
 		Description:    "Test description",
@@ -578,7 +578,7 @@ func TestMapTopicToState_basic(t *testing.T) {
 
 func TestMapTopicToState_noExamples(t *testing.T) {
 	ctx := context.Background()
-	topic := &management.CustomTopic{
+	topic := &airsruntime.CustomTopic{
 		TopicID:  "topic-456",
 		Examples: nil,
 	}
@@ -598,7 +598,7 @@ func TestMapTopicToState_noExamples(t *testing.T) {
 
 func TestMapTopicToState_emptyExamples(t *testing.T) {
 	ctx := context.Background()
-	topic := &management.CustomTopic{
+	topic := &airsruntime.CustomTopic{
 		TopicID:  "topic-789",
 		Examples: []string{},
 	}
@@ -788,7 +788,7 @@ func TestGetMgmtClient_noClient(t *testing.T) {
 }
 
 func TestGetMgmtClient_valid(t *testing.T) {
-	pd := &ProviderData{MgmtClient: &management.Client{}}
+	pd := &ProviderData{MgmtClient: &airsruntime.Client{}}
 	client, diags := getMgmtClient(pd)
 	if diags.HasError() {
 		t.Fatalf("unexpected error: %v", diags)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -22,7 +22,7 @@ func NewCustomerAppResource() resource.Resource {
 }
 
 type customerAppResource struct {
-	client *management.Client
+	client *airsruntime.Client
 }
 
 type CustomerAppResourceModel struct {
@@ -169,7 +169,7 @@ func (r *customerAppResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	updateReq := management.UpdateAppRequest{
+	updateReq := airsruntime.UpdateAppRequest{
 		AppName:       plan.AppName.ValueString(),
 		ModelName:     plan.ModelName.ValueString(),
 		CloudProvider: plan.CloudProvider.ValueString(),
@@ -222,7 +222,7 @@ func (r *customerAppResource) ImportState(ctx context.Context, req resource.Impo
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func mapAppToState(app *management.CustomerApp, state *CustomerAppResourceModel) {
+func mapAppToState(app *airsruntime.CustomerApp, state *CustomerAppResourceModel) {
 	state.ID = types.StringValue(app.CustomerAppID)
 	state.CustomerAppID = types.StringValue(app.CustomerAppID)
 	state.AppName = types.StringValue(app.AppName)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -22,7 +22,7 @@ func NewApiKeyResource() resource.Resource {
 }
 
 type apiKeyResource struct {
-	client *management.Client
+	client *airsruntime.Client
 }
 
 type ApiKeyResourceModel struct {
@@ -142,7 +142,7 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 		custApp = plan.CustApp.ValueString()
 	}
 
-	createReq := management.CreateApiKeyRequest{
+	createReq := airsruntime.CreateApiKeyRequest{
 		ApiKeyName:           plan.ApiKeyName.ValueString(),
 		AuthCode:             plan.AuthCode.ValueString(),
 		CustApp:              custApp,
@@ -236,11 +236,11 @@ func (r *apiKeyResource) ImportState(ctx context.Context, req resource.ImportSta
 }
 
 // findApiKeyByID searches for an API key by ID using paginated list calls.
-func findApiKeyByID(ctx context.Context, client *management.Client, apiKeyID string) *management.ApiKey {
+func findApiKeyByID(ctx context.Context, client *airsruntime.Client, apiKeyID string) *airsruntime.ApiKey {
 	offset := 0
 	limit := 100
 	for {
-		listResp, err := client.ApiKeys.List(ctx, management.ListOpts{Limit: limit, Offset: offset})
+		listResp, err := client.ApiKeys.List(ctx, airsruntime.ListOpts{Limit: limit, Offset: offset})
 		if err != nil {
 			return nil
 		}
@@ -256,7 +256,7 @@ func findApiKeyByID(ctx context.Context, client *management.Client, apiKeyID str
 	}
 }
 
-func mapApiKeyToState(key *management.ApiKey, state *ApiKeyResourceModel) {
+func mapApiKeyToState(key *airsruntime.ApiKey, state *ApiKeyResourceModel) {
 	state.ID = types.StringValue(key.ApiKeyID)
 	state.ApiKeyID = types.StringValue(key.ApiKeyID)
 	state.ApiKeyName = types.StringValue(key.ApiKeyName)

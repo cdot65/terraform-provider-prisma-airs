@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.6.0 — SDK v0.4.0, New Security Profile Fields, .env Support
+
+- Upgrade `prisma-airs-go` SDK to v0.4.0 (`aisec/management` + `aisec/scan` consolidated into `aisec/runtime`)
+- **New schema fields** for `prisma-airs_security_profile`:
+    - `app_protection.default_url_category` — list of default URL categories
+    - `app_protection.url_detected_action` — action when URL detected (`"block"` or `""`)
+    - `app_protection.malicious_code_protection` — nested block with `name` and `action`
+    - `data_protection.database_security` — list of CRUD operation rules (`name` + `action`)
+- Fix `mask_data_in_storage` state consistency (now Optional+Computed, always set in state)
+- Remove hardcoded credentials from example files
+- Add `scripts/terraform-env.sh` helper for `.env`-based credential loading
+- Update docs with new fields, `.env` workflow, and authentication guide
+
 ## v0.5.0 — Customer App Import-Only, SDK v0.3.1
 
 - **Breaking:** `prisma-airs_customer_app` no longer supports `terraform apply` for new apps — use `terraform import` instead. The AIRS API has no POST endpoint for customer apps; they are created externally.

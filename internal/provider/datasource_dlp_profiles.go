@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -17,7 +17,7 @@ func NewDlpProfilesDataSource() datasource.DataSource {
 }
 
 type dlpProfilesDataSource struct {
-	client *management.Client
+	client *airsruntime.Client
 }
 
 type DlpProfilesDataSourceModel struct {
@@ -96,7 +96,7 @@ func (d *dlpProfilesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	opts := management.ListOpts{}
+	opts := airsruntime.ListOpts{}
 	if !config.Limit.IsNull() && !config.Limit.IsUnknown() {
 		opts.Limit = int(config.Limit.ValueInt64())
 	}

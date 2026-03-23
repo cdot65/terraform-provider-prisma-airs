@@ -229,24 +229,39 @@ resource "prisma-airs_security_profile" "cursor_ide" {
 }
 
 # ── Slack Moderation Profile ──────────────────────────────────────────
-# Lightweight profile for a Slack bot. Only blocks prompt injection;
-# no agent protection, no data leak detection. Suitable for low-risk
-# internal chat integrations.
+# Profile for the OpenClaw Slack bot. Blocks prompt injection, filters
+# malicious URLs, and enables data protection. Latency timeout set to
+# allow to avoid blocking chat responses.
+#
+# NOTE: The API's default-url-category and url-detected-action fields
+# are not yet supported by the SDK/provider. Those must be set manually
+# or added in a future SDK release.
 
 resource "prisma-airs_security_profile" "slack_moderation" {
   profile_name = "${var.profile_prefix}OpenClaw - Slack Moderation"
 
   ai_security_profile {
-    model_type = "default"
+    model_type        = "default"
+    mask_data_in_storage = false
 
     latency {
-      inline_timeout_action = "block"
+      inline_timeout_action = "allow"
       max_inline_latency    = 5
     }
 
     model_protection {
       name   = "prompt-injection"
       action = "block"
+    }
+
+    app_protection {
+      block_url_category = ["malicious"]
+    }
+
+    data_protection {
+      data_leak_detection {
+        action = ""
+      }
     }
   }
 }

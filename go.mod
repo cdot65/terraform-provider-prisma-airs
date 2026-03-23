@@ -3,7 +3,7 @@ module github.com/cdot65/prisma-airs-provider
 go 1.25.6
 
 require (
-	github.com/cdot65/prisma-airs-go v0.3.1
+	github.com/cdot65/prisma-airs-go v0.4.0
 	github.com/hashicorp/terraform-plugin-framework v1.19.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
 	github.com/hashicorp/terraform-plugin-go v0.31.0

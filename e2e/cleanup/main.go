@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cdot65/prisma-airs-go/aisec/management"
+	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	client, err := management.NewClient(management.Opts{
+	client, err := airsruntime.NewClient(airsruntime.Opts{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		TsgID:        tsgID,
@@ -48,7 +48,7 @@ func main() {
 	fmt.Printf("Scanning security profiles with prefix %q...\n", *prefix)
 	offset := 0
 	for {
-		resp, err := client.Profiles.List(ctx, management.ListOpts{Limit: 100, Offset: offset})
+		resp, err := client.Profiles.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "ERROR listing profiles: %v\n", err)
 			break
@@ -84,7 +84,7 @@ func main() {
 	fmt.Printf("Scanning custom topics with prefix %q...\n", *prefix)
 	offset = 0
 	for {
-		resp, err := client.Topics.List(ctx, management.ListOpts{Limit: 100, Offset: offset})
+		resp, err := client.Topics.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "ERROR listing topics: %v\n", err)
 			break

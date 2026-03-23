@@ -36,6 +36,25 @@ Falls back to `PANW_MGMT_*` variables if not set.
 | `PANW_RED_TEAM_DATA_ENDPOINT` | Optional | Data plane endpoint |
 | `PANW_RED_TEAM_MGMT_ENDPOINT` | Optional | Management plane endpoint |
 
+## Using .env Files
+
+For local development, you can store credentials in a `.env` file:
+
+```bash
+# .env
+PANW_MGMT_CLIENT_ID=your-client-id
+PANW_MGMT_CLIENT_SECRET=your-client-secret
+PANW_MGMT_TSG_ID=1234567890
+```
+
+The repo includes a helper at `scripts/terraform-env.sh` that loads `.env` before running Terraform:
+
+```bash
+../../scripts/terraform-env.sh plan
+```
+
+Never commit `.env` files to version control.
+
 ## Precedence
 
 1. Provider block attribute (explicit value)
