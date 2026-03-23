@@ -255,7 +255,8 @@ resource "prisma-airs_security_profile" "slack_moderation" {
     }
 
     app_protection {
-      block_url_category = ["malicious"]
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
     }
 
     data_protection {
