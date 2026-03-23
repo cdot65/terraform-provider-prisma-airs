@@ -484,6 +484,11 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	r.resolveTopicRefs(ctx, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	createReq := airsruntime.CreateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
 		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
@@ -587,6 +592,75 @@ func (r *securityProfileResource) ImportState(ctx context.Context, req resource.
 	var state SecurityProfileResourceModel
 	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// ── Topic resolution ─────────────────────────────────────────────────
+
+// resolveTopicRefs looks up all custom topics and fills in topic_id and
+// revision for any topic ref that only has a topic_name.
+func (r *securityProfileResource) resolveTopicRefs(ctx context.Context, plan *SecurityProfileResourceModel, diags *diag.Diagnostics) {
+	// Collect topic names that need resolution.
+	var needsResolve bool
+	for _, asp := range plan.AiSecurityProfiles {
+		for _, mp := range asp.ModelProtection {
+			for _, tl := range mp.TopicLists {
+				for _, t := range tl.Topics {
+					if !t.TopicName.IsNull() && !t.TopicName.IsUnknown() && t.TopicName.ValueString() != "" &&
+						(t.TopicID.IsNull() || t.TopicID.IsUnknown() || t.TopicID.ValueString() == "") {
+						needsResolve = true
+					}
+				}
+			}
+		}
+	}
+	if !needsResolve {
+		return
+	}
+
+	// Fetch all topics (paginate).
+	nameMap := make(map[string]airsruntime.CustomTopic)
+	offset := 0
+	for {
+		result, err := r.client.Topics.List(ctx, airsruntime.ListOpts{Limit: 200, Offset: offset})
+		if err != nil {
+			diags.AddError("Failed to list topics for name resolution", err.Error())
+			return
+		}
+		for _, t := range result.Items {
+			nameMap[t.TopicName] = t
+		}
+		if result.NextOffset <= offset || len(result.Items) == 0 {
+			break
+		}
+		offset = result.NextOffset
+	}
+
+	// Fill in topic_id and revision.
+	for aspIdx := range plan.AiSecurityProfiles {
+		for mpIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection {
+			for tlIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists {
+				for tIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists[tlIdx].Topics {
+					ref := &plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists[tlIdx].Topics[tIdx]
+					name := ref.TopicName.ValueString()
+					if name == "" {
+						continue
+					}
+					if ref.TopicID.IsNull() || ref.TopicID.IsUnknown() || ref.TopicID.ValueString() == "" {
+						if resolved, ok := nameMap[name]; ok {
+							tflog.Debug(ctx, "resolved topic", map[string]any{
+								"name": name, "id": resolved.TopicID, "revision": resolved.Revision,
+							})
+							ref.TopicID = types.StringValue(resolved.TopicID)
+							ref.Revision = types.Int64Value(resolved.Revision)
+						} else {
+							diags.AddError("Topic not found",
+								"Custom topic '"+name+"' does not exist. Create it first or specify topic_id directly.")
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 // ── Conversion: Terraform plan → SDK ─────────────────────────────────
