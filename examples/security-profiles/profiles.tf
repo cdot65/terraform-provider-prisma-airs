@@ -19,7 +19,7 @@ resource "prisma-airs_security_profile" "high_security" {
 
     latency {
       inline_timeout_action = "block"
-      max_inline_latency    = 5
+      max_inline_latency    = 1
     }
 
     model_protection {
@@ -28,24 +28,79 @@ resource "prisma-airs_security_profile" "high_security" {
     }
 
     model_protection {
+      name   = "contextual-grounding"
+      action = "block"
+    }
+
+    model_protection {
       name   = "toxic-content"
       action = "high:block, moderate:block"
+    }
+
+    model_protection {
+      name   = "topic-guardrails"
+      action = "allow"
+
+      topic_list {
+        action = "allow"
+      }
+
+      topic_list {
+        action = "block"
+
+        topic {
+          topic_name = "Deletion and Destruction of Cloud Infrastructure"
+        }
+
+        topic {
+          topic_name = "Tax Evasion Techniques"
+        }
+
+        topic {
+          topic_name = "Illegal Weapons Manufacturing and Procurement"
+        }
+
+        topic {
+          topic_name = "Home Manufacturing of Illegal Drugs"
+        }
+
+        topic {
+          topic_name = "Star Wars vs Star Trek Superiority Claims"
+        }
+
+        topic {
+          topic_name = "ASCII Art Generation"
+        }
+
+        topic {
+          topic_name = "Weapons Manufacturing and Procurement"
+        }
+
+        topic {
+          topic_name = "Building Explosives"
+        }
+
+        topic {
+          topic_name = "Tax Guidance and Recommendations"
+        }
+
+        topic {
+          topic_name = "Explosives and Bomb-Making Discussions"
+        }
+
+        topic {
+          topic_name = "Offensive Military Operation Planning Against Iran"
+        }
+
+        topic {
+          topic_name = "Retail Black Friday Sale"
+        }
+      }
     }
 
     agent_protection {
       name   = "agent-security"
       action = "block"
-    }
-
-    data_protection {
-      data_leak_detection {
-        action         = "block"
-        mask_data_inline = true
-
-        member {
-          text = "sensitive content"
-        }
-      }
     }
 
     app_protection {
@@ -59,6 +114,44 @@ resource "prisma-airs_security_profile" "high_security" {
         "phishing",
         "sports",
       ]
+      url_detected_action = "block"
+
+      malicious_code_protection {
+        name   = "malicious-code"
+        action = "block"
+      }
+    }
+
+    data_protection {
+      data_leak_detection {
+        action = "block"
+
+        member {
+          text    = "IP Addresses"
+          id      = "11995029"
+          version = "1"
+        }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-read"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-update"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
+      }
     }
   }
 
@@ -183,6 +276,11 @@ resource "prisma-airs_security_profile" "recipe_extractor" {
     }
 
     model_protection {
+      name   = "contextual-grounding"
+      action = "block"
+    }
+
+    model_protection {
       name   = "toxic-content"
       action = "high:block, moderate:block"
     }
@@ -207,6 +305,17 @@ resource "prisma-airs_security_profile" "recipe_extractor" {
     agent_protection {
       name   = "agent-security"
       action = "block"
+    }
+
+    app_protection {
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
+    }
+
+    data_protection {
+      data_leak_detection {
+        action = ""
+      }
     }
   }
 }
@@ -242,13 +351,44 @@ resource "prisma-airs_security_profile" "cursor_ide" {
       action = "block"
     }
 
+    app_protection {
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
+
+      malicious_code_protection {
+        name   = "malicious-code"
+        action = "block"
+      }
+    }
+
     data_protection {
       data_leak_detection {
         action = "block"
 
         member {
-          text = "sensitive content"
+          text    = "sensitive content"
+          version = "2"
         }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-read"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-update"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
       }
     }
   }
@@ -341,6 +481,11 @@ resource "prisma-airs_security_profile" "hipaa_compliance" {
       action = "block"
     }
 
+    app_protection {
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
+    }
+
     data_protection {
       data_leak_detection {
         action = "block"
@@ -350,6 +495,26 @@ resource "prisma-airs_security_profile" "hipaa_compliance" {
           id      = "11995010"
           version = "1"
         }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-read"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-update"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
       }
     }
   }
