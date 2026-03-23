@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.6.2 — Auto-Resolve Topic Names
+
+- **Feature:** Security profiles now auto-resolve `topic_name` to `topic_id` and `revision` via the Topics API before create/update — users no longer need to specify `topic_id` manually
+- Error with actionable message if a referenced topic name doesn't exist
+
 ## v0.6.1 — SDK v0.4.1, Bool Serialization Fix
 
 - Upgrade `prisma-airs-go` SDK to v0.4.1
