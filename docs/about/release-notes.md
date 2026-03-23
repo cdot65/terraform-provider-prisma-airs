@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.6.3 — Read-After-Write, Update Topic Resolution
+
+- Fix: `Create` and `Update` now read back the full profile via `GetByID` — resolves "inconsistent result after apply" errors for `app_protection`, `database_security`, and `member.version` fields
+- Fix: `resolveTopicRefs()` now runs on `Update` (was only on `Create`) — topics no longer become `null` after profile updates
+- Update Truffles Agent example to match production config (`app_protection`, `database_security`, `member.version`)
+
 ## v0.6.2 — Auto-Resolve Topic Names
 
 - **Feature:** Security profiles now auto-resolve `topic_name` to `topic_id` and `revision` via the Topics API before create/update — users no longer need to specify `topic_id` manually
