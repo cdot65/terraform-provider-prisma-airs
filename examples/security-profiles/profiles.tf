@@ -122,14 +122,40 @@ resource "prisma-airs_security_profile" "truffles_agent" {
       action = "block"
     }
 
+    app_protection {
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
+    }
+
     data_protection {
       data_leak_detection {
-        action         = "block"
+        action           = "block"
         mask_data_inline = true
 
         member {
-          text = "sensitive content"
+          text    = "sensitive content"
+          version = "2"
         }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-read"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-update"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
       }
     }
   }
