@@ -16,7 +16,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.5"
+      version = "~> 0.6"
     }
   }
 }

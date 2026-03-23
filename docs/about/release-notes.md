@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.6.1 — SDK v0.4.1, Bool Serialization Fix
+
+- Upgrade `prisma-airs-go` SDK to v0.4.1
+- Fix: `bool` attributes set to `false` (e.g., `mask_data_in_storage = false`) are now correctly sent to the API instead of being silently dropped
+- Fix: `slack_moderation` example uses `default_url_category` instead of `block_url_category` to match production profile
+- Update example version constraint to `~> 0.6`
+
 ## v0.6.0 — SDK v0.4.0, New Security Profile Fields, .env Support
 
 - Upgrade `prisma-airs-go` SDK to v0.4.0 (`aisec/management` + `aisec/scan` consolidated into `aisec/runtime`)
