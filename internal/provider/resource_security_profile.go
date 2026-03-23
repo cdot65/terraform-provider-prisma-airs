@@ -512,6 +512,14 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	// Create response may be incomplete; read back the full profile.
+	if profile != nil && profile.ProfileID != "" {
+		full, readErr := r.client.Profiles.GetByID(ctx, profile.ProfileID)
+		if readErr == nil && full != nil {
+			profile = full
+		}
+	}
+
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -550,6 +558,11 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	r.resolveTopicRefs(ctx, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	updateReq := airsruntime.UpdateProfileRequest{
 		ProfileName: plan.ProfileName.ValueString(),
 		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
@@ -562,6 +575,14 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update security profile", err.Error())
 		return
+	}
+
+	// Update response may be incomplete; read back the full profile.
+	if profile != nil && profile.ProfileID != "" {
+		full, readErr := r.client.Profiles.GetByID(ctx, profile.ProfileID)
+		if readErr == nil && full != nil {
+			profile = full
+		}
 	}
 
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
