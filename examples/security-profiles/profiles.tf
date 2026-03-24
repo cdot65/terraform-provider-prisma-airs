@@ -12,7 +12,7 @@
 # and URL category filtering for high-risk categories.
 
 resource "prisma-airs_security_profile" "high_security" {
-  profile_name = "${var.profile_prefix}AI-Firewall-High-Security-Profile"
+  profile_name = "${var.profile_prefix}InfoSec - AI Firewall - Strict"
 
   ai_security_profile {
     model_type = "default"
@@ -169,7 +169,7 @@ resource "prisma-airs_security_profile" "high_security" {
 # allow recipe generation while blocking ASCII art abuse.
 
 resource "prisma-airs_security_profile" "truffles_agent" {
-  profile_name = "${var.profile_prefix}Truffles Agent"
+  profile_name = "${var.profile_prefix}Truffles - Agent Security - Moderate"
 
   ai_security_profile {
     model_type = "default"
@@ -260,7 +260,7 @@ resource "prisma-airs_security_profile" "truffles_agent" {
 # and blocks prompt injection.
 
 resource "prisma-airs_security_profile" "recipe_extractor" {
-  profile_name = "${var.profile_prefix}Recipe Extractor AWS Agent"
+  profile_name = "${var.profile_prefix}Truffles - Recipe Extractor - Moderate"
 
   ai_security_profile {
     model_type = "default"
@@ -326,7 +326,7 @@ resource "prisma-airs_security_profile" "recipe_extractor" {
 # detection via app protection.
 
 resource "prisma-airs_security_profile" "cursor_ide" {
-  profile_name = "${var.profile_prefix}Cursor IDE - Hooks"
+  profile_name = "${var.profile_prefix}InfoSec - Code Assistant - Strict"
 
   ai_security_profile {
     model_type = "default"
@@ -404,7 +404,7 @@ resource "prisma-airs_security_profile" "cursor_ide" {
 # or added in a future SDK release.
 
 resource "prisma-airs_security_profile" "slack_moderation" {
-  profile_name = "${var.profile_prefix}OpenClaw - Slack Moderation"
+  profile_name = "${var.profile_prefix}OpenClaw - Slack Moderation - Moderate"
 
   ai_security_profile {
     model_type        = "default"
@@ -439,7 +439,7 @@ resource "prisma-airs_security_profile" "slack_moderation" {
 # blocking everything else by default.
 
 resource "prisma-airs_security_profile" "hipaa_compliance" {
-  profile_name = "${var.profile_prefix}OpenClaw AI Agent Security Nightmare"
+  profile_name = "${var.profile_prefix}OpenClaw - HIPAA Compliance - Strict"
 
   ai_security_profile {
     model_type = "default"
