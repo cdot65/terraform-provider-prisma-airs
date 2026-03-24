@@ -3,7 +3,7 @@
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.24 (for building from source)
+- [Go](https://golang.org/doc/install) >= 1.25 (for building from source)
 
 ## Terraform Registry
 
@@ -14,7 +14,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.4"
+      version = "~> 0.6"
     }
   }
 }
@@ -45,7 +45,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.4"
+      version = "~> 0.6"
     }
   }
 }
