@@ -139,8 +139,6 @@ resource "prisma-airs_security_profile" "topics" {
 
         topic {
           topic_name = "Recipe Generation"
-          topic_id   = prisma-airs_custom_topic.recipes.topic_id
-          revision   = 1
         }
       }
 
@@ -149,14 +147,15 @@ resource "prisma-airs_security_profile" "topics" {
 
         topic {
           topic_name = "Restricted Content"
-          topic_id   = prisma-airs_custom_topic.restricted.topic_id
-          revision   = 1
         }
       }
     }
   }
 }
 ```
+
+!!! tip "Auto-Resolution"
+    Since v0.6.2, the provider automatically resolves `topic_name` to `topic_id` and `revision` via the Topics API. You no longer need to specify these manually.
 
 ## Argument Reference
 
