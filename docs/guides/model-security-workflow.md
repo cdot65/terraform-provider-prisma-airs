@@ -18,6 +18,6 @@ resource "prisma-airs_model_security_group" "ml_models" {
 data "prisma-airs_model_security_rules" "all" {}
 
 output "available_rules" {
-  value = data.prisma-airs_model_security_rules.all.items[*].name
+  value = data.prisma-airs_model_security_rules.all.rules[*].name
 }
 ```
