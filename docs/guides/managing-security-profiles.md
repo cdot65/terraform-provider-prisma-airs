@@ -80,14 +80,15 @@ resource "prisma-airs_security_profile" "with_topics" {
 
         topic {
           topic_name = prisma-airs_custom_topic.financial.topic_name
-          topic_id   = prisma-airs_custom_topic.financial.topic_id
-          revision   = 1
         }
       }
     }
   }
 }
 ```
+
+!!! tip "Auto-Resolution"
+    The provider automatically resolves `topic_name` to `topic_id` and `revision` — no need to specify them manually.
 
 ## Managing API Keys
 
