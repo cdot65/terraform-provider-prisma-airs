@@ -121,3 +121,96 @@ output "dlp_profiles" {
   value = data.prisma-airs_dlp_profiles.available.items[*].profile_name
 }
 ```
+
+## App Protection
+
+Control URL filtering and malicious code detection:
+
+```hcl
+resource "prisma-airs_security_profile" "app_secured" {
+  profile_name = "app-protection-enabled"
+
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "block"
+    }
+
+    app_protection {
+      default_url_category = ["malicious"]
+      url_detected_action  = "block"
+
+      malicious_code_protection {
+        name   = "malicious-code"
+        action = "block"
+      }
+    }
+  }
+}
+```
+
+For more granular URL category control, use `allow_url_category`, `block_url_category`, or `alert_url_category` lists:
+
+```hcl
+    app_protection {
+      allow_url_category = [
+        "dynamic-dns",
+        "grayware",
+        "high-risk",
+      ]
+      url_detected_action = "block"
+    }
+```
+
+## Database Security
+
+Control which database operations AI models can perform:
+
+```hcl
+resource "prisma-airs_security_profile" "db_protected" {
+  profile_name = "database-security-enabled"
+
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "prompt-injection"
+      action = "block"
+    }
+
+    data_protection {
+      data_leak_detection {
+        action = "block"
+
+        member {
+          text = "sensitive content"
+        }
+      }
+
+      database_security {
+        name   = "database-security-create"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-read"
+        action = "allow"
+      }
+
+      database_security {
+        name   = "database-security-update"
+        action = "block"
+      }
+
+      database_security {
+        name   = "database-security-delete"
+        action = "block"
+      }
+    }
+  }
+}
+```
+
+This configuration allows read operations while blocking create, update, and delete — a common pattern for read-only AI assistants.
