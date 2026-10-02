@@ -32,6 +32,11 @@ def reference_files():
                 raise ValueError(f"Missing text replacement in {path}: {before}")
             content = content.replace(before, after)
         files[path] = content.encode()
+    for path, row in manifest.get("productAssets", {}).items():
+        content = (SITE / path).read_bytes()
+        if hashlib.sha256(content).hexdigest() != row["sha256"]:
+            raise ValueError(f"Product asset hash mismatch: {path}")
+        files[path] = content
     return manifest, files
 
 
@@ -43,7 +48,7 @@ def verify():
         path = row["path"]
         if (SITE / path).read_bytes() != files[path]:
             raise ValueError(f"Harness design drift: {path}; refresh from the pinned source or change product copy in design/harness/copy.json")
-    print(f"Verified {len(files)} harness design inputs at {manifest['commit']}.")
+    print(f"Verified {len(manifest['files'])} Harness design inputs and {len(manifest.get('productAssets', {}))} Terraform product assets at {manifest['commit']}.")
 
 
 if __name__ == "__main__":

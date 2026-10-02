@@ -26,7 +26,7 @@ Examples described as complete must include a provider requirement and all varia
 
 ## Maintain the shared design
 
-The site copies the Harness logo, CSS, Prism colors, hero layout, and article layout. Product text and routes are explicit substitutions in `docs-site/design/harness/copy.json`. The source archive and hashes pin the reference; refresh it deliberately when the shared design changes.
+The site uses the owner-provided Terraform logo and copies the Harness CSS, Prism colors, hero layout, and article layout. Product text and routes are explicit substitutions in `docs-site/design/harness/copy.json`. The source archive and hashes pin the reference; refresh it deliberately when the shared design changes.
 
 `npm run check` checks design inputs, content, schema freshness, TypeScript, production build, browser navigation, and nine pixel comparisons. The independent reference uses its own locked Docusaurus 3.10.1 dependencies and the same Terraform copy. Screenshots compare homepage, getting-started, and migration pages at desktop, tablet, and mobile sizes with zero differing pixels. Both sites must load Inter and JetBrains Mono.
 

@@ -5,7 +5,7 @@ import airsTheme from './src/css/prism-airs';
 const config: Config = {
   title: 'Prisma AIRS Terraform',
   tagline: 'Infrastructure as code for Prisma AIRS security',
-  favicon: 'img/brand-logo.png',
+  favicon: 'img/terraform-logo.png',
   url: 'https://cdot65.github.io',
   baseUrl: '/terraform-provider-prisma-airs/',
   organizationName: 'cdot65',
@@ -31,7 +31,7 @@ const config: Config = {
     colorMode: {defaultMode: 'dark', disableSwitch: true, respectPrefersColorScheme: false},
     navbar: {
       title: 'Prisma AIRS Terraform',
-      logo: {alt: 'Prisma AIRS Terraform', src: 'img/brand-logo.png'},
+      logo: {alt: 'Prisma AIRS Terraform', src: 'img/terraform-logo.png'},
       items: [
         {type: 'docSidebar', sidebarId: 'docs', label: 'Docs', position: 'left'},
         {type: 'docSidebar', sidebarId: 'reference', label: 'Provider Reference', position: 'left'},

@@ -24,8 +24,10 @@ SOFTWARE.
 
 ## Shared documentation design attribution
 
-The shared brand CSS, Prism theme, homepage and article layouts, and logo artwork derive from [Prisma AIRS Harness commit 1885e40](https://github.com/cdot65/prisma-airs-harness/tree/1885e40eb1dc493ad5b47757694d077011afa431/docs-site), licensed under Apache-2.0. Terraform product text, routes, guides, schema generation, and validation are modified for this provider. Original notices and the full Apache license are distributed with the site; the provider remains MIT licensed.
+The shared brand CSS, Prism theme, homepage and article layouts derive from [Prisma AIRS Harness commit 1885e40](https://github.com/cdot65/prisma-airs-harness/tree/1885e40eb1dc493ad5b47757694d077011afa431/docs-site), licensed under Apache-2.0. Terraform product text, routes, guides, schema generation, and validation are modified for this provider. Original notices and the full Apache license are distributed with the site; the provider remains MIT licensed.
 
 - [Harness notices](/licenses/NOTICE.txt)
 - [Apache-2.0 license](/licenses/LICENSE-HARNESS.txt)
 - [Third-party notices](/licenses/THIRD_PARTY_NOTICES.txt)
+
+The Terraform logo is owner-provided product artwork. The original Harness artwork remains only in the pinned design reference archive.

@@ -27,7 +27,7 @@ export default function Home(): ReactNode {
             <p className={styles.platforms}>NATIVE HCL · REVIEWABLE PLANS · MIT LICENSED</p>
           </div>
           <div className={styles.artwork}>
-            <img src={useBaseUrl('/img/brand-logo.png')} alt="Prisma AIRS shield and prism spectrum" width="1254" height="1254" fetchPriority="high" />
+            <img src={useBaseUrl('/img/terraform-logo.png')} alt="Prisma AIRS Terraform shield and prism spectrum" width="1254" height="1254" fetchPriority="high" />
             <div className={styles.pillRow}><span className={styles.pill}>OAuth management</span><span className={styles.pill}>Versioned profiles</span><span className={styles.pill}>Native HCL</span></div>
           </div>
         </section>
