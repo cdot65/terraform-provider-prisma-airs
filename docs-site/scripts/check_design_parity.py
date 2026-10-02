@@ -28,7 +28,7 @@ def main():
         # layout come independently from the pinned harness source archive.
         for relative in ["tsconfig.json", "sidebars.ts"]:
             shutil.copy2(SITE / relative, reference / relative)
-        shutil.copytree(SITE.parent / "docs", reference / "docs")
+        shutil.copytree(SITE / "docs", reference / "docs")
         shutil.copytree(SITE / "static/licenses", reference / "static/licenses")
         subprocess.run([node, npm, "ci", "--registry=https://registry.npmjs.org/", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=reference, env=runtime_env, check=True)
         (reference / "static/img/logo.svg").write_bytes((SITE / "static/img/logo.svg").read_bytes())

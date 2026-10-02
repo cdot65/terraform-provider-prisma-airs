@@ -1,7 +1,3 @@
----
-page_title: "Troubleshooting"
----
-
 # Troubleshooting
 
 Start with the error from the actual operation and confirm which provider binary, tenant, and service it used.

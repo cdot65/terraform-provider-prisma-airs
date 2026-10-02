@@ -1,6 +1,6 @@
 # Documentation development
 
-The site uses Docusaurus 3.10.2 and Node 24+. Authored Markdown lives in `docs/`; UI, build configuration, and browser checks live in `docs-site/`. Public URLs use the `/terraform-provider-prisma-airs/` base path.
+The site uses Docusaurus 3.10.2 and Node 24+. Authored Markdown lives in `docs-site/docs/`; UI, build configuration, and browser checks live in `docs-site/`. Public URLs use the `/terraform-provider-prisma-airs/` base path.
 
 ## Run locally
 
@@ -18,7 +18,7 @@ make generate
 make docs-check
 ```
 
-`make generate` builds the provider before running the safe schema generator through `go generate`. It writes only `docs/reference/generated/`; authored guides remain separate. Direct `go generate` requires an already-built current provider.
+`make generate` builds the provider before running the safe schema generator through `go generate`. It writes exact schema pages in `docs-site/docs/reference/generated/` and the Registry documentation in `docs/`; authored guides remain separate. Direct `go generate` requires an already-built current provider.
 
 The schema generator uses Terraform's provider-schema protocol with a temporary development override. It needs Terraform and the built provider; it performs no live API calls. `--check` detects missing, extra, or stale generated pages.
 
@@ -36,4 +36,4 @@ The site copies the Harness logo, CSS, Prism colors, hero layout, and article la
 
 Builds fail on broken links or anchors. Standard Docusaurus callouts and Mermaid diagrams replace the former site-specific Markdown extensions.
 
-Registry resource and data-source pages use underscore filenames under `docs/resources/` and `docs/data-sources/`. The schema generator produces them from the lifecycle guides and exact schemas; Docusaurus excludes these duplicates. Release tags publish these pages to the Terraform Registry. GitHub Actions builds, checks, deploys, and tests the public Pages site after each relevant main-branch update.
+Registry resource and data-source pages use underscore filenames under `docs/resources/` and `docs/data-sources/`. The schema generator produces them from the lifecycle guides and exact schemas. These generated pages are separate from the authored Docusaurus guides. Release tags publish these pages to the Terraform Registry. GitHub Actions builds, checks, deploys, and tests the public Pages site after each relevant main-branch update.

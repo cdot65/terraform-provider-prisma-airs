@@ -13,7 +13,7 @@ COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/
 
 def main():
     errors = []
-    for path in sorted((ROOT / 'docs').rglob('*.md')):
+    for path in sorted((SITE / 'docs').rglob('*.md')):
         text = path.read_text()
         if re.search(r'^!!!|^===|^:::[a-z]+ ', text, re.MULTILINE):
             errors.append(f'{path.relative_to(ROOT)}: legacy Markdown extension')
@@ -27,8 +27,8 @@ def main():
         env.update(TF_CLI_CONFIG_FILE=str(config), TF_IN_AUTOMATION='1')
         validated = 0
         skipped = []
-        for path in sorted((ROOT / 'docs').rglob('*.md')):
-            relative = str(path.relative_to(ROOT / 'docs'))
+        for path in sorted((SITE / 'docs').rglob('*.md')):
+            relative = str(path.relative_to(SITE / 'docs'))
             blocks = re.findall(r'```hcl\n(.*?)\n```', path.read_text(), re.DOTALL)
             if relative in COMPLETE and len(blocks) != 1:
                 errors.append(f'{relative}: expected one complete HCL configuration')

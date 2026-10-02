@@ -1,16 +1,12 @@
----
-page_title: "Authentication guide"
----
-
 # Authentication guide
 
-Follow [Authentication](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/) for the shared SCM service-account walkthrough, required environment variables, and access checks.
+Follow [Authentication](../getting-started/authentication.md) for the shared SCM service-account walkthrough, required environment variables, and access checks.
 
 ## Credential precedence
 
 For each provider attribute, an explicit value takes precedence over its mapped environment variable. `client_id`, `client_secret`, and `tsg_id` resolve from `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` and are passed to every service client.
 
-Service-specific endpoint variables are supported. Separate SDK service credential prefixes are not exposed by this provider; use explicit credentials on aliased providers for separate identities. See [Configuration](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/configuration/) and [Environment variables](https://cdot65.github.io/terraform-provider-prisma-airs/reference/environment-variables/).
+Service-specific endpoint variables are supported. Separate SDK service credential prefixes are not exposed by this provider; use explicit credentials on aliased providers for separate identities. See [Configuration](../getting-started/configuration.md) and [Environment variables](../reference/environment-variables.md).
 
 ## Local environment files
 

@@ -1,10 +1,6 @@
----
-page_title: "Migrate to the updated provider"
----
-
 # Migrate to the updated provider
 
-Provider v0.7.0 uses Go SDK v0.6.1 and changes the schemas from v0.6.3. Follow [installation](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/installation/), select `~> 0.7.0`, remove any development override, and run `terraform init -upgrade`. Review and refactor existing HCL and state before applying.
+Provider v0.7.0 uses Go SDK v0.6.1 and changes the schemas from v0.6.3. Follow [installation](../getting-started/installation.md), select `~> 0.7.0`, remove any development override, and run `terraform init -upgrade`. Review and refactor existing HCL and state before applying.
 
 ## Review existing ownership
 
@@ -44,7 +40,7 @@ resource "prisma-airs_red_team_target" "app" {
 }
 ```
 
-Preserve the Terraform address where appropriate. Native blocks preserve false, zero, null, empty values, and nested objects/lists. For an existing CUSTOM/REST target, `rest/<uuid>` is the [import hint](https://cdot65.github.io/terraform-provider-prisma-airs/resources/red-team-target/#import-and-outputs); plain UUID import selects `custom`. Imported credentials and payloads that the API cannot recover remain null until configured.
+Preserve the Terraform address where appropriate. Native blocks preserve false, zero, null, empty values, and nested objects/lists. For an existing CUSTOM/REST target, `rest/<uuid>` is the [import hint](../resources/red-team-target.md#import-and-outputs); plain UUID import selects `custom`. Imported credentials and payloads that the API cannot recover remain null until configured.
 
 ## Understand replacement and update plans
 

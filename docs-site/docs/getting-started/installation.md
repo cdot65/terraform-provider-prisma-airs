@@ -57,7 +57,7 @@ export TF_CLI_CONFIG_FILE=/absolute/path/to/dev.tfrc
 
 For provider-only configurations, run `terraform validate`, `terraform plan`, and `terraform apply` directly. `dev_overrides` bypasses normal provider installation and registry version selection. Configurations with other providers or modules may still need `terraform init` to install those dependencies.
 
-The local `0.7.0-dev` directory label is a development setting. Provider and SDK release version numbers are independent.
+Provider and SDK release version numbers are independent.
 
 ## Verify the selected binary
 

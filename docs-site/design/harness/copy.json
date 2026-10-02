@@ -47,6 +47,6 @@
     "'https://github.com/cdot65/prisma-airs-harness'": "'https://github.com/cdot65/terraform-provider-prisma-airs'",
     "cdot65. Apache-2.0. Built with Docusaurus.": "cdot65. Terraform Provider: MIT. Built with Docusaurus.",
     "additionalLanguages: ['bash'": "additionalLanguages: ['hcl', 'go', 'bash'",
-    "docs: {sidebarPath: './sidebars.ts', routeBasePath: '/'}": "docs: {path: '../docs', sidebarPath: './sidebars.ts', routeBasePath: '/', exclude: ['resources/*_*.md', 'data-sources/*_*.md']}"
+    "docs: {sidebarPath: './sidebars.ts', routeBasePath: '/'}": "docs: {path: './docs', sidebarPath: './sidebars.ts', routeBasePath: '/'}"
   }
 }

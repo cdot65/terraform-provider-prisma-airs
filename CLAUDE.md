@@ -80,4 +80,4 @@ internal/provider/
 
 ## Docs
 
-Docusaurus site in `docs-site/`, authored guides in `docs/`. For documentation changes, read `docs/development/documentation.md` for schema generation and pinned Harness design checks. Complete `make docs-check` before declaring documentation changes verified. Existing public routes remain under cdot65.github.io/terraform-provider-prisma-airs/.
+Docusaurus site in `docs-site/`, authored guides in `docs-site/docs/`. For documentation changes, read `docs-site/docs/development/documentation.md` for schema generation and pinned Harness design checks. Complete `make docs-check` before declaring documentation changes verified. Existing public routes remain under cdot65.github.io/terraform-provider-prisma-airs/.

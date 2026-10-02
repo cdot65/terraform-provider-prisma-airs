@@ -18,7 +18,7 @@ const config: Config = {
   themes: ['@docusaurus/theme-mermaid'],
   i18n: {defaultLocale: 'en', locales: ['en']},
   presets: [['classic', {
-    docs: {path: '../docs', sidebarPath: './sidebars.ts', routeBasePath: '/', exclude: ['resources/*_*.md', 'data-sources/*_*.md']},
+    docs: {path: './docs', sidebarPath: './sidebars.ts', routeBasePath: '/'},
     blog: false,
     theme: {customCss: './src/css/custom.css'},
   } satisfies Preset.Options]],

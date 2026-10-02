@@ -1,7 +1,3 @@
----
-page_title: "Import and state"
----
-
 # Import and state
 
 Import establishes Terraform ownership of existing AIRS infrastructure. Write the matching resource configuration first and use the identifier accepted by that resource.
@@ -29,9 +25,11 @@ Use real identifiers from your tenant. Import supports active objects; archived 
 
 The security-profile resource owns all revisions under a name. Refresh follows the highest numeric revision regardless of active status, including changes made outside Terraform. Policy updates retain the resource address and create a new UUID/revision. Renaming transfers Terraform to the new name and leaves old history in AIRS.
 
-**Destroy scope**
+:::warning[Destroy scope]
+
 Destroy deletes every revision under the currently managed name, including revisions predating import. Confirm this ownership boundary before importing a shared profile.
 
+:::
 
 ## Secrets and unavailable values
 

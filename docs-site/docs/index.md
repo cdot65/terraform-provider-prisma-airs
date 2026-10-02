@@ -1,4 +1,5 @@
 ---
+slug: /overview
 page_title: "Prisma AIRS Provider"
 ---
 
@@ -24,16 +25,16 @@ Terraform provider for Palo Alto Networks **Prisma AI Runtime Security (AIRS)** 
 
 ## Architecture
 
-Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](https://cdot65.github.io/terraform-provider-prisma-airs/development/architecture/) for the service boundaries.
+Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](development/architecture.md) for the service boundaries.
 
-These guides describe provider v0.7.0 built on Go SDK v0.6.1. See [Getting started](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/) and [Migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) for the installation and state transition.
+These guides describe provider v0.7.0 built on Go SDK v0.6.1. See [Getting started](getting-started/index.md) and [Migration](guides/migration.md) for the installation and state transition.
 
 ## Quick Links
 
-- [Installation](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/installation/)
-- [Quick Start](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/quick-start/)
-- [Configuration](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/configuration/)
-- [Provider Configuration Reference](https://cdot65.github.io/terraform-provider-prisma-airs/reference/provider-configuration/)
+- [Installation](getting-started/installation.md)
+- [Quick Start](getting-started/quick-start.md)
+- [Configuration](getting-started/configuration.md)
+- [Provider Configuration Reference](reference/provider-configuration.md)
 
 ## Example Usage
 
@@ -50,4 +51,4 @@ terraform {
 provider "prisma-airs" {}
 ```
 
-Configure `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` through your secret manager. See the [provider schema](https://cdot65.github.io/terraform-provider-prisma-airs/reference/generated/provider/) for every argument.
+Configure `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` through your secret manager. See the [provider schema](reference/generated/provider.md) for every argument.

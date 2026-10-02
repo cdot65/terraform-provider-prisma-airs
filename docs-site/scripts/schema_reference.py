@@ -9,7 +9,7 @@ import tempfile
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
-DESTINATION = ROOT / 'docs/reference/generated'
+DESTINATION = SITE / 'docs/reference/generated'
 
 
 def provider_schema():
@@ -77,18 +77,21 @@ def render(name, schema, kind):
 def registry_render(name, schema, kind):
     short = name.removeprefix('prisma-airs_')
     folder = 'resources' if kind == 'resource' else 'data-sources'
-    guide = ROOT / 'docs' / folder / (short.replace('_', '-') + '.md')
-    text = guide.read_text()
-    text = re.sub(r'^---\n.*?\n---\n', '', text, count=1, flags=re.DOTALL)
+    guide = SITE / 'docs' / folder / (short.replace('_', '-') + '.md')
+    text = registry_content(guide)
     text = re.sub(r'^# .*\n', '', text, count=1)
-    text = re.sub(r'^:::[a-z]+(?:\[([^]\n]+)\])?\s*$', lambda m: '**' + (m.group(1) or 'Note') + '**', text, flags=re.MULTILINE)
-    text = re.sub(r'^:::\s*$', '', text, flags=re.MULTILINE)
-    # Registry pages link to the deployed guides; they cannot resolve Docusaurus paths.
-    text = re.sub(r'(?<!!)\[([^]]+)\]\(([^)]+)\)', lambda m: registry_link(m, guide), text)
     heading = f'# {name} {kind.title()}'
     lines = [f'---\npage_title: "{name} ({kind.title()})"\n---', '', heading, '', text.strip(), '', '## Schema', '']
     lines += block_lines(schema['block'], depth=3)
     return '\n'.join(lines).rstrip() + '\n'
+
+
+def registry_content(guide):
+    text = guide.read_text()
+    text = re.sub(r'^---\n.*?\n---\n', '', text, count=1, flags=re.DOTALL)
+    text = re.sub(r'^:::[a-z]+(?:\[([^]\n]+)\])?\s*$', lambda m: '**' + (m.group(1) or 'Note') + '**', text, flags=re.MULTILINE)
+    text = re.sub(r'^:::\s*$', '', text, flags=re.MULTILINE)
+    return re.sub(r'(?<!!)\[([^]]+)\]\(([^)]+)\)', lambda m: registry_link(m, guide), text)
 
 
 def registry_link(match, guide):
@@ -96,7 +99,7 @@ def registry_link(match, guide):
     if link.startswith(('https://', 'http://', '#')):
         return match.group(0)
     relative, separator, anchor = link.partition('#')
-    destination = (guide.parent / relative).resolve().relative_to((ROOT / 'docs').resolve())
+    destination = (guide.parent / relative).resolve().relative_to((SITE / 'docs').resolve())
     route = str(destination).removesuffix('.md')
     if route.endswith('/index'):
         route = route.removesuffix('index')
@@ -120,11 +123,18 @@ def main():
     for group, kind, folder in [('resource_schemas', 'resource', 'resources'), ('data_source_schemas', 'data source', 'data-sources')]:
         for name, row in sorted(schema[group].items()):
             registry[ROOT / 'docs' / folder / (name.removeprefix('prisma-airs_') + '.md')] = registry_render(name, row, kind)
+    for guide in sorted((SITE / 'docs/guides').glob('*.md')):
+        title = next(line.removeprefix('# ') for line in guide.read_text().splitlines() if line.startswith('# '))
+        registry[ROOT / 'docs/guides' / guide.name] = '---\npage_title: ' + json.dumps(title) + '\n---\n\n' + registry_content(guide).strip() + '\n'
+    registry[ROOT / 'docs/index.md'] = '---\npage_title: "Prisma AIRS Provider"\n---\n\n' + registry_content(SITE / 'docs/index.md').strip() + '\n'
     if check:
+        actual_registry = set((ROOT / "docs").rglob("*.md"))
+        if actual_registry != set(registry):
+            raise SystemExit("Registry documentation has missing or extra pages. Run make generate and keep authored content in docs-site/docs/.")
         stale_registry = [str(path.relative_to(ROOT)) for path, content in registry.items() if not path.is_file() or path.read_text() != content]
         if stale_registry:
             raise SystemExit('Stale Registry pages: ' + ', '.join(stale_registry))
-        print(f'Checked {len(registry)} Terraform Registry resource/data-source pages.')
+        print(f'Checked {len(registry)} Terraform Registry pages.')
         actual = {p.name for p in DESTINATION.glob('*.md')}
         if actual != set(expected):
             raise SystemExit('Generated schema catalog has missing or extra pages. Run npm run generate:reference.')
@@ -134,8 +144,9 @@ def main():
         print(f'Checked {len(expected)} exact schema pages against the built provider.')
     else:
         for path, content in registry.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
-        print(f'Generated {len(registry)} Terraform Registry resource/data-source pages.')
+        print(f'Generated {len(registry)} Terraform Registry pages.')
         DESTINATION.mkdir(parents=True, exist_ok=True)
         for name, text in expected.items():
             (DESTINATION / name).write_text(text)

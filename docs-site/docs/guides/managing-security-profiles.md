@@ -1,18 +1,16 @@
----
-page_title: "Managing Security Profiles"
----
-
 # Managing Security Profiles
 
 This guide walks through managing AI security profiles with the Prisma AIRS Terraform provider.
 
 ## Profile ownership
 
-A resource owns all revisions under its `profile_name`. Policy edits create a new UUID/revision while keeping the Terraform address. Renaming follows version 1 of the new name and leaves the old history in AIRS. [Import and state](https://cdot65.github.io/terraform-provider-prisma-airs/guides/import-and-state/) explains adoption and sensitive values.
+A resource owns all revisions under its `profile_name`. Policy edits create a new UUID/revision while keeping the Terraform address. Renaming follows version 1 of the new name and leaves the old history in AIRS. [Import and state](import-and-state.md) explains adoption and sensitive values.
 
-**Destroy scope**
+:::warning[Destroy scope]
+
 Destroy deletes every revision under the currently managed name, including history predating import or created by another actor. Confirm that ownership before importing a shared profile.
 
+:::
 
 ## Creating a Profile
 
@@ -99,9 +97,11 @@ resource "prisma-airs_security_profile" "with_topics" {
 }
 ```
 
-**Auto-Resolution**
+:::tip[Auto-Resolution]
+
 The provider automatically resolves `topic_name` to `topic_id` and `revision` — no need to specify them manually.
 
+:::
 
 ## Managing API Keys
 
@@ -126,7 +126,7 @@ output "api_key_value" {
 }
 ```
 
-Deleting an API key can also delete its associated customer app. Capture the one-time key securely; imported keys cannot recover it. See the [API-key lifecycle](https://cdot65.github.io/terraform-provider-prisma-airs/resources/api-key/#replacement-and-secret-state).
+Deleting an API key can also delete its associated customer app. Capture the one-time key securely; imported keys cannot recover it. See the [API-key lifecycle](../resources/api-key.md#replacement-and-secret-state).
 
 ## Listing DLP Profiles
 
