@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Covers all four service domains: AI Runtime Security (Scan), Management, Model Security, and AI Red Teaming.
+Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Organized around AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security. Gateway is not yet implemented; Supply Chain Security currently covers Model Security groups and rules.
 
 ## Commands
 
@@ -37,28 +37,21 @@ Note: `GOPRIVATE=github.com/cdot65/*` is set in the Makefile. For manual go comm
 
 ```
 main.go                         # provider server entry point
-internal/provider/
-  provider.go                   # provider schema, config, client init
-  provider_test.go              # acceptance test helpers
-  # Resources (CRUD):
-  resource_security_profile.go  # management: security profiles
-  resource_custom_topic.go      # management: custom topics
-  resource_api_key.go           # management: API keys
-  resource_customer_app.go      # management: customer apps
-  resource_model_security_group.go
-  resource_red_team_target.go
-  resource_red_team_custom_prompt_set.go
-  # Data Sources (read-only reference):
-  datasource_dlp_profiles.go
-  datasource_deployment_profiles.go
-  datasource_model_security_rules.go
+internal/provider/              # shared configuration, catalog composition, acceptance tests
+internal/product/               # product definition and opaque client slots
+internal/products/catalog.go    # product inventory, including unimplemented Gateway
+internal/products/runtime/      # Runtime Security lifecycle, data sources, SDK adapter
+internal/products/redteam/      # Red Teaming lifecycle and native target inputs
+internal/products/supplychain/  # Supply Chain Security groups/rules, SDK adapter
+internal/tfutil/                # shared SDK error/deletion handling
+cmd/product-catalog/            # metadata for docs and schema consistency checks
 ```
 
 **SDK dependency:** `github.com/cdot65/prisma-airs-go` — private repo, requires `GOPRIVATE=github.com/cdot65/*`.
 
 **Auth model:** Provider config → env var fallback. OAuth2 client_credentials for Management, Model Security, Red Team.
 
-**Client initialization:** `provider.Configure()` resolves config, creates SDK clients. `ProviderData` struct is passed to all resources/data sources via `req.ProviderData`.
+**Client initialization:** `provider.Configure()` resolves shared defaults and nested product endpoints. Each product constructs its SDK client; opaque product-owned slots are passed via `req.ProviderData`.
 
 ## Conventions
 
@@ -67,7 +60,7 @@ internal/provider/
 - All data sources implement `datasource.DataSource`
 - Test files: `*_test.go` alongside source, use `testAccProtoV6ProviderFactories`
 - Acceptance tests gated by `TF_ACC=1` env var
-- Resource naming: `prisma-airs_<resource>` (e.g., `prisma-airs_security_profile`)
+- Resource naming: `prisma-airs_<product>_<resource>` (e.g., `prisma-airs_runtime_security_profile`)
 - Schema field naming: snake_case matching Terraform conventions
 - SDK model fields mapped to `types.String`, `types.Bool`, `types.Int64`, etc.
 

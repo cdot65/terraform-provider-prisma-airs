@@ -1,6 +1,6 @@
 # Configuration
 
-Use one OAuth identity per provider configuration. Credentials are shared across Management, Model Security, and Red Team clients; API endpoint overrides remain service-specific.
+Use one OAuth identity per provider configuration. Credentials are shared across AI Runtime Security, AI Supply Chain Security, and AI Red Teaming clients; API endpoint overrides remain service-specific.
 
 ## Environment configuration
 
@@ -33,7 +33,7 @@ provider "prisma-airs" {
 }
 ```
 
-Explicit attributes override the corresponding environment variables. The provider accepts a common `token_endpoint` and separate management, Model Security, and Red Team API endpoints. Leave overrides unset to use SDK defaults; the [configuration reference](../reference/provider-configuration.md) lists their exact names.
+Explicit attributes override the corresponding environment variables. The provider accepts a common `token_endpoint` and separate Runtime Security, Supply Chain Security, and Red Teaming API endpoints. Leave overrides unset to use SDK defaults; the [configuration reference](../reference/provider-configuration.md) lists their exact names.
 
 ## Separate tenants
 
@@ -60,7 +60,7 @@ provider "prisma-airs" {
   tsg_id        = var.second_tsg_id
 }
 
-resource "prisma-airs_model_security_group" "second" {
+resource "prisma-airs_supply_chain_security_group" "second" {
   provider    = prisma-airs.second
   name        = "second-tenant-models"
   source_type = "HUGGING_FACE"

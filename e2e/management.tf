@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 
 # --- Security Profile ---
-resource "prisma-airs_security_profile" "test" {
+resource "prisma-airs_runtime_security_profile" "test" {
   profile_name = "${local.prefix}-profile"
 
   ai_security_profile {
@@ -27,7 +27,7 @@ resource "prisma-airs_security_profile" "test" {
 }
 
 # --- Custom Topic ---
-resource "prisma-airs_custom_topic" "test" {
+resource "prisma-airs_runtime_custom_topic" "test" {
   topic_name  = "${local.prefix}-topic"
   description = "E2E test custom topic for content detection"
   examples = [
@@ -40,10 +40,10 @@ resource "prisma-airs_custom_topic" "test" {
 # Management API Data Sources
 # ---------------------------------------------------------------------------
 
-data "prisma-airs_dlp_profiles" "all" {
+data "prisma-airs_runtime_dlp_profiles" "all" {
   limit = 10
 }
 
-data "prisma-airs_deployment_profiles" "all" {
+data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }

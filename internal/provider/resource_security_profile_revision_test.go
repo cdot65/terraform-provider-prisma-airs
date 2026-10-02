@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -62,7 +63,7 @@ func TestAccSecurityProfileResource_revisionsAndRename(t *testing.T) {
 	client := accMgmtClient(t)
 	name := "tf-acc-rev-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
 	newName := name + "-new"
-	const addr = "prisma-airs_security_profile.test"
+	const addr = "prisma-airs_runtime_security_profile.test"
 	var current idRecorder
 	var first, expectedBefore string
 	t.Cleanup(func() {
@@ -228,9 +229,9 @@ func TestAccSecurityProfileResource_richPolicy(t *testing.T) {
 	fmt.Printf("BORROWED fixture=dlp-profile id=%s read-only=true\n", dlp.ID)
 	name := "tf-acc-rich-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
 	accProfileCleanup(t, client, name)
-	const addr = "prisma-airs_security_profile.test"
+	const addr = "prisma-airs_runtime_security_profile.test"
 	config := func(action string) string {
-		return fmt.Sprintf(`resource "prisma-airs_security_profile" "test" {
+		return fmt.Sprintf(`resource "prisma-airs_runtime_security_profile" "test" {
  profile_name = %q
  ai_security_profile {
   latency { max_inline_latency = 5 }
@@ -276,7 +277,7 @@ func TestAccSecurityProfileResource_richPolicy(t *testing.T) {
 	switchedReference = switchedReference[:dlpStart] + suffix
 
 	check := resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "ai_security_profile.0.data_protection.data_leak_detection.mask_data_inline", "false"), resource.TestCheckResourceAttr(addr, "ai_security_profile.0.latency.max_inline_latency", "5"))
-	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
+	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_runtime_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
 		revs, err := accProfileRevisions(ctx, client, name)
 		return len(revs) == 0, err
 	}), Steps: []resource.TestStep{

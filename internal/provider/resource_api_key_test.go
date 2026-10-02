@@ -4,14 +4,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
-	"strings"
-	"testing"
 )
 
 func accKeyInputs(t *testing.T, client *airsruntime.Client) (string, string) {
@@ -49,7 +50,7 @@ func accKeyInputs(t *testing.T, client *airsruntime.Client) (string, string) {
 	return code, creator
 }
 func testAccApiKeyConfig(name, app, code, creator string, interval int) string {
-	return fmt.Sprintf(`resource "prisma-airs_api_key" "test" {
+	return fmt.Sprintf(`resource "prisma-airs_runtime_api_key" "test" {
  api_key_name = %q
  auth_code = %q
  cust_app = %q
@@ -65,7 +66,7 @@ func TestAccApiKeyResource_lifecycle(t *testing.T) {
 	client := accMgmtClient(t)
 	code, creator := accKeyInputs(t, client)
 	name := "tf-acc-key-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
-	const addr = "prisma-airs_api_key.test"
+	const addr = "prisma-airs_runtime_api_key.test"
 	var secret string
 	config := testAccApiKeyConfig(name, name, code, creator, 1)
 	checkSecret := func(s *terraform.State) error {
@@ -112,7 +113,7 @@ func TestAccApiKeyResource_lifecycle(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error {
 			ctx, cancel := accCtx()
 			defer cancel()
-			if err := destroyCheck("prisma-airs_api_key", "api_key_id", func(ctx context.Context, id string) (bool, error) {
+			if err := destroyCheck("prisma-airs_runtime_api_key", "api_key_id", func(ctx context.Context, id string) (bool, error) {
 				for offset := 0; ; {
 					page, err := client.ApiKeys.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
 					if err != nil {

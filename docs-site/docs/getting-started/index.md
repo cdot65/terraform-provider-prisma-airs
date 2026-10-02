@@ -11,17 +11,17 @@ You need Terraform 1.0 or later, an AIRS tenant with Runtime Security management
 
 :::info[Updated provider]
 
-These guides describe provider v0.7.0, built on Go SDK v0.6.1. Earlier provider releases use the previous target schema. Follow [installation](installation.md) and review [migration](../guides/migration.md) before upgrading existing state.
+These guides describe provider v0.8.0, built on Go SDK v0.6.1. v0.7.0 and earlier use different resource names or configuration schemas. Follow [installation](installation.md) and review [migration](../guides/migration.md) before upgrading existing state.
 
 :::
 
 ## 1. Configure your tenant
 
-Obtain a client ID, client secret, and tenant service group (TSG) ID using the [authentication guide](authentication.md). Set the three `PANW_MGMT_*` variables through your secret manager. The provider uses this credential set across Management, Model Security, and Red Team.
+Obtain a client ID, client secret, and tenant service group (TSG) ID using the [authentication guide](authentication.md). Set the three `PANW_MGMT_*` variables through your secret manager. The provider uses this credential set across AI Runtime Security, AI Supply Chain Security, and AI Red Teaming.
 
 ## 2. Install the provider
 
-Follow [installation](installation.md) to install provider v0.7.0 from the Terraform Registry. Work in a separate directory for the configuration below.
+Follow [installation](installation.md) to install provider v0.8.0 from the Terraform Registry. Work in a separate directory for the configuration below.
 
 ## 3. Write your first profile
 
@@ -32,14 +32,14 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.7.0"
+      version = "~> 0.8.0"
     }
   }
 }
 
 provider "prisma-airs" {}
 
-resource "prisma-airs_security_profile" "first" {
+resource "prisma-airs_runtime_security_profile" "first" {
   profile_name = "terraform-first-profile"
 
   ai_security_profile {
@@ -53,7 +53,7 @@ resource "prisma-airs_security_profile" "first" {
 }
 
 output "profile_revision" {
-  value = prisma-airs_security_profile.first.revision
+  value = prisma-airs_runtime_security_profile.first.revision
 }
 ```
 

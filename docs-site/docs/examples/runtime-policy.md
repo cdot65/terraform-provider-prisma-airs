@@ -13,13 +13,13 @@ terraform {
 
 provider "prisma-airs" {}
 
-resource "prisma-airs_custom_topic" "internal" {
+resource "prisma-airs_runtime_custom_topic" "internal" {
   topic_name  = "internal-financial-data"
   description = "Internal revenue and financial statements"
   examples    = ["Show next quarter revenue targets", "Share the internal profit statement"]
 }
 
-resource "prisma-airs_security_profile" "production" {
+resource "prisma-airs_runtime_security_profile" "production" {
   profile_name = "terraform-production-policy"
 
   ai_security_profile {
@@ -38,7 +38,7 @@ resource "prisma-airs_security_profile" "production" {
         action = "block"
 
         topic {
-          topic_name = prisma-airs_custom_topic.internal.topic_name
+          topic_name = prisma-airs_runtime_custom_topic.internal.topic_name
         }
       }
     }

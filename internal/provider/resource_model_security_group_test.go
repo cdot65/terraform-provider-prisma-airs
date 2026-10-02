@@ -3,10 +3,11 @@ package provider_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -16,12 +17,12 @@ func TestAccModelSecurityGroupResource_lifecycle(t *testing.T) {
 	testAccPreCheck(t)
 	client := accModelSecClient(t)
 	name := "tf-acc-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
-	const addr = "prisma-airs_model_security_group.test"
+	const addr = "prisma-airs_supply_chain_security_group.test"
 	var rec idRecorder
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy: destroyCheck("prisma-airs_model_security_group", "uuid", func(ctx context.Context, id string) (bool, error) {
+		CheckDestroy: destroyCheck("prisma-airs_supply_chain_security_group", "uuid", func(ctx context.Context, id string) (bool, error) {
 			group, err := client.SecurityGroups.Get(ctx, id)
 			if err == nil {
 				return group.IsTombstone, nil
@@ -69,7 +70,7 @@ func TestAccModelSecurityGroupResource_lifecycle(t *testing.T) {
 
 func testAccModelSecurityGroupConfig(name, description string) string {
 	return fmt.Sprintf(`
-resource "prisma-airs_model_security_group" "test" {
+resource "prisma-airs_supply_chain_security_group" "test" {
   name        = %[1]q
   description = %[2]q
   source_type = "HUGGING_FACE"
@@ -90,12 +91,12 @@ func TestAccModelSecurityGroupResource_omittedDescriptionAndReplacement(t *testi
 	client := accModelSecClient(t)
 	name := "tf-acc-null-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
 	config := func(source string) string {
-		return fmt.Sprintf(`resource "prisma-airs_model_security_group" "test" {
+		return fmt.Sprintf(`resource "prisma-airs_supply_chain_security_group" "test" {
  name = %q
  source_type = %q
 }`, name, source)
 	}
-	const addr = "prisma-airs_model_security_group.test"
+	const addr = "prisma-airs_supply_chain_security_group.test"
 	var prior idRecorder
 	checkPriorTombstone := func(_ *terraform.State) error {
 		ctx, cancel := accCtx()
@@ -107,11 +108,11 @@ func TestAccModelSecurityGroupResource_omittedDescriptionAndReplacement(t *testi
 		if !group.IsTombstone {
 			return fmt.Errorf("prior source group remains active")
 		}
-		fmt.Printf("CLEANUP resource=prisma-airs_model_security_group id=%s outcome=tombstoned confirmed=true\n", prior.value)
+		fmt.Printf("CLEANUP resource=prisma-airs_supply_chain_security_group id=%s outcome=tombstoned confirmed=true\n", prior.value)
 		return nil
 	}
 
-	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_model_security_group", "uuid", func(ctx context.Context, id string) (bool, error) {
+	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_supply_chain_security_group", "uuid", func(ctx context.Context, id string) (bool, error) {
 		group, err := client.SecurityGroups.Get(ctx, id)
 		if err == nil {
 			return group.IsTombstone, nil

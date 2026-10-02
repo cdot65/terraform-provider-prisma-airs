@@ -10,6 +10,8 @@ import tempfile
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
 DESTINATION = SITE / 'docs/reference/generated'
+CATALOG = SITE / 'product-catalog.json'
+INVENTORY = SITE / 'docs/reference/index.md'
 
 
 def provider_schema():
@@ -24,6 +26,51 @@ def provider_schema():
         env = dict(os.environ, TF_CLI_CONFIG_FILE=str(config), TF_IN_AUTOMATION='1')
         result = subprocess.run(['terraform', 'providers', 'schema', '-json'], cwd=work, env=env, capture_output=True, text=True, check=True)
         return json.loads(result.stdout)['provider_schemas']['registry.terraform.io/cdot65/prisma-airs']
+
+
+def product_catalog(schema):
+    result = subprocess.run(['go', 'run', './cmd/product-catalog'], cwd=ROOT,
+                            env=dict(os.environ, GOPRIVATE='github.com/cdot65/*'),
+                            capture_output=True, text=True, check=True)
+    catalog = json.loads(result.stdout)
+    owned = {'resource_schemas': {}, 'data_source_schemas': {}}
+    ids = set()
+    for product in catalog:
+        if product['id'] in ids:
+            raise SystemExit('Duplicate product ID: ' + product['id'])
+        ids.add(product['id'])
+        if not product['implemented'] and (product['resources'] or product['data_sources'] or product['endpoints']):
+            raise SystemExit('Unimplemented products cannot register types or settings.')
+        for key, group in [('resources', 'resource_schemas'), ('data_sources', 'data_source_schemas')]:
+            for entry in product[key]:
+                name = entry['name']
+                if name in owned[group]:
+                    raise SystemExit('Duplicate product ownership: ' + name)
+                guide = SITE / 'docs' / (entry['guide'] + '.md')
+                if not guide.is_file():
+                    raise SystemExit('Missing lifecycle guide: ' + str(guide))
+                owned[group][name] = (entry, product)
+    for group, entries in owned.items():
+        if set(entries) != set(schema[group]):
+            raise SystemExit('Product catalog and built schema disagree: ' + group)
+    return catalog, owned
+
+
+def inventory(catalog):
+    lines = ['---', 'title: Provider reference', 'slug: /reference', '---', '',
+             'Product ownership is generated from the provider registrations. Lifecycle guides explain imports and updates; exact schemas list types, nested blocks, and sensitive fields.', '',
+             'See [provider configuration](provider-configuration.md), [environment variables](environment-variables.md), and the [provider schema](generated/provider.md).', '']
+    for product in catalog:
+        lines += ['## ' + product['label'], '']
+        if not product['implemented']:
+            lines += ['Not yet implemented. There are no Gateway resources, data sources, or configuration settings in this release. See [AI Gateway status](../products/gateway.md).', '']
+            continue
+        lines += ['| Terraform type | Kind | Guide | Schema |', '| --- | --- | --- | --- |']
+        for key, kind in [('resources', 'Resource'), ('data_sources', 'Data source')]:
+            for entry in product[key]:
+                lines.append(f"| `{entry['name']}` | {kind} | [Lifecycle](../{entry['guide']}.md) | [Attributes](generated/{entry['name']}.md) |")
+        lines.append('')
+    return '\n'.join(lines).rstrip() + '\n'
 
 
 def type_name(value):
@@ -74,14 +121,12 @@ def render(name, schema, kind):
     return '\n'.join(lines).rstrip() + '\n'
 
 
-def registry_render(name, schema, kind):
-    short = name.removeprefix('prisma-airs_')
-    folder = 'resources' if kind == 'resource' else 'data-sources'
-    guide = SITE / 'docs' / folder / (short.replace('_', '-') + '.md')
+def registry_render(name, schema, kind, entry, product):
+    guide = SITE / 'docs' / (entry['guide'] + '.md')
     text = registry_content(guide)
     text = re.sub(r'^# .*\n', '', text, count=1)
     heading = f'# {name} {kind.title()}'
-    lines = [f'---\npage_title: "{name} ({kind.title()})"\n---', '', heading, '', text.strip(), '', '## Schema', '']
+    lines = [f'---\npage_title: "{name} ({kind.title()})"\nsubcategory: "{product["label"]}"\n---', '', heading, '', text.strip(), '', '## Schema', '']
     lines += block_lines(schema['block'], depth=3)
     return '\n'.join(lines).rstrip() + '\n'
 
@@ -115,6 +160,8 @@ def main():
     args.add_argument('--check', action='store_true')
     check = args.parse_args().check
     schema = provider_schema()
+    catalog, owned = product_catalog(schema)
+    derived = {CATALOG: json.dumps(catalog, indent=2) + '\n', INVENTORY: inventory(catalog)}
     expected = {'provider.md': render('Provider', schema['provider'], 'provider')}
     for group, kind in [('resource_schemas', 'resource'), ('data_source_schemas', 'data source')]:
         for name, row in sorted(schema[group].items()):
@@ -122,12 +169,15 @@ def main():
     registry = {}
     for group, kind, folder in [('resource_schemas', 'resource', 'resources'), ('data_source_schemas', 'data source', 'data-sources')]:
         for name, row in sorted(schema[group].items()):
-            registry[ROOT / 'docs' / folder / (name.removeprefix('prisma-airs_') + '.md')] = registry_render(name, row, kind)
+            registry[ROOT / 'docs' / folder / (name.removeprefix('prisma-airs_') + '.md')] = registry_render(name, row, kind, *owned[group][name])
     for guide in sorted((SITE / 'docs/guides').glob('*.md')):
         title = next(line.removeprefix('# ') for line in guide.read_text().splitlines() if line.startswith('# '))
         registry[ROOT / 'docs/guides' / guide.name] = '---\npage_title: ' + json.dumps(title) + '\n---\n\n' + registry_content(guide).strip() + '\n'
     registry[ROOT / 'docs/index.md'] = '---\npage_title: "Prisma AIRS Provider"\n---\n\n' + registry_content(SITE / 'docs/index.md').strip() + '\n'
     if check:
+        stale = [str(path.relative_to(ROOT)) for path, content in derived.items() if not path.is_file() or path.read_text() != content]
+        if stale:
+            raise SystemExit('Stale product catalog: ' + ', '.join(stale))
         actual_registry = set((ROOT / "docs").rglob("*.md"))
         if actual_registry != set(registry):
             raise SystemExit("Registry documentation has missing or extra pages. Run make generate and keep authored content in docs-site/docs/.")
@@ -143,6 +193,11 @@ def main():
             raise SystemExit('Stale schema pages: ' + ', '.join(stale))
         print(f'Checked {len(expected)} exact schema pages against the built provider.')
     else:
+        for path, content in derived.items():
+            path.write_text(content)
+        for path in (ROOT / 'docs').rglob('*.md'):
+            if path not in registry:
+                path.unlink()
         for path, content in registry.items():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)

@@ -15,7 +15,7 @@ Destroy deletes every revision under the currently managed name, including histo
 ## Creating a Profile
 
 ```hcl
-resource "prisma-airs_security_profile" "production" {
+resource "prisma-airs_runtime_security_profile" "production" {
   profile_name = "production-ai-security"
 
   ai_security_profile {
@@ -60,7 +60,7 @@ resource "prisma-airs_security_profile" "production" {
 Create custom detection topics and reference them in profiles:
 
 ```hcl
-resource "prisma-airs_custom_topic" "financial" {
+resource "prisma-airs_runtime_custom_topic" "financial" {
   topic_name  = "financial-data"
   description = "Detects discussions about internal financial data"
 
@@ -70,7 +70,7 @@ resource "prisma-airs_custom_topic" "financial" {
   ]
 }
 
-resource "prisma-airs_security_profile" "with_topics" {
+resource "prisma-airs_runtime_security_profile" "with_topics" {
   profile_name = "finance-team-profile"
 
   ai_security_profile {
@@ -89,7 +89,7 @@ resource "prisma-airs_security_profile" "with_topics" {
         action = "block"
 
         topic {
-          topic_name = prisma-airs_custom_topic.financial.topic_name
+          topic_name = prisma-airs_runtime_custom_topic.financial.topic_name
         }
       }
     }
@@ -108,20 +108,20 @@ The provider automatically resolves `topic_name` to `topic_id` and `revision` â€
 API keys require a deployment profile auth code, a rotation interval, and a rotation time unit:
 
 ```hcl
-data "prisma-airs_deployment_profiles" "all" {
+data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }
 
-resource "prisma-airs_api_key" "scanner" {
+resource "prisma-airs_runtime_api_key" "scanner" {
   api_key_name           = "production-scanner-key"
-  auth_code              = data.prisma-airs_deployment_profiles.all.items[0].auth_code
+  auth_code              = data.prisma-airs_runtime_deployment_profiles.all.items[0].auth_code
   rotation_time_interval = 90
   rotation_time_unit     = "days"
   created_by             = "terraform"
 }
 
 output "api_key_value" {
-  value     = prisma-airs_api_key.scanner.api_key
+  value     = prisma-airs_runtime_api_key.scanner.api_key
   sensitive = true
 }
 ```
@@ -131,10 +131,10 @@ Deleting an API key can also delete its associated customer app. Capture the one
 ## Listing DLP Profiles
 
 ```hcl
-data "prisma-airs_dlp_profiles" "available" {}
+data "prisma-airs_runtime_dlp_profiles" "available" {}
 
 output "dlp_profiles" {
-  value = data.prisma-airs_dlp_profiles.available.items[*].profile_name
+  value = data.prisma-airs_runtime_dlp_profiles.available.items[*].profile_name
 }
 ```
 
@@ -143,7 +143,7 @@ output "dlp_profiles" {
 Control URL filtering and malicious code detection:
 
 ```hcl
-resource "prisma-airs_security_profile" "app_secured" {
+resource "prisma-airs_runtime_security_profile" "app_secured" {
   profile_name = "app-protection-enabled"
 
   ai_security_profile {
@@ -185,7 +185,7 @@ For more granular URL category control, use `allow_url_category`, `block_url_cat
 Control which database operations AI models can perform:
 
 ```hcl
-resource "prisma-airs_security_profile" "db_protected" {
+resource "prisma-airs_runtime_security_profile" "db_protected" {
   profile_name = "database-security-enabled"
 
   ai_security_profile {

@@ -18,9 +18,9 @@ make generate
 make docs-check
 ```
 
-`make generate` builds the provider before running the safe schema generator through `go generate`. It writes exact schema pages in `docs-site/docs/reference/generated/` and the Registry documentation in `docs/`; authored guides remain separate. Direct `go generate` requires an already-built current provider.
+`make generate` builds the provider before running the safe schema generator through `go generate`. It derives `docs-site/product-catalog.json` and the product reference inventory from Go registrations, then writes exact schema pages in `docs-site/docs/reference/generated/` and the Registry documentation in `docs/`; authored guides remain separate. Direct `go generate` requires an already-built current provider.
 
-The schema generator uses Terraform's provider-schema protocol with a temporary development override. It needs Terraform and the built provider; it performs no live API calls. `--check` detects missing, extra, or stale generated pages.
+The schema generator uses Terraform's provider-schema protocol with a temporary development override. It needs Terraform and the built provider; it performs no live API calls. `--check` detects missing, extra, or stale generated pages and catalog metadata. Every built Terraform type must have exactly one implemented product owner and an existing lifecycle guide. Docusaurus navigation and Registry subcategories use that catalog. Keep the reference inventory generated; edit product definitions or lifecycle guides instead.
 
 Examples described as complete must include a provider requirement and all variable declarations. Add complete examples to the offline Terraform validation fixtures when extending the guide catalog. Live lifecycle evidence remains in [SDK upgrade verification](sdk-upgrade-verification.md).
 

@@ -3,10 +3,11 @@ package provider_test
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"

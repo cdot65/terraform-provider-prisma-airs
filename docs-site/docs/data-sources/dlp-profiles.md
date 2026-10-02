@@ -1,14 +1,14 @@
-# prisma-airs_dlp_profiles
+# prisma-airs_runtime_dlp_profiles
 
 Reads DLP data profiles from Prisma AIRS Management API.
 
 ## Example Usage
 
 ```hcl
-data "prisma-airs_dlp_profiles" "all" {}
+data "prisma-airs_runtime_dlp_profiles" "all" {}
 
 output "profile_count" {
-  value = data.prisma-airs_dlp_profiles.all.total_count
+  value = data.prisma-airs_runtime_dlp_profiles.all.total_count
 }
 ```
 
@@ -27,4 +27,4 @@ output "profile_count" {
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_dlp_profiles.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_runtime_dlp_profiles.md) for all nested fields, types, and sensitivity flags.

@@ -3,10 +3,10 @@ name: Documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'docs-site/**', 'internal/provider/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
+    paths: ['docs/**', 'docs-site/**', 'internal/**', 'cmd/product-catalog/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
   pull_request:
     branches: [main]
-    paths: ['docs/**', 'docs-site/**', 'internal/provider/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
+    paths: ['docs/**', 'docs-site/**', 'internal/**', 'cmd/product-catalog/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
   workflow_dispatch:
 
 permissions:

@@ -1,16 +1,16 @@
-# prisma-airs_deployment_profiles
+# prisma-airs_runtime_deployment_profiles
 
 Reads deployment profiles from Prisma AIRS Management API.
 
 ## Example Usage
 
 ```hcl
-data "prisma-airs_deployment_profiles" "all" {
+data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }
 
 output "profiles" {
-  value = [for p in data.prisma-airs_deployment_profiles.all.items : p.profile_name]
+  value = [for p in data.prisma-airs_runtime_deployment_profiles.all.items : p.profile_name]
 }
 ```
 
@@ -30,4 +30,4 @@ output "profiles" {
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_deployment_profiles.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_runtime_deployment_profiles.md) for all nested fields, types, and sensitivity flags.

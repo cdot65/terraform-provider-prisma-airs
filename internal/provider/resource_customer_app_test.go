@@ -3,11 +3,12 @@ package provider_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"testing"
 )
 
 func TestAccCustomerAppResource_lifecycle(t *testing.T) {
@@ -37,13 +38,13 @@ func TestAccCustomerAppResource_lifecycle(t *testing.T) {
 			t.Error("disposable application cleanup unconfirmed")
 		}
 	})
-	const addr = "prisma-airs_customer_app.test"
+	const addr = "prisma-airs_runtime_customer_app.test"
 	config := func(model string) string {
 		configuredModel := fmt.Sprintf("model_name = %q", model)
 		if model == "" {
 			configuredModel = ""
 		}
-		return fmt.Sprintf(`resource "prisma-airs_customer_app" "test" {
+		return fmt.Sprintf(`resource "prisma-airs_runtime_customer_app" "test" {
  app_name = %q
  %s
  cloud_provider = "aws"
@@ -51,7 +52,7 @@ func TestAccCustomerAppResource_lifecycle(t *testing.T) {
 }`, name, configuredModel)
 	}
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy: destroyCheck("prisma-airs_customer_app", "app_name", func(ctx context.Context, name string) (bool, error) {
+		CheckDestroy: destroyCheck("prisma-airs_runtime_customer_app", "app_name", func(ctx context.Context, name string) (bool, error) {
 			_, err := accCustomerApp(ctx, client, name)
 			return goneOnNotFound(err)
 		}),
@@ -84,8 +85,8 @@ func TestAccCustomerAppResource_remoteDeletion(t *testing.T) {
 			t.Error("key cleanup failed")
 		}
 	})
-	const addr = "prisma-airs_customer_app.test"
-	config := fmt.Sprintf(`resource "prisma-airs_customer_app" "test" {app_name = %q}`, name)
+	const addr = "prisma-airs_runtime_customer_app.test"
+	config := fmt.Sprintf(`resource "prisma-airs_runtime_customer_app" "test" {app_name = %q}`, name)
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, Steps: []resource.TestStep{
 		{Config: config, ResourceName: addr, ImportState: true, ImportStateId: name, ImportStatePersist: true},
 		{PreConfig: func() {

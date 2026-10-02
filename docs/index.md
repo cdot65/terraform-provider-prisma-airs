@@ -4,19 +4,20 @@ page_title: "Prisma AIRS Provider"
 
 # Prisma AIRS Terraform Provider
 
-Terraform provider for Palo Alto Networks **Prisma AI Runtime Security (AIRS)** — manage AI security infrastructure as code.
+Terraform provider for Palo Alto Networks **Prisma AIRS** — manage AI security infrastructure as code.
 
-## Service Domains
+## Products
 
-| Domain | Resources | Description |
-|--------|-----------|-------------|
-| **Management** | Profiles, Topics, API Keys, Apps | Security profile and configuration CRUD |
-| **Model Security** | Groups, Rules | Security group management and rules |
-| **AI Red Teaming** | Targets, Custom Prompt Sets | Red team target and prompt set management |
+The [product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/reference/) derives available resources and data sources from the provider registrations:
+
+- **AI Runtime Security:** profiles, custom topics, API keys, customer apps, DLP profiles, and deployment profiles.
+- **AI Red Teaming:** targets and custom prompt sets.
+- **AI Gateway:** not yet implemented; no configuration settings or Terraform types in this release.
+- **AI Supply Chain Security:** Model Security groups and the rule catalog.
 
 ## Key Features
 
-- **AIRS management coverage** — resources and data sources for management, model security, and red team domains
+- **AIRS management coverage** — resources and data sources for the implemented products
 - **Built on prisma-airs-go** — uses the project Go SDK for API interactions
 - **Terraform Plugin Framework** — modern provider architecture with typed schemas
 - **OAuth2 authentication** — client credentials grant for all APIs
@@ -24,9 +25,9 @@ Terraform provider for Palo Alto Networks **Prisma AI Runtime Security (AIRS)** 
 
 ## Architecture
 
-Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](https://cdot65.github.io/terraform-provider-prisma-airs/development/architecture/) for the service boundaries.
+Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](https://cdot65.github.io/terraform-provider-prisma-airs/development/architecture/) for the product modules.
 
-These guides describe provider v0.7.0 built on Go SDK v0.6.1. See [Getting started](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/) and [Migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) for the installation and state transition.
+These guides describe provider v0.8.0 built on Go SDK v0.6.1. See [Getting started](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/) and [Migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) for the installation and state transition.
 
 ## Quick Links
 
@@ -42,7 +43,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.7.0"
+      version = "~> 0.8.0"
     }
   }
 }
@@ -51,3 +52,25 @@ provider "prisma-airs" {}
 ```
 
 Configure `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` through your secret manager. See the [provider schema](https://cdot65.github.io/terraform-provider-prisma-airs/reference/generated/provider/) for every argument.
+
+## Product endpoint configuration
+
+OAuth credentials (`client_id`, sensitive `client_secret`, and `tsg_id`) and `token_endpoint` are shared. Endpoint overrides live in optional product blocks; omit them for environment/SDK defaults.
+
+```hcl
+provider "prisma-airs" {
+  runtime {
+    mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aisec"
+  }
+  red_team {
+    data_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/data-plane"
+    mgmt_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/mgmt-plane"
+  }
+  supply_chain {
+    data_endpoint = "https://api.sase.paloaltonetworks.com/aims/data"
+    mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aims/mgmt"
+  }
+}
+```
+
+There is no Gateway block until Gateway functionality ships. See [product configuration](https://cdot65.github.io/terraform-provider-prisma-airs/reference/provider-configuration/) for environment mappings and [migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before upgrading existing state.

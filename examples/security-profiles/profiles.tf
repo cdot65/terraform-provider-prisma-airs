@@ -11,7 +11,7 @@
 # agent abuse, and malicious URLs. Includes DLP with IP address detection
 # and URL category filtering for high-risk categories.
 
-resource "prisma-airs_security_profile" "high_security" {
+resource "prisma-airs_runtime_security_profile" "high_security" {
   profile_name = "${var.profile_prefix}InfoSec - AI Firewall - Strict"
 
   ai_security_profile {
@@ -168,7 +168,7 @@ resource "prisma-airs_security_profile" "high_security" {
 # toxic content through, masks data inline, and uses topic guardrails to
 # allow recipe generation while blocking ASCII art abuse.
 
-resource "prisma-airs_security_profile" "truffles_agent" {
+resource "prisma-airs_runtime_security_profile" "truffles_agent" {
   profile_name = "${var.profile_prefix}Truffles - Agent Security - Moderate"
 
   ai_security_profile {
@@ -259,7 +259,7 @@ resource "prisma-airs_security_profile" "truffles_agent" {
 # toxic content, uses topic guardrails to permit recipe discussions,
 # and blocks prompt injection.
 
-resource "prisma-airs_security_profile" "recipe_extractor" {
+resource "prisma-airs_runtime_security_profile" "recipe_extractor" {
   profile_name = "${var.profile_prefix}Truffles - Recipe Extractor - Moderate"
 
   ai_security_profile {
@@ -325,7 +325,7 @@ resource "prisma-airs_security_profile" "recipe_extractor" {
 # threats with strict toxic content filtering. Includes malicious code
 # detection via app protection.
 
-resource "prisma-airs_security_profile" "cursor_ide" {
+resource "prisma-airs_runtime_security_profile" "cursor_ide" {
   profile_name = "${var.profile_prefix}InfoSec - Code Assistant - Strict"
 
   ai_security_profile {
@@ -403,7 +403,7 @@ resource "prisma-airs_security_profile" "cursor_ide" {
 # are not yet supported by the SDK/provider. Those must be set manually
 # or added in a future SDK release.
 
-resource "prisma-airs_security_profile" "slack_moderation" {
+resource "prisma-airs_runtime_security_profile" "slack_moderation" {
   profile_name = "${var.profile_prefix}OpenClaw - Slack Moderation - Moderate"
 
   ai_security_profile {
@@ -438,7 +438,7 @@ resource "prisma-airs_security_profile" "slack_moderation" {
 # Topic guardrails allow specific safe topics (Star Wars debates) while
 # blocking everything else by default.
 
-resource "prisma-airs_security_profile" "hipaa_compliance" {
+resource "prisma-airs_runtime_security_profile" "hipaa_compliance" {
   profile_name = "${var.profile_prefix}OpenClaw - HIPAA Compliance - Strict"
 
   ai_security_profile {

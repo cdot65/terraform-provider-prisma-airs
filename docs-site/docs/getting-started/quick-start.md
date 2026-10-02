@@ -5,7 +5,7 @@ For a complete installation-to-cleanup walkthrough, use [Getting started](index.
 ## Security profile
 
 ```hcl
-resource "prisma-airs_security_profile" "example" {
+resource "prisma-airs_runtime_security_profile" "example" {
   profile_name = "my-ai-security-profile"
 
   ai_security_profile {

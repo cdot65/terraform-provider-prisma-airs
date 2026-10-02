@@ -1,4 +1,4 @@
-# prisma-airs_customer_app
+# prisma-airs_runtime_customer_app
 
 Manages an existing customer application in Prisma AIRS Management API.
 
@@ -13,13 +13,13 @@ Customer apps are created externally (via the AIRS console or when applications 
 ### Import an existing app
 
 ```bash
-terraform import prisma-airs_customer_app.chatbot customer-support-chatbot
+terraform import prisma-airs_runtime_customer_app.chatbot customer-support-chatbot
 ```
 
 ### Manage the imported app
 
 ```hcl
-resource "prisma-airs_customer_app" "chatbot" {
+resource "prisma-airs_runtime_customer_app" "chatbot" {
   app_name       = "customer-support-chatbot"
   model_name     = "gpt-4"
   cloud_provider = "aws"
@@ -51,7 +51,7 @@ resource "prisma-airs_customer_app" "chatbot" {
 Customer apps are imported by app name:
 
 ```bash
-terraform import prisma-airs_customer_app.chatbot <app_name>
+terraform import prisma-airs_runtime_customer_app.chatbot <app_name>
 ```
 
 ## Service compatibility
@@ -66,4 +66,4 @@ Renaming an imported application is rejected during planning. Establish the desi
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_customer_app.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_runtime_customer_app.md) for all nested fields, types, and sensitivity flags.

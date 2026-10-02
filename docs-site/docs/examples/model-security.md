@@ -13,16 +13,16 @@ terraform {
 
 provider "prisma-airs" {}
 
-resource "prisma-airs_model_security_group" "models" {
+resource "prisma-airs_supply_chain_security_group" "models" {
   name        = "terraform-models"
   description = "Models managed through Terraform"
   source_type = "HUGGING_FACE"
 }
 
-data "prisma-airs_model_security_rules" "catalog" {}
+data "prisma-airs_supply_chain_security_rules" "catalog" {}
 
 output "rule_names" {
-  value = data.prisma-airs_model_security_rules.catalog.rules[*].name
+  value = data.prisma-airs_supply_chain_security_rules.catalog.rules[*].name
 }
 ```
 
