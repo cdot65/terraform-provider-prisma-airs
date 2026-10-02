@@ -15,7 +15,7 @@ func TestAccDeploymentProfilesDataSource_basic(t *testing.T) {
 			{
 				Config: testAccDeploymentProfilesConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.prisma-airs_deployment_profiles.test", "total_count"),
+					resource.TestCheckResourceAttrSet("data.prisma-airs_runtime_deployment_profiles.test", "total_count"),
 				),
 			},
 		},
@@ -24,6 +24,6 @@ func TestAccDeploymentProfilesDataSource_basic(t *testing.T) {
 
 func testAccDeploymentProfilesConfig() string {
 	return `
-data "prisma-airs_deployment_profiles" "test" {}
+data "prisma-airs_runtime_deployment_profiles" "test" {}
 `
 }

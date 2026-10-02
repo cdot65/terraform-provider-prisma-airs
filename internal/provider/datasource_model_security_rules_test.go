@@ -15,7 +15,7 @@ func TestAccModelSecurityRulesDataSource_basic(t *testing.T) {
 			{
 				Config: testAccModelSecurityRulesConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.prisma-airs_model_security_rules.test", "rules.#"),
+					resource.TestCheckResourceAttrSet("data.prisma-airs_supply_chain_security_rules.test", "rules.#"),
 				),
 			},
 		},
@@ -24,6 +24,6 @@ func TestAccModelSecurityRulesDataSource_basic(t *testing.T) {
 
 func testAccModelSecurityRulesConfig() string {
 	return `
-data "prisma-airs_model_security_rules" "test" {}
+data "prisma-airs_supply_chain_security_rules" "test" {}
 `
 }

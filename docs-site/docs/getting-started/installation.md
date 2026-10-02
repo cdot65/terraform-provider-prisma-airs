@@ -6,14 +6,14 @@ Use Terraform 1.0 or later. Building the provider from source requires Go 1.25.6
 
 ## Install from the Terraform Registry
 
-Provider v0.7.0 uses Go SDK v0.6.1 and supports the native target blocks in these guides. Review [migration](../guides/migration.md) before upgrading from v0.6.3 or earlier.
+Provider v0.8.0 uses Go SDK v0.6.1 and uses product-prefixed Terraform types and nested product endpoint blocks. Review [migration](../guides/migration.md) before upgrading from v0.7.0 or earlier.
 
 ```hcl
 terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.7.0"
+      version = "~> 0.8.0"
     }
   }
 }

@@ -7,12 +7,12 @@ The provider reads these environment variables when their corresponding attribut
 | `PANW_MGMT_CLIENT_ID` | `client_id` | OAuth client ID |
 | `PANW_MGMT_CLIENT_SECRET` | `client_secret` | OAuth client secret; sensitive |
 | `PANW_MGMT_TSG_ID` | `tsg_id` | Tenant service group ID |
-| `PANW_MGMT_ENDPOINT` | `mgmt_endpoint` | Management API override |
+| `PANW_MGMT_ENDPOINT` | `runtime.mgmt_endpoint` | Management API override |
 | `PANW_MGMT_TOKEN_ENDPOINT` | `token_endpoint` | Common OAuth token endpoint override |
-| `PANW_MODEL_SEC_DATA_ENDPOINT` | `model_sec_data_endpoint` | Model Security data API override |
-| `PANW_MODEL_SEC_MGMT_ENDPOINT` | `model_sec_mgmt_endpoint` | Model Security management API override |
-| `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team_data_endpoint` | Red Team data API override |
-| `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team_mgmt_endpoint` | Red Team management API override |
+| `PANW_MODEL_SEC_DATA_ENDPOINT` | `supply_chain.data_endpoint` | Supply Chain Security model data API override |
+| `PANW_MODEL_SEC_MGMT_ENDPOINT` | `supply_chain.mgmt_endpoint` | Supply Chain Security model management API override |
+| `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team.data_endpoint` | Red Team data API override |
+| `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team.mgmt_endpoint` | Red Team management API override |
 
 An explicit provider attribute takes precedence over its corresponding variable. Service-specific SDK credential prefixes do not establish separate identities through this provider. Use [aliased configurations](../getting-started/configuration.md#separate-tenants) for distinct credentials.
 

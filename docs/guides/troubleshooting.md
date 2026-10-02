@@ -8,7 +8,7 @@ Start with the error from the actual operation and confirm which provider binary
 
 | Symptom | Check |
 | --- | --- |
-| Native target block is unsupported | Select `~> 0.7.0` and run `terraform init -upgrade`; remove any development override and review migration |
+| Native target block is unsupported | Select `~> 0.8.0` and run `terraform init -upgrade`; remove any development override and review migration |
 | Management client is unavailable | Set all three `PANW_MGMT_*` credentials or explicit provider attributes |
 | No active Model Security license | Use a tenant with the required entitlement |
 | Profile name already exists | Import by name; creation does not adopt existing history |

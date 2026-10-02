@@ -15,7 +15,7 @@ func TestAccDlpProfilesDataSource_basic(t *testing.T) {
 			{
 				Config: testAccDlpProfilesConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.prisma-airs_dlp_profiles.test", "total_count"),
+					resource.TestCheckResourceAttrSet("data.prisma-airs_runtime_dlp_profiles.test", "total_count"),
 				),
 			},
 		},
@@ -24,6 +24,6 @@ func TestAccDlpProfilesDataSource_basic(t *testing.T) {
 
 func testAccDlpProfilesConfig() string {
 	return `
-data "prisma-airs_dlp_profiles" "test" {}
+data "prisma-airs_runtime_dlp_profiles" "test" {}
 `
 }

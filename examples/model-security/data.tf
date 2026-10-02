@@ -5,4 +5,4 @@
 # security posture and integrate with other tooling.
 # ---------------------------------------------------------------------------
 
-data "prisma-airs_model_security_rules" "all" {}
+data "prisma-airs_supply_chain_security_rules" "all" {}

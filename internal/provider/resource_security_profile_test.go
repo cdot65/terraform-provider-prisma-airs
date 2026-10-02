@@ -14,13 +14,13 @@ func TestAccSecurityProfileResource_lifecycle(t *testing.T) {
 	testAccPreCheck(t)
 	client := accMgmtClient(t)
 	name := "tf-acc-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
-	const addr = "prisma-airs_security_profile.test"
+	const addr = "prisma-airs_runtime_security_profile.test"
 	var rec idRecorder
 	accProfileCleanup(t, client, name)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy: destroyCheck("prisma-airs_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
+		CheckDestroy: destroyCheck("prisma-airs_runtime_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
 			revisions, err := accProfileRevisions(ctx, client, name)
 			return len(revisions) == 0, err
 		}),
@@ -72,13 +72,13 @@ func TestAccSecurityProfileResource_topicReference(t *testing.T) {
 	testAccPreCheck(t)
 	client := accMgmtClient(t)
 	suffix := acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
-	const addr = "prisma-airs_security_profile.test"
+	const addr = "prisma-airs_runtime_security_profile.test"
 
 	accProfileCleanup(t, client, "tf-acc-"+suffix)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy: destroyCheck("prisma-airs_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
+		CheckDestroy: destroyCheck("prisma-airs_runtime_security_profile", "profile_name", func(ctx context.Context, name string) (bool, error) {
 			revisions, err := accProfileRevisions(ctx, client, name)
 			return len(revisions) == 0, err
 		}),
@@ -103,7 +103,7 @@ func TestAccSecurityProfileResource_topicReference(t *testing.T) {
 
 func testAccSecurityProfileConfig(name, action string) string {
 	return fmt.Sprintf(`
-resource "prisma-airs_security_profile" "test" {
+resource "prisma-airs_runtime_security_profile" "test" {
   profile_name = %[1]q
 
   ai_security_profile {
@@ -120,13 +120,13 @@ resource "prisma-airs_security_profile" "test" {
 
 func testAccSecurityProfileTopicConfig(suffix, action string) string {
 	return fmt.Sprintf(`
-resource "prisma-airs_custom_topic" "test" {
+resource "prisma-airs_runtime_custom_topic" "test" {
   topic_name  = "tf-acc-topic-%[1]s"
   description = "acceptance topic"
   examples    = ["acceptance example"]
 }
 
-resource "prisma-airs_security_profile" "test" {
+resource "prisma-airs_runtime_security_profile" "test" {
   profile_name = "tf-acc-%[1]s"
 
   ai_security_profile {
@@ -140,7 +140,7 @@ resource "prisma-airs_security_profile" "test" {
         action = %[2]q
 
         topic {
-          topic_name = prisma-airs_custom_topic.test.topic_name
+          topic_name = prisma-airs_runtime_custom_topic.test.topic_name
         }
       }
     }

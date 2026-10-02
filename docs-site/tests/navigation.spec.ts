@@ -1,15 +1,15 @@
 import {test, expect} from '@playwright/test';
 
-const resources = ['security-profile', 'custom-topic', 'api-key', 'customer-app', 'model-security-group', 'red-team-target', 'red-team-custom-prompt-set'];
-const dataSources = ['dlp-profiles', 'deployment-profiles', 'model-security-rules'];
+import catalog from '../product-catalog.json';
+const entries = catalog.flatMap(product => [...product.resources, ...product.data_sources]);
 const routes = [
   'overview/', 'getting-started/', ...['installation', 'configuration', 'quick-start', 'authentication'].map(name => `getting-started/${name}/`),
-  ...resources.map(name => `resources/${name}/`), ...dataSources.map(name => `data-sources/${name}/`),
+  ...entries.map(entry => `${entry.guide}/`), 'products/gateway/',
   ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
   'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'repository-configurations'].map(name => `examples/${name}/`),
   'reference/', ...['provider-configuration', 'environment-variables', 'error-handling'].map(name => `reference/${name}/`),
-  'reference/generated/provider/', ...[...resources, ...dataSources].map(name => `reference/generated/prisma-airs_${name.replaceAll('-', '_')}/`),
-  ...['architecture', 'documentation', 'design-parity', 'sdk-upgrade-verification'].map(name => `development/${name}/`),
+  'reference/generated/provider/', ...entries.map(entry => `reference/generated/${entry.name}/`),
+  ...['architecture', 'documentation', 'design-parity', 'sdk-upgrade-verification', 'product-refactor-verification'].map(name => `development/${name}/`),
   'about/release-notes/', 'about/license/',
 ];
 
@@ -39,7 +39,7 @@ test('hero and all homepage paths reach provider-specific guides', async ({page}
   expect((await page.request.get(new URL(favicon!, page.url()).href)).ok()).toBe(true);
   await page.getByRole('link', {name: 'Get started →', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Getting started', exact: true})).toBeVisible();
-  await expect(page.locator('pre.language-hcl').first()).toContainText('prisma-airs_security_profile');
+  await expect(page.locator('pre.language-hcl').first()).toContainText('prisma-airs_runtime_security_profile');
   await expect(page.locator('.theme-admonition').filter({hasText: 'Updated provider'})).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -77,7 +77,7 @@ test('reference catalog exposes every native family and sensitive fields', async
   for (const family of ['openai', 'hugging_face', 'databricks', 'bedrock', 'custom', 'rest', 'streaming']) {
     await expect(page.locator(`h2#${family}`)).toBeVisible();
   }
-  await page.goto('reference/generated/prisma-airs_deployment_profiles/');
+  await page.goto('reference/generated/prisma-airs_runtime_deployment_profiles/');
   for (const field of ['profile_id', 'auth_code', 'details']) {
     await expect(page.locator('tr').filter({has: page.locator(`td:first-child code:text-is("${field}")`)})).toContainText('yes');
   }
@@ -102,3 +102,16 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 1024, height: 768},
     }
   });
 }
+
+test('product navigation agrees with implemented coverage', async ({page}) => {
+  await page.goto('reference/');
+  for (const product of catalog) {
+    await expect(page.getByRole('heading', {name: new RegExp(`^${product.label}`)})).toBeVisible();
+    await expect(page.locator('.theme-doc-sidebar-container').getByRole('button', {name: product.label, exact: true})).toBeVisible();
+    for (const entry of [...product.resources, ...product.data_sources]) {
+      await expect(page.locator('article')).toContainText(entry.name);
+    }
+  }
+  await page.goto('products/gateway/');
+  await expect(page.locator('article')).toContainText('not yet implemented');
+});

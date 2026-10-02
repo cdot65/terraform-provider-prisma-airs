@@ -1,0 +1,107 @@
+[
+  {
+    "id": "runtime",
+    "label": "AI Runtime Security",
+    "implemented": true,
+    "endpoints": [
+      {
+        "name": "mgmt_endpoint",
+        "environment": "PANW_MGMT_ENDPOINT",
+        "description": "Runtime Security management endpoint override."
+      }
+    ],
+    "resources": [
+      {
+        "name": "prisma-airs_runtime_security_profile",
+        "guide": "resources/security-profile"
+      },
+      {
+        "name": "prisma-airs_runtime_custom_topic",
+        "guide": "resources/custom-topic"
+      },
+      {
+        "name": "prisma-airs_runtime_api_key",
+        "guide": "resources/api-key"
+      },
+      {
+        "name": "prisma-airs_runtime_customer_app",
+        "guide": "resources/customer-app"
+      }
+    ],
+    "data_sources": [
+      {
+        "name": "prisma-airs_runtime_dlp_profiles",
+        "guide": "data-sources/dlp-profiles"
+      },
+      {
+        "name": "prisma-airs_runtime_deployment_profiles",
+        "guide": "data-sources/deployment-profiles"
+      }
+    ]
+  },
+  {
+    "id": "red_team",
+    "label": "AI Red Teaming",
+    "implemented": true,
+    "endpoints": [
+      {
+        "name": "data_endpoint",
+        "environment": "PANW_RED_TEAM_DATA_ENDPOINT",
+        "description": "Red Teaming data endpoint override."
+      },
+      {
+        "name": "mgmt_endpoint",
+        "environment": "PANW_RED_TEAM_MGMT_ENDPOINT",
+        "description": "Red Teaming management endpoint override."
+      }
+    ],
+    "resources": [
+      {
+        "name": "prisma-airs_red_team_target",
+        "guide": "resources/red-team-target"
+      },
+      {
+        "name": "prisma-airs_red_team_custom_prompt_set",
+        "guide": "resources/red-team-custom-prompt-set"
+      }
+    ],
+    "data_sources": []
+  },
+  {
+    "id": "gateway",
+    "label": "AI Gateway",
+    "implemented": false,
+    "endpoints": [],
+    "resources": [],
+    "data_sources": []
+  },
+  {
+    "id": "supply_chain",
+    "label": "AI Supply Chain Security",
+    "implemented": true,
+    "endpoints": [
+      {
+        "name": "data_endpoint",
+        "environment": "PANW_MODEL_SEC_DATA_ENDPOINT",
+        "description": "Supply Chain Security model-management data endpoint override."
+      },
+      {
+        "name": "mgmt_endpoint",
+        "environment": "PANW_MODEL_SEC_MGMT_ENDPOINT",
+        "description": "Supply Chain Security model-management endpoint override."
+      }
+    ],
+    "resources": [
+      {
+        "name": "prisma-airs_supply_chain_security_group",
+        "guide": "resources/model-security-group"
+      }
+    ],
+    "data_sources": [
+      {
+        "name": "prisma-airs_supply_chain_security_rules",
+        "guide": "data-sources/model-security-rules"
+      }
+    ]
+  }
+]

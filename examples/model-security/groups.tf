@@ -9,7 +9,7 @@
 # Monitor models sourced from Hugging Face Hub for supply chain attacks,
 # malicious weights, and model poisoning.
 
-resource "prisma-airs_model_security_group" "hugging_face" {
+resource "prisma-airs_supply_chain_security_group" "hugging_face" {
   name        = "${var.group_prefix}hugging-face-models"
   description = "Security group for monitoring Hugging Face models"
   source_type = "HUGGING_FACE"
@@ -19,7 +19,7 @@ resource "prisma-airs_model_security_group" "hugging_face" {
 # Monitor internally-trained or fine-tuned models uploaded from
 # custom sources.
 
-resource "prisma-airs_model_security_group" "custom_models" {
+resource "prisma-airs_supply_chain_security_group" "custom_models" {
   name        = "${var.group_prefix}custom-trained-models"
   description = "Security group for internally-trained models"
   source_type = "HUGGING_FACE"

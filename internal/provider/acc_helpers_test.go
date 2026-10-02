@@ -118,7 +118,7 @@ func destroyCheck(resourceType, idAttr string, absent func(ctx context.Context, 
 				return fmt.Errorf("%s %s still exists after destroy", resourceType, id)
 			}
 			outcome := "deleted"
-			if resourceType == "prisma-airs_model_security_group" {
+			if resourceType == "prisma-airs_supply_chain_security_group" {
 				outcome = "tombstoned"
 			}
 			if resourceType == "prisma-airs_red_team_custom_prompt_set" {

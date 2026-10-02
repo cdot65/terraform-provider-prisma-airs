@@ -16,12 +16,12 @@ func TestAccCustomTopicResource_lifecycle(t *testing.T) {
 	testAccPreCheck(t)
 	client := accMgmtClient(t)
 	name := "tf-acc-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
-	const addr = "prisma-airs_custom_topic.test"
+	const addr = "prisma-airs_runtime_custom_topic.test"
 	var rec idRecorder
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy: destroyCheck("prisma-airs_custom_topic", "topic_id", func(ctx context.Context, id string) (bool, error) {
+		CheckDestroy: destroyCheck("prisma-airs_runtime_custom_topic", "topic_id", func(ctx context.Context, id string) (bool, error) {
 			for offset := 0; ; {
 				page, err := client.Topics.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
 				if err != nil {
@@ -83,7 +83,7 @@ func TestAccCustomTopicResource_lifecycle(t *testing.T) {
 
 func testAccCustomTopicConfig(name, description, examples string) string {
 	return fmt.Sprintf(`
-resource "prisma-airs_custom_topic" "test" {
+resource "prisma-airs_runtime_custom_topic" "test" {
   topic_name  = %[1]q
   description = %[2]q
   examples    = %[3]s
@@ -95,11 +95,11 @@ func TestAccCustomTopicResource_omittedDescription(t *testing.T) {
 	client := accMgmtClient(t)
 	name := "tf-acc-null-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
 	var description string
-	config := fmt.Sprintf(`resource "prisma-airs_custom_topic" "test" {
+	config := fmt.Sprintf(`resource "prisma-airs_runtime_custom_topic" "test" {
  topic_name = %q
  examples = []
 }`, name)
-	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_custom_topic", "topic_id", func(ctx context.Context, id string) (bool, error) {
+	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: destroyCheck("prisma-airs_runtime_custom_topic", "topic_id", func(ctx context.Context, id string) (bool, error) {
 		for offset := 0; ; {
 			page, err := client.Topics.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
 			if err != nil {
@@ -118,15 +118,15 @@ func TestAccCustomTopicResource_omittedDescription(t *testing.T) {
 				return true, nil
 			}
 		}
-	}), Steps: []resource.TestStep{{Config: config, Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttrSet("prisma-airs_custom_topic.test", "description"), resource.TestCheckResourceAttr("prisma-airs_custom_topic.test", "examples.#", "0"))}, {Config: config, Check: func(state *terraform.State) error {
-		value := state.RootModule().Resources["prisma-airs_custom_topic.test"].Primary.Attributes["description"]
+	}), Steps: []resource.TestStep{{Config: config, Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttrSet("prisma-airs_runtime_custom_topic.test", "description"), resource.TestCheckResourceAttr("prisma-airs_runtime_custom_topic.test", "examples.#", "0"))}, {Config: config, Check: func(state *terraform.State) error {
+		value := state.RootModule().Resources["prisma-airs_runtime_custom_topic.test"].Primary.Attributes["description"]
 		if value == "" {
 			return fmt.Errorf("description unavailable")
 		}
 		description = value
 		return nil
 	}}, {Config: strings.Replace(config, "examples = []", `examples = ["new example"]`, 1), Check: func(state *terraform.State) error {
-		if state.RootModule().Resources["prisma-airs_custom_topic.test"].Primary.Attributes["description"] != description {
+		if state.RootModule().Resources["prisma-airs_runtime_custom_topic.test"].Primary.Attributes["description"] != description {
 			return fmt.Errorf("omitted description changed while updating examples")
 		}
 		return nil

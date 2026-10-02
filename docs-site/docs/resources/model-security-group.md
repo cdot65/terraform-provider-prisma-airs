@@ -1,11 +1,11 @@
-# prisma-airs_model_security_group
+# prisma-airs_supply_chain_security_group
 
 Manages a model security group in Prisma AIRS Model Security API.
 
 ## Example Usage
 
 ```hcl
-resource "prisma-airs_model_security_group" "ml_models" {
+resource "prisma-airs_supply_chain_security_group" "ml_models" {
   name        = "production-ml-models"
   description = "Security group for production ML models"
   source_type = "HUGGING_FACE"
@@ -29,7 +29,7 @@ resource "prisma-airs_model_security_group" "ml_models" {
 ## Import
 
 ```bash
-terraform import prisma-airs_model_security_group.ml_models <uuid>
+terraform import prisma-airs_supply_chain_security_group.ml_models <uuid>
 ```
 
 ## Lifecycle
@@ -38,4 +38,4 @@ Model Security entitlement is required. Changing `source_type` plans replacement
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_model_security_group.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_supply_chain_security_group.md) for all nested fields, types, and sensitivity flags.

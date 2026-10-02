@@ -26,7 +26,7 @@ def main():
             path.write_bytes(content)
         # Navigation and guide copy are shared inputs; renderers, CSS, and home
         # layout come independently from the pinned harness source archive.
-        for relative in ["tsconfig.json", "sidebars.ts"]:
+        for relative in ["tsconfig.json", "sidebars.ts", "product-catalog.json"]:
             shutil.copy2(SITE / relative, reference / relative)
         shutil.copytree(SITE / "docs", reference / "docs")
         shutil.copytree(SITE / "static/licenses", reference / "static/licenses")

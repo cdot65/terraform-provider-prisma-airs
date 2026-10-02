@@ -13,8 +13,8 @@ Import establishes Terraform ownership of existing AIRS infrastructure. Write th
 | Custom prompt set | Prompt-set UUID |
 
 ```bash
-terraform import prisma-airs_security_profile.production production-profile
-terraform import prisma-airs_customer_app.chatbot customer-support-chatbot
+terraform import prisma-airs_runtime_security_profile.production production-profile
+terraform import prisma-airs_runtime_customer_app.chatbot customer-support-chatbot
 terraform import prisma-airs_red_team_target.app rest/00000000-0000-0000-0000-000000000000
 terraform plan
 ```

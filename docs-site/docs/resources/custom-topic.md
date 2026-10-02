@@ -1,11 +1,11 @@
-# prisma-airs_custom_topic
+# prisma-airs_runtime_custom_topic
 
 Manages a custom detection topic in Prisma AIRS Management API.
 
 ## Example Usage
 
 ```hcl
-resource "prisma-airs_custom_topic" "sensitive_data" {
+resource "prisma-airs_runtime_custom_topic" "sensitive_data" {
   topic_name  = "sensitive-financial-data"
   description = "Detects discussions about internal financial projections"
 
@@ -35,11 +35,11 @@ resource "prisma-airs_custom_topic" "sensitive_data" {
 Custom topics can be imported using the topic ID:
 
 ```bash
-terraform import prisma-airs_custom_topic.sensitive_data <topic_id>
+terraform import prisma-airs_runtime_custom_topic.sensitive_data <topic_id>
 ```
 
 Omitting `description` adopts the service-generated value; removing it from configuration keeps the observed description. Explicit empty descriptions are rejected. An explicit empty examples list clears existing examples through the SDK fields update. Omitting `examples` during an update also sends an empty list, so keep the desired examples configured when changing a name or description.
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_custom_topic.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_runtime_custom_topic.md) for all nested fields, types, and sensitivity flags.

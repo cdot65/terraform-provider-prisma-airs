@@ -1,5 +1,6 @@
 ---
 page_title: "prisma-airs_red_team_custom_prompt_set (Resource)"
+subcategory: "AI Red Teaming"
 ---
 
 # prisma-airs_red_team_custom_prompt_set Resource

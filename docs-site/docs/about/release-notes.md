@@ -1,5 +1,13 @@
 # Release Notes
 
+## v0.8.0 — Product modules and configuration (2026-10-02)
+
+- **Breaking:** identify Runtime Security and Supply Chain Security resources and data sources with product prefixes. Red Teaming names remain unchanged. Follow the [state migration guide](../guides/migration.md) before upgrading.
+- **Breaking:** move endpoint overrides into `runtime`, `red_team`, and `supply_chain` blocks. Shared OAuth credentials and existing endpoint environment variables remain supported.
+- Own registration, SDK clients, lifecycle code, and guide metadata within each product module. Generate navigation, reference coverage, and Registry subcategories from the same catalog.
+- Show AI Gateway as not yet implemented; Gateway configuration and functionality are the next milestone.
+- Preserve native HCL, profile revision diffs, import-only customer apps, sensitive state, and archive/deletion semantics.
+
 ## v0.7.0 — SDK upgrade, native HCL, and Docusaurus (2026-10-02)
 
 - Rebuild documentation with Docusaurus and the shared AIRS Harness design, native HCL examples, exact provider schemas, migration guidance, and desktop/tablet/mobile browser and pixel checks.

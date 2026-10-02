@@ -5,49 +5,49 @@
 # ── Management Resources ────────────────────────────────────────────────
 
 output "security_profile_id" {
-  value = prisma-airs_security_profile.test.id
+  value = prisma-airs_runtime_security_profile.test.id
 }
 
 output "security_profile_name" {
-  value = prisma-airs_security_profile.test.profile_name
+  value = prisma-airs_runtime_security_profile.test.profile_name
 }
 
 output "custom_topic_id" {
-  value = prisma-airs_custom_topic.test.id
+  value = prisma-airs_runtime_custom_topic.test.id
 }
 
 output "custom_topic_name" {
-  value = prisma-airs_custom_topic.test.topic_name
+  value = prisma-airs_runtime_custom_topic.test.topic_name
 }
 
 # ── Management Data Sources ─────────────────────────────────────────────
 
 output "dlp_profile_count" {
-  value = length(data.prisma-airs_dlp_profiles.all.items)
+  value = length(data.prisma-airs_runtime_dlp_profiles.all.items)
 }
 
 output "deployment_profile_count" {
-  value = length(data.prisma-airs_deployment_profiles.all.items)
+  value = length(data.prisma-airs_runtime_deployment_profiles.all.items)
 }
 
 # ── Model Security Resources ───────────────────────────────────────────
 
 output "model_security_group_id" {
-  value = prisma-airs_model_security_group.test.id
+  value = prisma-airs_supply_chain_security_group.test.id
 }
 
 output "model_security_group_name" {
-  value = prisma-airs_model_security_group.test.name
+  value = prisma-airs_supply_chain_security_group.test.name
 }
 
 output "model_security_group_state" {
-  value = prisma-airs_model_security_group.test.state
+  value = prisma-airs_supply_chain_security_group.test.state
 }
 
 # ── Model Security Data Sources ─────────────────────────────────────────
 
 output "model_security_rule_count" {
-  value = length(data.prisma-airs_model_security_rules.all.rules)
+  value = length(data.prisma-airs_supply_chain_security_rules.all.rules)
 }
 
 # ── Red Team Resources ──────────────────────────────────────────────────

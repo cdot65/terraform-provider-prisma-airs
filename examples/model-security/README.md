@@ -13,7 +13,7 @@ Manages model security groups for monitoring AI models from various sources. Rea
 
 | Data Source | Description |
 |-------------|-------------|
-| `prisma-airs_model_security_rules.all` | All model security rules |
+| `prisma-airs_supply_chain_security_rules.all` | All model security rules |
 
 ## Usage
 

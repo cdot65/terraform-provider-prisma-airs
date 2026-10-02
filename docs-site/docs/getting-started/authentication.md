@@ -12,9 +12,9 @@ Follow Palo Alto Networks’ [service-account creation guide](https://docs.paloa
 
 | Domain | Access needed |
 | --- | --- |
-| Management | Profile, topic, deployment-profile, API-key, and customer-app actions used by your configuration |
-| Model Security | Active Model Security entitlement and group/rule permissions |
-| Red Team | Active Red Team entitlement and target/prompt-set permissions |
+| AI Runtime Security | Profile, topic, deployment-profile, API-key, and customer-app actions used by your configuration |
+| AI Supply Chain Security | Active Model Security entitlement and group/rule permissions |
+| AI Red Teaming | Active Red Team entitlement and target/prompt-set permissions |
 
 A valid OAuth token does not establish a service entitlement. A superuser role does not make an unsupported API route available. The customer-app resource uses the supported paginated list route.
 
@@ -36,7 +36,7 @@ The provider passes this resolved credential set to all three management clients
 
 ## 4. Check access
 
-Start with a read appropriate to the service you need, such as `prisma-airs_deployment_profiles` or `prisma-airs_model_security_rules`. `terraform validate` checks configuration without proving live authorization; `terraform plan` reads the configured data sources.
+Start with a read appropriate to the service you need, such as `prisma-airs_runtime_deployment_profiles` or `prisma-airs_supply_chain_security_rules`. `terraform validate` checks configuration without proving live authorization; `terraform plan` reads the configured data sources.
 
 ## Token and secret handling
 

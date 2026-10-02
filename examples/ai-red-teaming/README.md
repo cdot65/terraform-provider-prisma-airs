@@ -50,4 +50,4 @@ terraform apply
 
 Targets use native connection blocks and separate sensitive authentication blocks. These examples use public endpoints; supply a preexisting channel and `api_endpoint_type = "NETWORK_BROKER"` when needed. Multi-turn configuration is not exposed by this upgrade.
 
-These native HCL examples require provider v0.7.0 or later. Run `terraform init -upgrade` and review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before applying existing configurations.
+These native HCL examples require provider v0.8.0 or later. Run `terraform init -upgrade` and review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before applying existing configurations.

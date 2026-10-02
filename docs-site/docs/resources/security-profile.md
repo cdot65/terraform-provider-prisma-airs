@@ -1,4 +1,4 @@
-# prisma-airs_security_profile
+# prisma-airs_runtime_security_profile
 
 Manages the complete revision history of one named AI security profile in Prisma AIRS Management API.
 
@@ -7,7 +7,7 @@ Manages the complete revision history of one named AI security profile in Prisma
 ### Basic — Prompt Injection Protection
 
 ```hcl
-resource "prisma-airs_security_profile" "basic" {
+resource "prisma-airs_runtime_security_profile" "basic" {
   profile_name = "basic-protection"
 
   ai_security_profile {
@@ -24,7 +24,7 @@ resource "prisma-airs_security_profile" "basic" {
 ### Full — Multiple Protections with Data Leak Detection
 
 ```hcl
-resource "prisma-airs_security_profile" "full" {
+resource "prisma-airs_runtime_security_profile" "full" {
   profile_name = "full-protection"
 
   ai_security_profile {
@@ -97,7 +97,7 @@ resource "prisma-airs_security_profile" "full" {
 ### Compound Toxic Content Action
 
 ```hcl
-resource "prisma-airs_security_profile" "toxic" {
+resource "prisma-airs_runtime_security_profile" "toxic" {
   profile_name = "toxic-compound"
 
   ai_security_profile {
@@ -119,7 +119,7 @@ resource "prisma-airs_security_profile" "toxic" {
 ### With Topic-Based Detection
 
 ```hcl
-resource "prisma-airs_security_profile" "topics" {
+resource "prisma-airs_runtime_security_profile" "topics" {
   profile_name = "topic-detection"
 
   ai_security_profile {
@@ -264,7 +264,7 @@ Contains `data_leak_detection` and `database_security` sub-blocks.
 Security profiles can be imported by name:
 
 ```bash
-terraform import prisma-airs_security_profile.example "profile-name"
+terraform import prisma-airs_runtime_security_profile.example "profile-name"
 ```
 
 ## Revision ownership and changes
@@ -283,4 +283,4 @@ Computed DLP reference metadata is preserved only while every configured name, U
 
 ## Complete schema
 
-See the [exact schema reference](../reference/generated/prisma-airs_security_profile.md) for all nested fields, types, and sensitivity flags.
+See the [exact schema reference](../reference/generated/prisma-airs_runtime_security_profile.md) for all nested fields, types, and sensitivity flags.

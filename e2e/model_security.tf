@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 
 # --- Security Group ---
-resource "prisma-airs_model_security_group" "test" {
+resource "prisma-airs_supply_chain_security_group" "test" {
   name        = "${local.prefix}-group"
   description = "E2E test security group"
   source_type = "HUGGING_FACE"
@@ -13,4 +13,4 @@ resource "prisma-airs_model_security_group" "test" {
 # Model Security Data Sources
 # ---------------------------------------------------------------------------
 
-data "prisma-airs_model_security_rules" "all" {}
+data "prisma-airs_supply_chain_security_rules" "all" {}

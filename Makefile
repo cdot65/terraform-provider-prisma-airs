@@ -5,7 +5,7 @@ NAMESPACE=cdot65
 NAME=prisma-airs
 BINARY=terraform-provider-${NAME}
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
-VERSION?=0.7.0-dev
+VERSION?=0.8.0-dev
 
 export GOPRIVATE=github.com/cdot65/*
 

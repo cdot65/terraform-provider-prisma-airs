@@ -1,6 +1,47 @@
 # Migrate to the updated provider
 
-Provider v0.7.0 uses Go SDK v0.6.1 and changes the schemas from v0.6.3. Follow [installation](../getting-started/installation.md), select `~> 0.7.0`, remove any development override, and run `terraform init -upgrade`. Review and refactor existing HCL and state before applying.
+Provider v0.8.0 groups existing functionality by product and uses Go SDK v0.6.1. The provider address remains `cdot65/prisma-airs`. Upgrade HCL and state together before applying; the provider does not register aliases for old type names.
+
+## Migrate v0.7.0 names and settings
+
+| Old type | New type |
+| --- | --- |
+| `prisma-airs_security_profile` | `prisma-airs_runtime_security_profile` |
+| `prisma-airs_custom_topic` | `prisma-airs_runtime_custom_topic` |
+| `prisma-airs_api_key` | `prisma-airs_runtime_api_key` |
+| `prisma-airs_customer_app` | `prisma-airs_runtime_customer_app` |
+| `prisma-airs_model_security_group` | `prisma-airs_supply_chain_security_group` |
+| `prisma-airs_dlp_profiles` | `prisma-airs_runtime_dlp_profiles` |
+| `prisma-airs_deployment_profiles` | `prisma-airs_runtime_deployment_profiles` |
+| `prisma-airs_model_security_rules` | `prisma-airs_supply_chain_security_rules` |
+
+Red Teaming type names remain unchanged. Update references and outputs as well as declarations. Move `mgmt_endpoint` into `runtime`; move `red_team_data_endpoint` / `red_team_mgmt_endpoint` into `red_team` as `data_endpoint` / `mgmt_endpoint`; move `model_sec_data_endpoint` / `model_sec_mgmt_endpoint` into `supply_chain` with the same nested attribute names. Endpoint environment variables remain unchanged; shared OAuth attributes stay at the top level.
+
+Pause concurrent Terraform runs and back up state in protected storage. With v0.7.0 still installed, record each resource's import identifier and configured secrets before changing HCL. Follow the individual [lifecycle guides](../reference/index.md) for supported IDs; security profiles import by `profile_name`, customer apps by `app_name`, and keys/topics/groups by their documented identifiers. Record the profile name, not its current UUID. Red Teaming types are unchanged and need no state removal or re-import for this product refactor.
+
+Before switching provider versions, use the installed v0.7.0 provider to remove **all** renamed managed resource and data-source addresses from state in one step. Use `terraform state list` to inventory the full addresses, including module prefixes and `for_each`/`count` indices. Shell-quote indexed addresses, for example `'module.m.prisma-airs_custom_topic.t["a"]'`. Keep Red Teaming addresses in state. Do not plan, apply, or import while any renamed old-type address remains: the new provider has no schema for it.
+
+After updating HCL and selecting `~> 0.8.0`, run `terraform init -upgrade` and import each recorded remote object into its new address. For a profile, topic, and DLP catalog, the sequence is:
+
+```bash
+terraform state pull > protected-backup.tfstate
+# With v0.7.0 still installed; include EVERY renamed address from your inventory.
+terraform state rm 'prisma-airs_security_profile.first' 'prisma-airs_custom_topic.topic' 'data.prisma-airs_dlp_profiles.catalog'
+# Update declarations/references and select ~> 0.8.0, then initialize.
+terraform init -upgrade
+terraform import 'prisma-airs_runtime_security_profile.first' '<recorded-profile-name>'
+terraform import 'prisma-airs_runtime_custom_topic.topic' '<recorded-topic-id>'
+# Imports and the final plan re-read the renamed data sources.
+terraform plan
+```
+
+`state rm` forgets ownership without deleting the remote object. Do not apply between removal and completion of all imports. Leaving other old-type entries in state can make import/plan fail while decoding unsupported schemas. This provider does not implement cross-type state moves; do not rely on `moved` blocks or `state mv` to convert types. Re-import cannot recover the one-time API-key secret. The `api_key` output is computed-only, so it cannot be restored by setting a configuration argument. After removal/import, references to that attribute will plan to null, including outputs or secret-store resources. Preserve an existing key value in your protected external secret store before migration and update downstream consumers to use it, rather than the imported resource's null secret. If the value is unavailable, deliberate key replacement/rotation is needed to obtain a new secret; assess application impact first. Configured key creation inputs remain in HCL. Red Teaming state and its configured credentials need no re-import for this refactor. Importing profiles adopts all revisions under the resolved name; no rename is needed for this migration. Rename data-source declarations and remove their old state entries with the managed resources; they are read again during import/planning.
+
+If a migration fails, stop without applying and recover using your backend's protected state version. Inspect the final plan: renamed resources should remain imported objects, not replacements. Review any actual remote drift separately.
+
+## Upgrading v0.6.3 or earlier
+
+The v0.7.0 native HCL and lifecycle changes below also apply when coming from an older release.
 
 ## Review existing ownership
 
