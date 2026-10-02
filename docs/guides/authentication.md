@@ -1,79 +1,23 @@
-# Authentication
+---
+page_title: "Authentication guide"
+---
 
-The Prisma AIRS Terraform provider uses OAuth2 client credentials for authentication across all service domains.
+# Authentication guide
 
-## OAuth2 Authentication
+Follow [Authentication](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/) for the shared SCM service-account walkthrough, required environment variables, and access checks.
 
-Used for all operations (Management, Model Security, Red Team).
+## Credential precedence
 
-### Provider Configuration
+For each provider attribute, an explicit value takes precedence over its mapped environment variable. `client_id`, `client_secret`, and `tsg_id` resolve from `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` and are passed to every service client.
 
-```hcl
-provider "prisma-airs" {
-  client_id     = var.panw_client_id
-  client_secret = var.panw_client_secret
-  tsg_id        = var.panw_tsg_id
-}
-```
+Service-specific endpoint variables are supported. Separate SDK service credential prefixes are not exposed by this provider; use explicit credentials on aliased providers for separate identities. See [Configuration](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/configuration/) and [Environment variables](https://cdot65.github.io/terraform-provider-prisma-airs/reference/environment-variables/).
 
-### Environment Variables
+## Local environment files
+
+From an example directory such as `examples/model-security/`, the repository helper loads `.env` before invoking Terraform:
 
 ```bash
-export PANW_MGMT_CLIENT_ID=your-client-id
-export PANW_MGMT_CLIENT_SECRET=your-client-secret
-export PANW_MGMT_TSG_ID=1234567890
-```
-
-### Token Lifecycle
-
-The provider handles the full OAuth2 token lifecycle automatically:
-
-1. **Token acquisition** — fetches a token on first API call
-2. **Token caching** — reuses the token for subsequent calls
-3. **Proactive refresh** — refreshes 30 seconds before expiry
-4. **Auto-retry** — retries on 401/403 with a fresh token
-
-### Service-Specific Credentials
-
-Model Security and Red Team can use their own credentials, falling back to the shared `PANW_MGMT_*` variables:
-
-```bash
-# Model Security specific (optional)
-export PANW_MODEL_SEC_CLIENT_ID=...
-export PANW_MODEL_SEC_CLIENT_SECRET=...
-export PANW_MODEL_SEC_TSG_ID=...
-
-# Red Team specific (optional)
-export PANW_RED_TEAM_CLIENT_ID=...
-export PANW_RED_TEAM_CLIENT_SECRET=...
-export PANW_RED_TEAM_TSG_ID=...
-```
-
-## Using .env Files
-
-For local development, store credentials in a `.env` file instead of exporting them in your shell:
-
-```bash
-# .env
-PANW_MGMT_CLIENT_ID=your-client-id
-PANW_MGMT_CLIENT_SECRET=your-client-secret
-PANW_MGMT_TSG_ID=1234567890
-```
-
-Load it manually or use the repo helper:
-
-```bash
-source .env && terraform plan
-# or
 ../../scripts/terraform-env.sh plan
 ```
 
-Never commit `.env` files to version control.
-
-## Precedence
-
-Provider config attributes always take precedence over environment variables:
-
-1. Explicit provider attribute value
-2. Service-specific environment variable (e.g., `PANW_MODEL_SEC_CLIENT_ID`)
-3. Fallback environment variable (e.g., `PANW_MGMT_CLIENT_ID`)
+For configurations outside this repository, export variables through your normal environment-loading or secret-store workflow. Terraform itself does not load `.env` files.

@@ -1,0 +1,87 @@
+/* Prisma AIRS brand palette supplied by the owner, September 2026. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+:root, [data-theme='dark'] {
+  --airs-obsidian: #030609;
+  --airs-navy: #061b29;
+  --airs-azure: #0066d9;
+  --airs-blue: #009df2;
+  --airs-cyan: #00ddf2;
+  --airs-white: #f5f8fa;
+  --airs-steel: #8999a6;
+  --airs-border: #234457;
+  --airs-muted: #b6c4cf;
+  --ifm-color-primary: #00ddf2;
+  --ifm-color-primary-dark: #00c7da;
+  --ifm-color-primary-darker: #00bccc;
+  --ifm-color-primary-darkest: #009baa;
+  --ifm-color-primary-light: #20e9fb;
+  --ifm-color-primary-lighter: #50efff;
+  --ifm-color-primary-lightest: #8af5ff;
+  --ifm-color-secondary: #8999a6;
+  --ifm-color-info: #009df2;
+  --ifm-color-success: #19bda7;
+  --ifm-color-warning: #ffd348;
+  --ifm-color-danger: #f0443a;
+  --ifm-background-color: var(--airs-obsidian);
+  --ifm-background-surface-color: var(--airs-navy);
+  --ifm-color-content: var(--airs-white);
+  --ifm-color-content-secondary: var(--airs-muted);
+  --ifm-heading-color: var(--airs-white);
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+  --ifm-font-family-monospace: 'JetBrains Mono', ui-monospace, monospace;
+  --ifm-font-size-base: 17px;
+  --ifm-line-height-base: 1.75;
+  --ifm-heading-font-weight: 700;
+  --ifm-link-color: var(--airs-cyan);
+  --ifm-link-hover-color: #8af5ff;
+  --ifm-code-background: #0b2637;
+  --ifm-code-color: #79e9f4;
+  --ifm-code-font-size: .86em;
+  --ifm-pre-background: var(--airs-navy);
+  --ifm-global-radius: 8px;
+  --ifm-color-emphasis-200: var(--airs-border);
+  --ifm-color-emphasis-300: var(--airs-border);
+  --ifm-hr-border-color: var(--airs-border);
+  --ifm-toc-border-color: var(--airs-border);
+  --ifm-navbar-height: 72px;
+  --ifm-navbar-background-color: var(--airs-obsidian);
+  --ifm-navbar-link-color: var(--airs-muted);
+  --ifm-navbar-link-hover-color: var(--airs-cyan);
+  --ifm-menu-color: var(--airs-muted);
+  --ifm-menu-color-active: var(--airs-cyan);
+  --ifm-menu-color-background-active: #0b293b;
+  --ifm-menu-color-background-hover: #0a2231;
+  --ifm-footer-background-color: var(--airs-navy);
+  --ifm-footer-color: var(--airs-muted);
+  --ifm-footer-link-color: var(--airs-white);
+  --ifm-footer-title-color: var(--airs-cyan);
+  --docusaurus-highlighted-code-line-bg: #00ddf215;
+}
+html, body { background: var(--airs-obsidian); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4 { letter-spacing: -.035em; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+.navbar { border-bottom: 1px solid var(--airs-border); box-shadow: none; }
+.navbar__title { font-size: .96rem; letter-spacing: -.025em; }
+.navbar__logo, .navbar__logo img { height: 52px; width: 52px; object-fit: contain; }
+.menu__link--active:not(.menu__link--sublist) { box-shadow: inset 3px 0 var(--airs-cyan); }
+.breadcrumbs { font-size: .78rem; }
+:not(pre) > code { border: 1px solid var(--airs-border); }
+.theme-code-block, pre[class*='language-'] { border: 1px solid var(--airs-border); }
+.theme-admonition, .alert { border: 1px solid var(--airs-border); border-left-width: 3px; background: var(--airs-navy); }
+.alert--info { border-left-color: var(--airs-blue); }
+.alert--success { border-left-color: #19bda7; }
+.alert--warning { border-left-color: #ffd348; }
+.alert--danger { border-left-color: #f0443a; }
+.button { font-weight: 600; border-radius: 10px; }
+.button.button--primary { color: var(--airs-obsidian); background: var(--airs-cyan); border-color: var(--airs-cyan); }
+.button.button--primary:hover { background: #50efff; border-color: #50efff; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--airs-cyan); outline-offset: 4px; }
+.card { background: var(--airs-navy); border: 1px solid var(--airs-border); }
+::selection { background: #00ddf240; }
+* { scrollbar-color: #325267 var(--airs-obsidian); }
+.docusaurus-mermaid-container { margin: 1.5rem 0; text-align: center; overflow-x: auto; }
+.markdown img { max-width: 100%; height: auto; }
+.markdown table { font-size: .9rem; }
+.footer.footer--dark { background: var(--airs-navy); color: var(--airs-muted); border-top: 1px solid var(--airs-border); --ifm-footer-link-color: var(--airs-white); --ifm-footer-title-color: var(--airs-cyan); }
+@media (max-width: 450px) { .navbar__title { font-size: .83rem; } .navbar__logo, .navbar__logo img { height: 42px; width: 42px; } }

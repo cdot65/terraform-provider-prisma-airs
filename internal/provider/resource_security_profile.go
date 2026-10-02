@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"strings"
 
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -10,7 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -35,6 +37,7 @@ type securityProfileResource struct {
 type SecurityProfileResourceModel struct {
 	ID                 types.String             `tfsdk:"id"`
 	ProfileID          types.String             `tfsdk:"profile_id"`
+	Revision           types.Int64              `tfsdk:"revision"`
 	ProfileName        types.String             `tfsdk:"profile_name"`
 	Active             types.Bool               `tfsdk:"active"`
 	CreatedAt          types.String             `tfsdk:"created_at"`
@@ -151,6 +154,10 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 				Computed:    true,
 				Description: "The unique identifier of the security profile.",
 			},
+			"revision": schema.Int64Attribute{
+				Computed:    true,
+				Description: "Highest numeric revision of the managed profile name; changes on policy updates.",
+			},
 			"profile_name": schema.StringAttribute{
 				Required:    true,
 				Description: "Name of the security profile.",
@@ -158,15 +165,12 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 			"active": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the profile is active.",
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
-				Description: "Creation timestamp.",
+				Description: "Timestamp of revision 1, when that revision remains available; null if original creation time is unavailable.",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					sameNamedStringState("profile_name"),
 				},
 			},
 			"updated_at": schema.StringAttribute{
@@ -180,17 +184,22 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"model_type": schema.StringAttribute{
-							Optional:    true,
-							Description: "Model type (e.g., 'default').",
+							Optional: true, Computed: true,
+							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+							Default:       stringdefault.StaticString("default"),
+							Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
+							Description:   "Model type (e.g., 'default').",
 						},
 						"content_type": schema.StringAttribute{
-							Optional:    true,
-							Description: "Content type.",
+							Optional: true, Computed: true,
+							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+							Description:   "Content type.",
 						},
 						"mask_data_in_storage": schema.BoolAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "Whether to mask data in storage.",
+							Optional:      true,
+							Computed:      true,
+							PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+							Description:   "Whether to mask data in storage.",
 						},
 					},
 					Blocks: map[string]schema.Block{
@@ -198,15 +207,17 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 							Description: "Latency configuration for inline scanning.",
 							Attributes: map[string]schema.Attribute{
 								"inline_timeout_action": schema.StringAttribute{
-									Optional:    true,
-									Description: "Action on inline timeout ('allow' or 'block').",
+									Optional: true, Computed: true,
+									PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+									Description:   "Action on inline timeout ('allow' or 'block').",
 									Validators: []validator.String{
 										stringvalidator.OneOf("allow", "block"),
 									},
 								},
 								"max_inline_latency": schema.Int64Attribute{
-									Optional:    true,
-									Description: "Maximum inline latency in seconds.",
+									Optional: true, Computed: true,
+									PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+									Description:   "Maximum inline latency in seconds.",
 								},
 							},
 						},
@@ -217,12 +228,14 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									Description: "Data leak detection configuration.",
 									Attributes: map[string]schema.Attribute{
 										"action": schema.StringAttribute{
-											Optional:    true,
-											Description: "Action on detection: 'block' or 'allow'.",
+											Optional: true, Computed: true,
+											PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+											Description:   "Action on detection: 'block' or 'allow'.",
 										},
 										"mask_data_inline": schema.BoolAttribute{
-											Optional:    true,
-											Description: "Whether to mask detected data inline.",
+											Optional: true, Computed: true,
+											PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+											Description:   "Whether to mask detected data inline.",
 										},
 									},
 									Blocks: map[string]schema.Block{
@@ -235,14 +248,16 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 														Description: "Member text identifier.",
 													},
 													"id": schema.StringAttribute{
-														Optional:    true,
-														Computed:    true,
-														Description: "Member ID.",
+														Optional:      true,
+														Computed:      true,
+														PlanModifiers: []planmodifier.String{sameNamedStringState("text")},
+														Description:   "Member ID.",
 													},
 													"version": schema.StringAttribute{
-														Optional:    true,
-														Computed:    true,
-														Description: "Member version.",
+														Optional:      true,
+														Computed:      true,
+														PlanModifiers: []planmodifier.String{sameNamedStringState("text")},
+														Description:   "Member version.",
 													},
 												},
 											},
@@ -288,15 +303,17 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									Description: "URL categories to allow.",
 								},
 								"default_url_category": schema.ListAttribute{
-									Optional:    true,
-									Computed:    true,
-									ElementType: types.StringType,
-									Description: "Default URL categories (e.g., 'malicious').",
+									Optional:      true,
+									Computed:      true,
+									PlanModifiers: []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+									ElementType:   types.StringType,
+									Description:   "Default URL categories (e.g., 'malicious').",
 								},
 								"url_detected_action": schema.StringAttribute{
-									Optional:    true,
-									Computed:    true,
-									Description: "Action when a URL matches configured categories: 'block' or empty to disable.",
+									Optional:      true,
+									Computed:      true,
+									PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+									Description:   "Action when a URL matches configured categories: 'block' or empty to disable.",
 								},
 							},
 							Blocks: map[string]schema.Block{
@@ -304,14 +321,16 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									Description: "Malicious code protection configuration.",
 									Attributes: map[string]schema.Attribute{
 										"name": schema.StringAttribute{
-											Optional:    true,
-											Computed:    true,
-											Description: "Protection name (e.g., 'malicious-code').",
+											Optional:      true,
+											Computed:      true,
+											PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+											Description:   "Protection name (e.g., 'malicious-code').",
 										},
 										"action": schema.StringAttribute{
-											Optional:    true,
-											Computed:    true,
-											Description: "Action to take: 'block' or 'allow'.",
+											Optional:      true,
+											Computed:      true,
+											PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+											Description:   "Action to take: 'block' or 'allow'.",
 											Validators: []validator.String{
 												stringvalidator.OneOf("block", "allow"),
 											},
@@ -379,14 +398,16 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 																Description: "Topic name.",
 															},
 															"topic_id": schema.StringAttribute{
-																Optional:    true,
-																Computed:    true,
-																Description: "Topic ID.",
+																Optional:      true,
+																Computed:      true,
+																PlanModifiers: []planmodifier.String{sameNamedStringState("topic_name")},
+																Description:   "Topic ID.",
 															},
 															"revision": schema.Int64Attribute{
-																Optional:    true,
-																Computed:    true,
-																Description: "Topic revision.",
+																Optional:      true,
+																Computed:      true,
+																Description:   "Topic revision.",
+																PlanModifiers: []planmodifier.Int64{sameNamedInt64State("topic_name")},
 															},
 														},
 													},
@@ -426,35 +447,42 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
-							Optional:    true,
-							Description: "Profile name.",
+							Optional: true, Computed: true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "Profile name.",
 						},
 						"uuid": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "Profile UUID.",
+							Optional:      true,
+							Computed:      true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "Profile UUID.",
 						},
 						"profile_id": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "Profile ID.",
+							Optional:      true,
+							Computed:      true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "Profile ID.",
 						},
 						"version": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "Profile version.",
+							Optional:      true,
+							Computed:      true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "Profile version.",
 						},
 						"log_severity": schema.StringAttribute{
-							Optional:    true,
+							Required:    true,
+							Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 							Description: "Log severity level.",
 						},
 						"non_file_based": schema.StringAttribute{
-							Optional:    true,
-							Description: "Non-file-based detection action.",
+							Optional: true, Computed: true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "Non-file-based detection action.",
 						},
 						"file_based": schema.StringAttribute{
-							Optional:    true,
-							Description: "File-based detection action.",
+							Optional: true, Computed: true,
+							PlanModifiers: []planmodifier.String{sameDLPReferenceState()},
+							Description:   "File-based detection action.",
 						},
 					},
 				},
@@ -497,27 +525,18 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	profile, err := r.client.Profiles.Create(ctx, createReq)
-	if err != nil {
-		if strings.Contains(err.Error(), "409") {
-			found, lookupErr := r.client.Profiles.GetByName(ctx, plan.ProfileName.ValueString())
-			if lookupErr == nil && found != nil {
-				tflog.Warn(ctx, "profile create returned 409 but profile exists; treating as success")
-				mapProfileToState(ctx, found, &plan, &resp.Diagnostics)
-				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-				return
-			}
-		}
-		resp.Diagnostics.AddError("Failed to create security profile", err.Error())
+	if !profileNameAvailable(ctx, r.client, plan.ProfileName.ValueString(), &resp.Diagnostics) {
 		return
 	}
-
-	// Create response may be incomplete; read back the full profile.
-	if profile != nil && profile.ProfileID != "" {
-		full, readErr := r.client.Profiles.GetByID(ctx, profile.ProfileID)
-		if readErr == nil && full != nil {
-			profile = full
-		}
+	profile, err := r.client.Profiles.Create(ctx, createReq)
+	if err != nil {
+		profileOperationError("create", plan.ProfileName.ValueString(), err, &resp.Diagnostics)
+		return
+	}
+	profile = readCreatedProfile(ctx, r.client, profile, &plan, &resp.Diagnostics)
+	if profile == nil {
+		preservePartialProfileState(ctx, &plan, &resp.State, &resp.Diagnostics)
+		return
 	}
 
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
@@ -531,16 +550,19 @@ func (r *securityProfileResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	found, err := r.client.Profiles.GetByID(ctx, state.ProfileID.ValueString())
+	found, err := latestNamedProfile(ctx, r.client, state.ProfileName.ValueString())
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			resp.State.RemoveResource(ctx)
-			return
-		}
+
 		resp.Diagnostics.AddError("Failed to read security profile", err.Error())
 		return
 	}
 
+	if found == nil {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	state.CreatedAt = profileCreationTime(ctx, r.client, found.ProfileName, &resp.Diagnostics)
 	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -571,18 +593,27 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	profile, err := r.client.Profiles.Update(ctx, state.ProfileID.ValueString(), updateReq)
+	var profile *airsruntime.SecurityProfile
+	var err error
+	if !plan.ProfileName.Equal(state.ProfileName) {
+		// Rename starts a new logical profile; the old name remains in AIRS.
+		if !profileNameAvailable(ctx, r.client, plan.ProfileName.ValueString(), &resp.Diagnostics) {
+			return
+		}
+		profile, err = r.client.Profiles.Create(ctx, airsruntime.CreateProfileRequest{
+			ProfileName: updateReq.ProfileName, Policy: updateReq.Policy,
+		})
+	} else {
+		profile, err = r.client.Profiles.Update(ctx, state.ProfileID.ValueString(), updateReq)
+	}
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to update security profile", err.Error())
+		profileOperationError("update", plan.ProfileName.ValueString(), err, &resp.Diagnostics)
 		return
 	}
-
-	// Update response may be incomplete; read back the full profile.
-	if profile != nil && profile.ProfileID != "" {
-		full, readErr := r.client.Profiles.GetByID(ctx, profile.ProfileID)
-		if readErr == nil && full != nil {
-			profile = full
-		}
+	profile = readCreatedProfile(ctx, r.client, profile, &plan, &resp.Diagnostics)
+	if profile == nil {
+		preservePartialProfileState(ctx, &plan, &resp.State, &resp.Diagnostics)
+		return
 	}
 
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
@@ -596,21 +627,49 @@ func (r *securityProfileResource) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	_, err := r.client.Profiles.ForceDelete(ctx, state.ProfileID.ValueString(), "terraform")
+	profiles, err := namedProfileRevisions(ctx, r.client, state.ProfileName.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to delete security profile", err.Error())
+		resp.Diagnostics.AddError("Failed to list security profile history", err.Error())
 		return
+	}
+	for _, profile := range profiles {
+		_, err = r.client.Profiles.ForceDelete(ctx, profile.ProfileID, "terraform")
+		id := profile.ProfileID
+		finishDelete(ctx, err, "security profile revision "+id, func(ctx context.Context) (bool, error) {
+			remaining, readErr := namedProfileRevisions(ctx, r.client, state.ProfileName.ValueString())
+			for _, item := range remaining {
+				if item.ProfileID == id {
+					return false, readErr
+				}
+			}
+			return true, readErr
+		}, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+	remaining, err := namedProfileRevisions(ctx, r.client, state.ProfileName.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to verify security profile destruction", err.Error())
+	} else if len(remaining) != 0 {
+		resp.Diagnostics.AddError("Security profile history remains", "Revisions still exist under the managed name; retry destroy to remove them.")
 	}
 }
 
 func (r *securityProfileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	found, err := r.client.Profiles.GetByName(ctx, req.ID)
+	found, err := latestNamedProfile(ctx, r.client, req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+req.ID+": "+err.Error())
+		resp.Diagnostics.AddError("Failed to import security profile", err.Error())
+		return
+	}
+
+	if found == nil {
+		resp.Diagnostics.AddError("Profile not found", "No profile with name: "+req.ID)
 		return
 	}
 
 	var state SecurityProfileResourceModel
+	state.CreatedAt = profileCreationTime(ctx, r.client, found.ProfileName, &resp.Diagnostics)
 	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -825,11 +884,10 @@ func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnos
 func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile, state *SecurityProfileResourceModel, diags *diag.Diagnostics) {
 	state.ID = types.StringValue(profile.ProfileID)
 	state.ProfileID = types.StringValue(profile.ProfileID)
+	state.Revision = types.Int64Value(int64(profile.Revision))
 	state.ProfileName = types.StringValue(profile.ProfileName)
 	state.Active = types.BoolValue(profile.Active)
-	if state.CreatedAt.IsNull() || state.CreatedAt.IsUnknown() || state.CreatedAt.ValueString() == "" {
-		state.CreatedAt = types.StringValue(profile.LastModifiedTs)
-	}
+
 	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
 
 	if profile.Policy == nil {
@@ -844,9 +902,7 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 		model := AiSecurityProfileModel{
 			ModelType: types.StringValue(asp.ModelType),
 		}
-		if asp.ContentType != "" {
-			model.ContentType = types.StringValue(asp.ContentType)
-		}
+		model.ContentType = types.StringValue(asp.ContentType)
 
 		if asp.ModelConfiguration != nil {
 			mc := asp.ModelConfiguration
@@ -867,9 +923,7 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 					dldModel := &DataLeakDetectionModel{
 						Action: types.StringValue(string(dld.Action)),
 					}
-					if dld.MaskDataInline {
-						dldModel.MaskDataInline = types.BoolValue(true)
-					}
+					dldModel.MaskDataInline = types.BoolValue(dld.MaskDataInline)
 					for _, m := range dld.Member {
 						member := DataLeakMemberModel{
 							Text: types.StringValue(m.Text),
@@ -963,12 +1017,8 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 			Version:     types.StringValue(dlp.Version),
 			LogSeverity: types.StringValue(dlp.LogSeverity),
 		}
-		if dlp.NonFileBased != "" {
-			dlpModel.NonFileBased = types.StringValue(dlp.NonFileBased)
-		}
-		if dlp.FileBased != "" {
-			dlpModel.FileBased = types.StringValue(dlp.FileBased)
-		}
+		dlpModel.NonFileBased = types.StringValue(dlp.NonFileBased)
+		dlpModel.FileBased = types.StringValue(dlp.FileBased)
 		state.DlpDataProfiles = append(state.DlpDataProfiles, dlpModel)
 	}
 }

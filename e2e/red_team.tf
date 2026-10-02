@@ -11,22 +11,14 @@ resource "prisma-airs_red_team_custom_prompt_set" "test" {
 # --- Target ---
 # Creates a target with a REST connection to httpbin (public echo service).
 resource "prisma-airs_red_team_target" "test" {
-  name            = "${local.prefix}-target"
-  description     = "E2E test target"
-  target_type     = "APPLICATION"
-  connection_type = "REST"
-
-  connection_params = jsonencode({
-    url = "https://httpbin.org/post"
-    headers = {
-      "Content-Type" = "application/json"
-    }
-    request_json = {
-      prompt = "{INPUT}"
-    }
-    response_json = {
-      output = "{RESPONSE}"
-    }
-    response_key = "output"
-  })
+  name        = "${local.prefix}-target"
+  description = "E2E test target"
+  target_type = "APPLICATION"
+  rest {
+    api_endpoint    = "https://httpbin.org/post"
+    request_headers = { "Content-Type" = "application/json" }
+    request_body    = { prompt = "{INPUT}" }
+    response_body   = { output = "{RESPONSE}" }
+    response_key    = "output"
+  }
 }

@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Manages red team targets and custom prompt sets for adversarial testing
 # of AI applications. Demonstrates multiple connection types:
-#   - CUSTOM targets via network broker (LiteLLM, Talkdesk)
+#   - REST targets via PUBLIC endpoints (LiteLLM, Talkdesk)
 #   - BEDROCK targets for AWS-hosted models (Claude)
 #   - APPLICATION and MODEL target types
 #
@@ -16,8 +16,8 @@
 terraform {
   required_providers {
     prisma-airs = {
-      source  = "cdot65/prisma-airs"
-      version = "~> 0.5"
+      source = "cdot65/prisma-airs"
+      version = "~> 0.7.0"
     }
   }
 }

@@ -61,7 +61,8 @@ func (d *deploymentProfilesDataSource) Schema(_ context.Context, _ datasource.Sc
 					Attributes: map[string]schema.Attribute{
 						"profile_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "Deployment profile ID.",
+							Sensitive:   true,
+							Description: "Sensitive legacy alias of auth_code; the API exposes no separate profile ID.",
 						},
 						"profile_name": schema.StringAttribute{
 							Computed:    true,
@@ -69,10 +70,12 @@ func (d *deploymentProfilesDataSource) Schema(_ context.Context, _ datasource.Sc
 						},
 						"auth_code": schema.StringAttribute{
 							Computed:    true,
+							Sensitive:   true,
 							Description: "Auth code for API key creation.",
 						},
 						"details": schema.StringAttribute{
 							Computed:    true,
+							Sensitive:   true,
 							Description: "Profile details as JSON string.",
 						},
 					},

@@ -1,3 +1,7 @@
+---
+page_title: "Model Security Workflow"
+---
+
 # Model Security Workflow
 
 This guide covers managing model security groups and reviewing security rules with the Prisma AIRS provider.
