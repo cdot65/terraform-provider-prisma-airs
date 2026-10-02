@@ -1,56 +1,26 @@
-# Error Handling
+# Error handling
 
-The Prisma AIRS Terraform provider surfaces errors from the underlying Go SDK with context about the operation that failed.
+Diagnostics identify the resource operation that failed. The SDK returns typed authentication, request, HTTP, missing-object, conflict, and internal errors; the provider uses typed status classification when deciding whether an object is absent.
 
-## Error Types
+## Retries
 
-| Type | Description |
-|------|-------------|
-| `ServerSideError` | HTTP 5xx from the AIRS API |
-| `ClientSideError` | HTTP 4xx (except auth) from the AIRS API |
-| `UserRequestPayloadError` | Invalid request payload |
-| `MissingVariableError` | Required configuration missing |
-| `AISecSDKInternalError` | SDK internal error |
-| `OAuthError` | OAuth2 authentication failure |
+The management transport retries HTTP 429, 500, 502, 503, and 504 with bounded backoff. Authentication responses 401/403 can trigger a bounded token refresh and retry. Other client errors normally fail immediately. A persistent authorization error or missing service entitlement requires a configuration/access change.
 
-## Retry Behavior
+## Missing objects and deletion
 
-The provider automatically retries on transient failures:
+Refresh removes truly absent resources from state. Model Security tombstones and archived prompt sets are treated as absent. Paginated reads fail explicitly on invalid or repeated cursors; an incomplete list does not establish absence.
 
-- **5xx errors** (500, 502, 503, 504) — retried with exponential backoff
-- **401/403 errors** — token refresh + retry (does not count against retry budget)
-- **4xx errors** (other) — not retried, fail immediately
+Deletion verifies the remote object is absent. An empty or undecodable successful response is not sufficient evidence by itself. Named security-profile destruction checks the whole current-name history. Network Broker channels remain externally managed.
 
-## Common Errors
+## Common failures
 
-### Missing Credentials
+| Failure | Next action |
+| --- | --- |
+| Management client unavailable | Supply the three management OAuth credentials |
+| Authentication or authorization rejected | Verify service-account roles, tenant, credentials, and entitlement |
+| Rate limit persists | Reduce parallel operations and retry after the service limit clears |
+| Profile name conflict | Import existing history explicitly |
+| App deployment-code ambiguity | Resolve distinct deployment associations in AIRS |
+| Target payload validation | Check the native connection family and required response/streaming fields |
 
-```
-Error: missing required configuration: PANW_MGMT_CLIENT_ID
-```
-
-Set the required environment variables or provider attributes.
-
-### OAuth2 Authentication Failure
-
-```
-Error: Token request failed with status 401
-```
-
-Verify your `client_id`, `client_secret`, and `tsg_id` are correct.
-
-### Rate Limiting
-
-```
-Error: server returned 429: rate limit exceeded
-```
-
-The provider will retry automatically. If persistent, reduce concurrent operations.
-
-## Debugging
-
-Enable Terraform debug logging to see detailed API interactions:
-
-```bash
-TF_LOG=DEBUG terraform apply
-```
+See [Troubleshooting](../guides/troubleshooting.md) for version selection and state-specific failures. If collecting debug logs, keep secret values, state, saved plans, and raw key receipts out of issue reports.

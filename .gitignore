@@ -32,8 +32,12 @@ Thumbs.db
 *.swo
 *~
 
-# MkDocs build output
-site/
+# Documentation build and browser output
+node_modules/
+docs-site/build/
+docs-site/.docusaurus/
+docs-site/test-results/
+docs-site/playwright-report/
 
 # Review documents
 REVIEW-*.md
@@ -56,3 +60,7 @@ terraform.rc
 
 # GoReleaser
 dist/
+
+# Python documentation tooling
+__pycache__/
+*.pyc

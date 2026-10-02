@@ -2,26 +2,13 @@
 
 Complete reference for all provider configuration attributes.
 
-## Schema
+## Minimal configuration
 
 ```hcl
-provider "prisma-airs" {
-  # OAuth2 (all API domains)
-  client_id      = string  # optional
-  client_secret  = string  # optional, sensitive
-  tsg_id         = string  # optional
-  mgmt_endpoint  = string  # optional
-  token_endpoint = string  # optional
-
-  # Model Security endpoints
-  model_sec_data_endpoint = string  # optional
-  model_sec_mgmt_endpoint = string  # optional
-
-  # Red Team endpoints
-  red_team_data_endpoint = string  # optional
-  red_team_mgmt_endpoint = string  # optional
-}
+provider "prisma-airs" {}
 ```
+
+Set the three management OAuth variables before planning live operations. One resolved identity is shared across the service clients. See [Authentication](../getting-started/authentication.md) and the [exact provider schema](generated/provider.md).
 
 ## Attribute Reference
 

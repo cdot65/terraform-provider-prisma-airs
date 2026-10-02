@@ -1,6 +1,6 @@
 # prisma-airs_security_profile
 
-Manages an AI security profile in Prisma AIRS Management API.
+Manages the complete revision history of one named AI security profile in Prisma AIRS Management API.
 
 ## Example Usage
 
@@ -154,8 +154,11 @@ resource "prisma-airs_security_profile" "topics" {
 }
 ```
 
-!!! tip "Auto-Resolution"
-    Since v0.6.2, the provider automatically resolves `topic_name` to `topic_id` and `revision` via the Topics API. You no longer need to specify these manually.
+:::tip[Auto-Resolution]
+
+Since v0.6.2, the provider automatically resolves `topic_name` to `topic_id` and `revision` via the Topics API. You no longer need to specify these manually.
+
+:::
 
 ## Argument Reference
 
@@ -243,7 +246,7 @@ Contains `data_leak_detection` and `database_security` sub-blocks.
 - `uuid` - (Optional) Profile UUID.
 - `profile_id` - (Optional) Profile ID.
 - `version` - (Optional) Profile version.
-- `log_severity` - (Optional) Log severity level.
+- `log_severity` - (Required) Log severity level.
 - `non_file_based` - (Optional) Non-file-based detection action.
 - `file_based` - (Optional) File-based detection action.
 
@@ -251,8 +254,9 @@ Contains `data_leak_detection` and `database_security` sub-blocks.
 
 - `id` - The profile ID.
 - `profile_id` - The profile ID (same as `id`).
+- `revision` - Highest numeric revision under the managed name.
 - `active` - Whether the profile is active.
-- `created_at` - Timestamp when the profile was created.
+- `created_at` - Timestamp of revision 1, or null when that history is unavailable.
 - `updated_at` - Timestamp when the profile was last updated.
 
 ## Import
@@ -262,3 +266,21 @@ Security profiles can be imported by name:
 ```bash
 terraform import prisma-airs_security_profile.example "profile-name"
 ```
+
+## Revision ownership and changes
+
+Import by profile name selects the highest numeric revision, independently of its `active` flag. Refresh follows externally created newer revisions and falls back to remaining history when the latest UUID disappears. A conflicting create requires explicit import.
+
+Policy changes create a new service UUID and revision while Terraform plans an ordinary update at the same address. Unchanged policy fields remain known; `profile_id`, `id`, and `revision` become known after apply. `created_at` uses revision 1's timestamp, or null when that original revision is unavailable.
+
+Renaming creates revision 1 of the new name and leaves the old named profile in AIRS. Terraform follows the new name. An occupied destination is rejected; import it separately if ownership is intended.
+
+**Destroy deletes every revision under the currently managed name**, including history predating import and changes by other actors. After a rename, the previous name requires separate management or cleanup.
+
+Omitted `model_type` defaults to `"default"`. Optional scalar policy fields that have server defaults are read as computed values. Explicit `mask_data_inline = false` remains false through apply and refresh. DLP entries require nonempty `log_severity`; the live API rejects its omission.
+
+Computed DLP reference metadata is preserved only while every configured name, UUID, profile ID and version still matches. Changing or reordering references leaves derived metadata unknown until the new revision is read, rather than carrying it from the prior list entry.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_security_profile.md) for all nested fields, types, and sensitivity flags.

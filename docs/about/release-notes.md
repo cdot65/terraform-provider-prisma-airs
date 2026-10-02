@@ -1,5 +1,17 @@
 # Release Notes
 
+## v0.7.0 — SDK upgrade, native HCL, and Docusaurus (2026-10-02)
+
+- Rebuild documentation with Docusaurus and the shared AIRS Harness design, native HCL examples, exact provider schemas, migration guidance, and desktop/tablet/mobile browser and pixel checks.
+
+- Pin published `prisma-airs-go` v0.6.1; correct typed missing/error handling, verified deletes, Model Security tombstones, and prompt-set archival.
+- Track security profiles by logical name and highest numeric revision. Policy edits update the existing Terraform address with a new service UUID; rename leaves the previous name unmanaged. Destroy removes all history under the current name.
+- **Breaking:** replace target JSON inputs with native HCL connection/authentication blocks. Preserve desired payloads and sensitive credentials; expose computed service discriminators. Databricks uses STREAMING; REST/STREAMING transports use the CUSTOM discriminator. Removing authentication requires replacement.
+- **Breaking:** remove unsupported prompt-set `properties`; immutable key creation settings and Model Security source changes require replacement.
+- **Breaking:** deployment-profile `profile_id`, `auth_code` and `details` are sensitive; outputs referencing them must set `sensitive = true`. Customer apps reject unsupported renames and explicit empty metadata. Custom topics reject empty descriptions, and clearing a prompt-set description plans replacement. Native provider connection changes plan replacement. DLP policy entries require nonempty `log_severity`, matching the live API.
+- Verify API-key one-time secret preservation and import limitations, app/key cascading cleanup, and import-only customer-app behavior.
+- Customer-app updates use the published SDK v0.6.1 deployment-code resolution fix. Provider and SDK version numbers are independent.
+
 ## v0.6.3 — Read-After-Write, Update Topic Resolution
 
 - Fix: `Create` and `Update` now read back the full profile via `GetByID` — resolves "inconsistent result after apply" errors for `app_protection`, `database_security`, and `member.version` fields

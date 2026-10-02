@@ -2,13 +2,15 @@ package provider
 
 import (
 	"context"
-	"strings"
 
+	"github.com/cdot65/prisma-airs-go/aisec"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
+	msschema "github.com/cdot65/prisma-airs-go/aisec/modelsecurity/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -63,16 +65,14 @@ func (r *modelSecurityGroupResource) Schema(_ context.Context, _ resource.Schema
 				Required:    true,
 				Description: "Name of the security group.",
 			},
-			"description": schema.StringAttribute{
-				Optional:    true,
-				Description: "Description of the security group.",
-			},
+			"description": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""), Description: "Description of the security group."},
 			"source_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "Source type (LOCAL, HUGGING_FACE, S3, GCS, AZURE, ARTIFACTORY, GITLAB, ALL).",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"state": schema.StringAttribute{
@@ -137,11 +137,16 @@ func (r *modelSecurityGroupResource) Read(ctx context.Context, req resource.Read
 
 	group, err := r.client.SecurityGroups.Get(ctx, state.UUID.ValueString())
 	if err != nil {
-		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+		if isNotFound(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("Failed to read model security group", err.Error())
+		return
+	}
+
+	if group.IsTombstone {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -162,17 +167,22 @@ func (r *modelSecurityGroupResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	updateReq := modelsecurity.ModelSecurityGroupUpdateRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
+	updateReq := msschema.ModelSecurityGroupUpdateRequest{
+		Name:        aisec.Value(plan.Name.ValueString()),
+		Description: aisec.Value(plan.Description.ValueString()),
 	}
 
-	group, err := r.client.SecurityGroups.Update(ctx, state.UUID.ValueString(), updateReq)
+	_, err := r.client.SecurityGroups.UpdateFields(ctx, state.UUID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update model security group", err.Error())
 		return
 	}
 
+	group, err := r.client.SecurityGroups.Get(ctx, state.UUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to read updated security group", err.Error())
+		return
+	}
 	mapSecurityGroupToState(group, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -185,13 +195,13 @@ func (r *modelSecurityGroupResource) Delete(ctx context.Context, req resource.De
 	}
 
 	err := r.client.SecurityGroups.Delete(ctx, state.UUID.ValueString())
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
+	finishDelete(ctx, err, "model security group", func(ctx context.Context) (bool, error) {
+		group, getErr := r.client.SecurityGroups.Get(ctx, state.UUID.ValueString())
+		if isNotFound(getErr) {
+			return true, nil
 		}
-		resp.Diagnostics.AddError("Failed to delete model security group", err.Error())
-		return
-	}
+		return getErr == nil && group.IsTombstone, getErr
+	}, &resp.Diagnostics)
 }
 
 func (r *modelSecurityGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -199,10 +209,14 @@ func (r *modelSecurityGroupResource) ImportState(ctx context.Context, req resour
 
 	group, err := r.client.SecurityGroups.Get(ctx, uuid)
 	if err != nil {
-		resp.Diagnostics.AddError("Group not found", "No security group with UUID: "+uuid)
+		resp.Diagnostics.AddError("Failed to import security group", err.Error())
 		return
 	}
 
+	if group.IsTombstone {
+		resp.Diagnostics.AddError("Group is deleted", "A tombstoned security group cannot be imported.")
+		return
+	}
 	var state ModelSecurityGroupResourceModel
 	mapSecurityGroupToState(group, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

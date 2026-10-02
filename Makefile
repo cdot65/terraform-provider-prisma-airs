@@ -1,11 +1,11 @@
-.PHONY: fmt vet lint test test-coverage build check clean install generate docs-serve
+.PHONY: fmt vet lint test test-coverage build check clean install generate docs-serve docs-build docs-check
 
 HOSTNAME=registry.terraform.io
 NAMESPACE=cdot65
 NAME=prisma-airs
 BINARY=terraform-provider-${NAME}
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
-VERSION=0.1.0
+VERSION?=0.7.0-dev
 
 export GOPRIVATE=github.com/cdot65/*
 
@@ -46,17 +46,25 @@ install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
-## Generate Terraform provider documentation
-generate:
+## Build the provider and generate exact Docusaurus schema pages
+generate: build
 	go generate ./...
 
 ## Remove build artifacts
 clean:
 	rm -f ${BINARY}
 	rm -f coverage.out
-	rm -rf site/
+	rm -rf docs-site/build/ docs-site/.docusaurus/
 	rm -rf dist/
 
-## Serve MkDocs locally
+## Serve Docusaurus locally (run npm ci in docs-site first)
 docs-serve:
-	mkdocs serve
+	cd docs-site && npm start
+
+## Build the documentation site
+docs-build:
+	cd docs-site && npm run build
+
+## Check documentation content, schema, browser behavior, and design parity
+docs-check: build
+	cd docs-site && npm run check

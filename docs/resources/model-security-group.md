@@ -31,3 +31,11 @@ resource "prisma-airs_model_security_group" "ml_models" {
 ```bash
 terraform import prisma-airs_model_security_group.ml_models <uuid>
 ```
+
+## Lifecycle
+
+Model Security entitlement is required. Changing `source_type` plans replacement; omitted descriptions default to an empty string, and explicit empty descriptions clear the observed value. Destroy tombstones the group. Tombstoned groups are removed from state on refresh and rejected during import.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_model_security_group.md) for all nested fields, types, and sensitivity flags.

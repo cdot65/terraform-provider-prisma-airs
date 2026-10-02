@@ -24,3 +24,7 @@ output "profile_count" {
     - `profile_name` - Profile name.
     - `details` - Profile details (JSON).
 - `total_count` - Total number of profiles.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_dlp_profiles.md) for all nested fields, types, and sensitivity flags.

@@ -1,0 +1,58 @@
+{
+  "repository": "https://github.com/cdot65/prisma-airs-harness",
+  "commit": "1885e40eb1dc493ad5b47757694d077011afa431",
+  "archiveSha256": "8ce2e005ea3fb1c729d4105a57c06b1fe9a103ea2b309ac01fc0e7d7951a1417",
+  "files": [
+    {
+      "path": "src/css/custom.css",
+      "sha256": "2cd26600d312a80acc1758a15ea8c14510b8faf82746d612a666c72268d3fb7f",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "src/css/prism-airs.ts",
+      "sha256": "bd805aa7a0920b7c22d88a5a8a87a68863403d0a26c293b500d0424e8ee08ec8",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "src/pages/index.module.css",
+      "sha256": "8e752f10ffd7ddb6db06d2ee8d477df94a4f42c53dfa9d78cde9c42043e67a8e",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "src/theme/DocItem/Layout/index.tsx",
+      "sha256": "02401eb52e895e3e9dc487d540be2eca52f826720e68d14b54e1edb51cb7c9ed",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "src/theme/DocItem/Layout/styles.module.css",
+      "sha256": "5c4144c06d2a0368beafec9e28663d4beea070e8fe75d1842aa91be316834f47",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "static/img/brand-logo.png",
+      "sha256": "9f3c2588c304132c96dd9377fd6a7fcb015d538dee10eba1160268541bfc6c43",
+      "copiedUnchanged": true
+    },
+    {
+      "path": "src/pages/index.tsx",
+      "sha256": "a70e85f1477f124c48129befa4cbc448fdfaa8300fb9d3b972e423312ba969ab",
+      "copiedUnchanged": false
+    },
+    {
+      "path": "docusaurus.config.ts",
+      "sha256": "347025601c4a1fc8f349c59dc19bd80b771eadff98bc182994dbaf0be01d5195",
+      "copiedUnchanged": false
+    },
+    {
+      "path": "package.json",
+      "sha256": "ba23d73a6285831e43750975a006b1e15b5f43d76fbd630d6a104cb4311e2eea",
+      "referenceOnly": true
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d47715e494714d816c2e7864c5d245f46dd1d5561244fb5095244e3a49e1ca4d",
+      "referenceOnly": true
+    }
+  ],
+  "referenceDocusaurusVersion": "3.10.1"
+}

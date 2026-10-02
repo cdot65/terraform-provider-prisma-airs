@@ -2,7 +2,8 @@ package provider
 
 import (
 	"context"
-	"strings"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -15,6 +16,7 @@ import (
 var (
 	_ resource.Resource                = &customerAppResource{}
 	_ resource.ResourceWithImportState = &customerAppResource{}
+	_ resource.ResourceWithModifyPlan  = &customerAppResource{}
 )
 
 func NewCustomerAppResource() resource.Resource {
@@ -65,7 +67,8 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"app_name": schema.StringAttribute{
 				Required:    true,
-				Description: "Name of the customer application.",
+				Description: "Name of the customer application. Explicit empty values are unsupported; omit optional fields to retain observed metadata.",
+				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"tsg_id": schema.StringAttribute{
 				Computed:    true,
@@ -74,17 +77,20 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 			"model_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Model name associated with the app.",
+				Description: "Model name associated with the app. Explicit empty values are unsupported; omit optional fields to retain observed metadata.",
+				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"cloud_provider": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Cloud provider for the app.",
+				Description: "Cloud provider for the app. Explicit empty values are unsupported; omit optional fields to retain observed metadata.",
+				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"environment": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Deployment environment.",
+				Description: "Deployment environment. Explicit empty values are unsupported; omit optional fields to retain observed metadata.",
+				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -114,6 +120,18 @@ func (r *customerAppResource) Schema(_ context.Context, _ resource.SchemaRequest
 	}
 }
 
+func (r *customerAppResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+	var plan, state CustomerAppResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if !resp.Diagnostics.HasError() && !plan.AppName.IsUnknown() && !plan.AppName.Equal(state.AppName) {
+		resp.Diagnostics.AddError("Customer-app rename is unsupported", "Re-establish the application under its desired name outside Terraform, then import that name at a separate address. This import-only resource cannot safely replace or rename an existing application.")
+	}
+}
+
 func (r *customerAppResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -140,13 +158,14 @@ func (r *customerAppResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	app, err := r.client.CustomerApps.Get(ctx, state.AppName.ValueString())
+	app, err := findCustomerAppByName(ctx, r.client, state.AppName.ValueString())
 	if err != nil {
-		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddError("Failed to read customer app", err.Error())
+		return
+	}
+
+	if app == nil {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -174,6 +193,7 @@ func (r *customerAppResource) Update(ctx context.Context, req resource.UpdateReq
 		ModelName:     plan.ModelName.ValueString(),
 		CloudProvider: plan.CloudProvider.ValueString(),
 		Environment:   plan.Environment.ValueString(),
+		UpdatedBy:     plan.UpdatedBy.ValueString(),
 	}
 
 	app, err := r.client.CustomerApps.Update(ctx, state.CustomerAppID.ValueString(), updateReq)
@@ -182,7 +202,18 @@ func (r *customerAppResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	// Update receipts can contain fields absent from the supported list response.
+	// Reconcile against the same canonical source used by Read and import.
 	mapAppToState(app, &plan)
+	full, readErr := findCustomerAppByName(ctx, r.client, plan.AppName.ValueString())
+	if readErr != nil {
+		resp.Diagnostics.AddError("Failed to refresh customer app after update", readErr.Error())
+	} else if full == nil {
+		resp.Diagnostics.AddError("Updated customer app not found", "The service did not list the updated application.")
+	} else {
+		mapAppToState(full, &plan)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -199,21 +230,23 @@ func (r *customerAppResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	_, err := r.client.CustomerApps.Delete(ctx, state.AppName.ValueString(), updatedBy)
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
-		}
-		resp.Diagnostics.AddError("Failed to delete customer app", err.Error())
-		return
-	}
+	finishDelete(ctx, err, "customer app", func(ctx context.Context) (bool, error) {
+		app, getErr := findCustomerAppByName(ctx, r.client, state.AppName.ValueString())
+		return app == nil, getErr
+	}, &resp.Diagnostics)
 }
 
 func (r *customerAppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	appName := req.ID
 
-	app, err := r.client.CustomerApps.Get(ctx, appName)
+	app, err := findCustomerAppByName(ctx, r.client, appName)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to import customer app", err.Error())
+		return
+	}
+
+	if app == nil {
+		resp.Diagnostics.AddError("Customer app not found", "No app with name: "+appName)
 		return
 	}
 
@@ -235,4 +268,27 @@ func mapAppToState(app *airsruntime.CustomerApp, state *CustomerAppResourceModel
 	state.AgentApp = types.BoolValue(app.AgentApp)
 	state.AiAgentFramework = types.StringValue(app.AiAgentFramework)
 	state.AiSecProfileName = types.StringValue(app.AiSecProfileName)
+}
+
+// The legacy single-app GET route fails on the live service. The supported
+// list route resolves names; a failed list never means an app is absent.
+func findCustomerAppByName(ctx context.Context, client *airsruntime.Client, name string) (*airsruntime.CustomerApp, error) {
+	for offset := 0; ; {
+		page, err := client.CustomerApps.List(ctx, airsruntime.ListOpts{Limit: 100, Offset: offset})
+		if err != nil {
+			return nil, err
+		}
+		for i := range page.Items {
+			if page.Items[i].AppName == name {
+				return &page.Items[i], nil
+			}
+		}
+		if page.NextOffset > offset {
+			offset = page.NextOffset
+		} else if len(page.Items) >= 100 {
+			offset += len(page.Items)
+		} else {
+			return nil, nil
+		}
+	}
 }

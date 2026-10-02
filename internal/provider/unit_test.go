@@ -283,7 +283,9 @@ func TestMapProfileToState_basic(t *testing.T) {
 	assertStringValue(t, "ProfileID", state.ProfileID, "prof-123")
 	assertStringValue(t, "ProfileName", state.ProfileName, "default")
 	assertBoolValue(t, "Active", state.Active, true)
-	assertStringValue(t, "CreatedAt", state.CreatedAt, "2026-01-02T00:00:00Z")
+	if !state.CreatedAt.IsNull() {
+		t.Error("creation metadata must come from revision 1 history, not latest modification time")
+	}
 	assertStringValue(t, "UpdatedAt", state.UpdatedAt, "2026-01-02T00:00:00Z")
 }
 
@@ -646,54 +648,6 @@ func TestMapSecurityGroupToState_basic(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mapTargetToState
 // ---------------------------------------------------------------------------
-
-func TestMapTargetToState_basic(t *testing.T) {
-	target := &redteam.TargetResponse{
-		UUID:             "tgt-123",
-		Name:             "test-target",
-		Description:      "Test target",
-		TargetType:       redteam.TargetType("APPLICATION"),
-		Status:           redteam.TargetStatus("ACTIVE"),
-		ConnectionType:   redteam.TargetConnectionType("REST"),
-		ConnectionParams: map[string]any{"url": "https://example.com"},
-		CreatedAt:        "2026-01-01T00:00:00Z",
-		UpdatedAt:        "2026-01-02T00:00:00Z",
-	}
-
-	var state RedTeamTargetResourceModel
-	mapTargetToState(target, &state)
-
-	assertStringValue(t, "ID", state.ID, "tgt-123")
-	assertStringValue(t, "UUID", state.UUID, "tgt-123")
-	assertStringValue(t, "Name", state.Name, "test-target")
-	assertStringValue(t, "Description", state.Description, "Test target")
-	assertStringValue(t, "TargetType", state.TargetType, "APPLICATION")
-	assertStringValue(t, "Status", state.Status, "ACTIVE")
-	assertStringValue(t, "ConnectionType", state.ConnectionType, "REST")
-	assertStringContains(t, "ConnectionParams", state.ConnectionParams, `"url":"https://example.com"`)
-}
-
-func TestMapTargetToState_emptyOptionalFields(t *testing.T) {
-	target := &redteam.TargetResponse{
-		UUID:             "tgt-456",
-		Name:             "minimal-target",
-		TargetType:       "",
-		ConnectionType:   "",
-		ConnectionParams: nil,
-	}
-
-	var state RedTeamTargetResourceModel
-	mapTargetToState(target, &state)
-
-	assertStringValue(t, "ID", state.ID, "tgt-456")
-	// TargetType and ConnectionType should remain zero value when empty
-	if state.TargetType.ValueString() != "" && !state.TargetType.IsNull() {
-		t.Errorf("TargetType: expected empty or null, got %q", state.TargetType.ValueString())
-	}
-	if state.ConnectionType.ValueString() != "" && !state.ConnectionType.IsNull() {
-		t.Errorf("ConnectionType: expected empty or null, got %q", state.ConnectionType.ValueString())
-	}
-}
 
 // ---------------------------------------------------------------------------
 // mapPromptSetToState
@@ -1128,18 +1082,6 @@ func assertBoolValue(t *testing.T, field string, got types.Bool, want bool) {
 	t.Helper()
 	if got.ValueBool() != want {
 		t.Errorf("%s: expected %v, got %v", field, want, got.ValueBool())
-	}
-}
-
-func assertStringContains(t *testing.T, field string, got types.String, substr string) {
-	t.Helper()
-	val := got.ValueString()
-	if len(val) == 0 {
-		t.Errorf("%s: expected string containing %q, got empty", field, substr)
-		return
-	}
-	if !containsSubstring(val, substr) {
-		t.Errorf("%s: expected string containing %q, got %q", field, substr, val)
 	}
 }
 

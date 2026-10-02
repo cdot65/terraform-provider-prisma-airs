@@ -2,13 +2,14 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
-	"strings"
 
+	"github.com/cdot65/prisma-airs-go/aisec"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
+	rtschema "github.com/cdot65/prisma-airs-go/aisec/redteam/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -31,7 +32,6 @@ type RedTeamCustomPromptSetResourceModel struct {
 	UUID        types.String `tfsdk:"uuid"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
-	Properties  types.String `tfsdk:"properties"`
 	Status      types.String `tfsdk:"status"`
 	Active      types.Bool   `tfsdk:"active"`
 	Archive     types.Bool   `tfsdk:"archive"`
@@ -67,11 +67,12 @@ func (r *redTeamCustomPromptSetResource) Schema(_ context.Context, _ resource.Sc
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "Description of the prompt set.",
-			},
-			"properties": schema.StringAttribute{
-				Optional:    true,
-				Description: "Properties as a JSON string.",
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
+				Description: "Description of the prompt set. Clearing a nonempty value requires replacement; the old set is archived.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIf(func(_ context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+					resp.RequiresReplace = !req.PlanValue.IsUnknown() && req.PlanValue.ValueString() == "" && req.StateValue.ValueString() != ""
+				}, "Replace when clearing a description.", "Replace when clearing a description.")},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -120,14 +121,6 @@ func (r *redTeamCustomPromptSetResource) Create(ctx context.Context, req resourc
 		Name:        plan.Name.ValueString(),
 		Description: plan.Description.ValueString(),
 	}
-	if !plan.Properties.IsNull() && !plan.Properties.IsUnknown() && plan.Properties.ValueString() != "" {
-		var props map[string]any
-		if err := json.Unmarshal([]byte(plan.Properties.ValueString()), &props); err != nil {
-			resp.Diagnostics.AddError("Invalid properties JSON", err.Error())
-			return
-		}
-		createReq.Properties = props
-	}
 
 	promptSet, err := r.client.CustomAttacks.CreatePromptSet(ctx, createReq)
 	if err != nil {
@@ -148,7 +141,7 @@ func (r *redTeamCustomPromptSetResource) Read(ctx context.Context, req resource.
 
 	promptSet, err := r.client.CustomAttacks.GetPromptSet(ctx, state.UUID.ValueString())
 	if err != nil {
-		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+		if isNotFound(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -156,10 +149,14 @@ func (r *redTeamCustomPromptSetResource) Read(ctx context.Context, req resource.
 		return
 	}
 
-	// Preserve write-only Properties value from prior state (not returned by API).
-	propsVal := state.Properties
+	// Destroy archives prompt sets (no delete endpoint). An archived set is gone
+	// as far as Terraform is concerned, including one archived out-of-band.
+	if promptSet.Archive {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	mapPromptSetToState(promptSet, &state)
-	state.Properties = propsVal
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -176,25 +173,22 @@ func (r *redTeamCustomPromptSetResource) Update(ctx context.Context, req resourc
 		return
 	}
 
-	updateReq := redteam.CustomPromptSetUpdateRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-	}
-	if !plan.Properties.IsNull() && !plan.Properties.IsUnknown() && plan.Properties.ValueString() != "" {
-		var props map[string]any
-		if err := json.Unmarshal([]byte(plan.Properties.ValueString()), &props); err != nil {
-			resp.Diagnostics.AddError("Invalid properties JSON", err.Error())
-			return
-		}
-		updateReq.Properties = props
+	updateReq := rtschema.CustomPromptSetUpdateRequest{
+		Name:        aisec.Value(plan.Name.ValueString()),
+		Description: aisec.Value(plan.Description.ValueString()),
 	}
 
-	promptSet, err := r.client.CustomAttacks.UpdatePromptSet(ctx, state.UUID.ValueString(), updateReq)
+	_, err := r.client.CustomAttacks.UpdatePromptSetDetails(ctx, state.UUID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update custom prompt set", err.Error())
 		return
 	}
 
+	promptSet, err := r.client.CustomAttacks.GetPromptSet(ctx, state.UUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to read updated prompt set", err.Error())
+		return
+	}
 	mapPromptSetToState(promptSet, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -210,13 +204,16 @@ func (r *redTeamCustomPromptSetResource) Delete(ctx context.Context, req resourc
 	_, err := r.client.CustomAttacks.ArchivePromptSet(ctx, state.UUID.ValueString(), redteam.CustomPromptSetArchiveRequest{
 		Archive: true,
 	})
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
+	finishDelete(ctx, err, "custom prompt set (archive)", func(ctx context.Context) (bool, error) {
+		ps, getErr := r.client.CustomAttacks.GetPromptSet(ctx, state.UUID.ValueString())
+		if isNotFound(getErr) {
+			return true, nil
 		}
-		resp.Diagnostics.AddError("Failed to archive custom prompt set", err.Error())
-		return
-	}
+		if getErr != nil {
+			return false, getErr
+		}
+		return ps.Archive, nil
+	}, &resp.Diagnostics)
 }
 
 func (r *redTeamCustomPromptSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -224,10 +221,14 @@ func (r *redTeamCustomPromptSetResource) ImportState(ctx context.Context, req re
 
 	promptSet, err := r.client.CustomAttacks.GetPromptSet(ctx, uuid)
 	if err != nil {
-		resp.Diagnostics.AddError("Prompt set not found", "No prompt set with UUID: "+uuid)
+		resp.Diagnostics.AddError("Failed to import prompt set", err.Error())
 		return
 	}
 
+	if promptSet.Archive {
+		resp.Diagnostics.AddError("Prompt set is archived", "An archived prompt set cannot be imported as a managed active set.")
+		return
+	}
 	var state RedTeamCustomPromptSetResourceModel
 	mapPromptSetToState(promptSet, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

@@ -18,8 +18,8 @@ make testacc        # TF_ACC=1 acceptance tests (requires real credentials)
 make build          # go build -o terraform-provider-prisma-airs
 make check          # fmt + vet + lint + test (CI equivalent)
 make install        # install provider locally for terraform development
-make generate       # terraform-plugin-docs generate
-make docs-serve     # mkdocs serve
+make generate       # build provider + generate exact Docusaurus schema pages
+make docs-serve     # Docusaurus development server
 ```
 
 Run a single test:
@@ -62,7 +62,7 @@ internal/provider/
 
 ## Conventions
 
-- Go 1.24+ minimum (go.mod targets 1.25)
+- Go 1.25.6 minimum (see go.mod)
 - All resources implement `resource.Resource` + `resource.ResourceWithImportState`
 - All data sources implement `datasource.DataSource`
 - Test files: `*_test.go` alongside source, use `testAccProtoV6ProviderFactories`
@@ -75,9 +75,9 @@ internal/provider/
 
 - **ci.yml**: gofmt check, go vet, golangci-lint
 - **test.yml**: `go test -race` matrix across Go versions
-- **mkdocs-deploy.yml**: MkDocs Material → GitHub Pages on push to main
+- **deploy-docs.yml**: Docusaurus checks → GitHub Pages on push to main
 - **release.yml**: GoReleaser for Terraform provider binary distribution
 
 ## Docs
 
-MkDocs Material site in `docs/`. Config in `mkdocs.yml`. Deployed to GitHub Pages at cdot65.github.io/prisma-airs-provider/.
+Docusaurus site in `docs-site/`, authored guides in `docs/`. For documentation changes, read `docs/development/documentation.md` for schema generation and pinned Harness design checks. Complete `make docs-check` before declaring documentation changes verified. Existing public routes remain under cdot65.github.io/terraform-provider-prisma-airs/.

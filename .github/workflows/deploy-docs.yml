@@ -1,0 +1,99 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'docs-site/**', 'internal/provider/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
+  pull_request:
+    branches: [main]
+    paths: ['docs/**', 'docs-site/**', 'internal/provider/**', 'examples/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/deploy-docs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.16.4'
+          terraform_wrapper: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - name: Configure private Go module access
+        env:
+          MODULE_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -n "$MODULE_TOKEN" ]; then
+            git config --global url."https://${MODULE_TOKEN}@github.com/".insteadOf "https://github.com/"
+          fi
+      - run: make build
+      - run: npm ci
+        working-directory: docs-site
+      - run: npx playwright install --with-deps chromium
+        working-directory: docs-site
+      - run: npm run check
+        working-directory: docs-site
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: documentation-browser-evidence
+          path: docs-site/test-results/
+          retention-days: 14
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: docs-site/build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify-public-site:
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - run: npm ci
+        working-directory: docs-site
+      - run: npx playwright install --with-deps chromium
+        working-directory: docs-site
+      - run: npm run test:browser
+        working-directory: docs-site
+        env:
+          DOCS_URL: ${{ needs.deploy.outputs.page_url }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: published-documentation-browser-evidence
+          path: docs-site/test-results/

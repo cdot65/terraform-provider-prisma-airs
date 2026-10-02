@@ -6,12 +6,12 @@ Manages red team targets and custom prompt sets for adversarial testing of AI ap
 
 | Resource | Model | Connection | Description |
 |----------|-------|------------|-------------|
-| `litellm_multiturn` | Mistral-7b | CUSTOM / Network Broker | Multi-turn via LiteLLM proxy |
-| `litellm_singleturn` | Mistral-7b | CUSTOM / Network Broker | Single-turn baseline testing |
-| `worf` | Qwen3-14B-AWQ | CUSTOM / Network Broker | Local vLLM with AIRS guardrails |
-| `bedrock_claude` | Claude Opus 4.6 | BEDROCK | AWS Bedrock streaming (MODEL type) |
-| `qwen_completions` | Qwen2.5-7B-Instruct | CUSTOM / Public | Completions API (not chat) |
-| `talkdesk` | Virtual Agent | CUSTOM / Network Broker | Talkdesk with custom request format |
+| `litellm_multiturn` | Mistral-7b | REST / Public | LiteLLM proxy (legacy resource address) |
+| `litellm_singleturn` | Mistral-7b | REST / Public | Single-turn baseline testing |
+| `worf` | Qwen3-14B-AWQ | REST / Public | Local vLLM with AIRS guardrails |
+| `bedrock_claude` | Claude Opus 4.6 | BEDROCK | AWS Bedrock REST (MODEL type) |
+| `qwen_completions` | Qwen2.5-7B-Instruct | REST / Public | Completions API (not chat) |
+| `talkdesk` | Virtual Agent | REST / Public | Talkdesk with custom request format |
 
 ## Prompt Sets
 
@@ -47,3 +47,7 @@ terraform apply
 | `targets.tf` | Red team target resources |
 | `prompt_sets.tf` | Custom prompt set resources |
 | `outputs.tf` | Target and prompt set IDs, names, and status |
+
+Targets use native connection blocks and separate sensitive authentication blocks. These examples use public endpoints; supply a preexisting channel and `api_endpoint_type = "NETWORK_BROKER"` when needed. Multi-turn configuration is not exposed by this upgrade.
+
+These native HCL examples require provider v0.7.0 or later. Run `terraform init -upgrade` and review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before applying existing configurations.

@@ -2,13 +2,17 @@ package provider
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -31,6 +35,9 @@ type ApiKeyResourceModel struct {
 	ApiKeyName           types.String `tfsdk:"api_key_name"`
 	ApiKey               types.String `tfsdk:"api_key"`
 	AuthCode             types.String `tfsdk:"auth_code"`
+	CustEnv              types.String `tfsdk:"cust_env"`
+	CustCloudProvider    types.String `tfsdk:"cust_cloud_provider"`
+	CustAIAgentFramework types.String `tfsdk:"cust_ai_agent_framework"`
 	CustApp              types.String `tfsdk:"cust_app"`
 	CreatedBy            types.String `tfsdk:"created_by"`
 	Status               types.String `tfsdk:"status"`
@@ -65,6 +72,7 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"api_key_name": schema.StringAttribute{
 				Required:    true,
+				Validators:  []validator.String{stringvalidator.LengthBetween(1, 31)},
 				Description: "Name of the API key.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -77,26 +85,45 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"auth_code": schema.StringAttribute{
 				Required:    true,
+				Sensitive:   true,
 				Description: "Deployment profile auth code for API key creation.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"cust_app": schema.StringAttribute{
-				Optional:    true,
-				Description: "Customer application name to associate with the key.",
+				Optional: true, Computed: true,
+				Description:   "Customer application name to associate with the key.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown(), stringplanmodifier.RequiresReplace()},
 			},
 			"created_by": schema.StringAttribute{
-				Optional:    true,
-				Description: "Identity of the user creating the key.",
+				Optional: true, Computed: true,
+				Description:   "Identity of the user creating the key.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown(), stringplanmodifier.RequiresReplace()},
 			},
 			"rotation_time_interval": schema.Int64Attribute{
-				Required:    true,
-				Description: "Rotation interval value (e.g. 90 for 90 days).",
+				Required:      true,
+				Description:   "Rotation interval value (e.g. 90 for 90 days).",
+				PlanModifiers: []planmodifier.Int64{int64planmodifier.RequiresReplace()},
+				Validators:    []validator.Int64{int64validator.Between(1, 2147483647)},
 			},
 			"rotation_time_unit": schema.StringAttribute{
-				Required:    true,
-				Description: "Rotation time unit (days, months).",
+				Required:      true,
+				Validators:    []validator.String{stringvalidator.OneOf("days", "months")},
+				Description:   "Rotation time unit (days, months).",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			},
+			"cust_env": schema.StringAttribute{
+				Optional: true, Computed: true, Description: "Customer environment used when creating the associated application.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown(), stringplanmodifier.RequiresReplace()},
+			},
+			"cust_cloud_provider": schema.StringAttribute{
+				Optional: true, Computed: true, Description: "Customer cloud provider used when creating the associated application.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown(), stringplanmodifier.RequiresReplace()},
+			},
+			"cust_ai_agent_framework": schema.StringAttribute{
+				Optional: true, Computed: true, Description: "Customer AI agent framework.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown(), stringplanmodifier.RequiresReplace()},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -146,6 +173,9 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 		ApiKeyName:           plan.ApiKeyName.ValueString(),
 		AuthCode:             plan.AuthCode.ValueString(),
 		CustApp:              custApp,
+		CustEnv:              plan.CustEnv.ValueString(),
+		CustCloudProvider:    plan.CustCloudProvider.ValueString(),
+		CustAIAgentFramework: plan.CustAIAgentFramework.ValueString(),
 		CreatedBy:            plan.CreatedBy.ValueString(),
 		RotationTimeInterval: int32(plan.RotationTimeInterval.ValueInt64()),
 		RotationTimeUnit:     plan.RotationTimeUnit.ValueString(),
@@ -158,6 +188,19 @@ func (r *apiKeyResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	mapApiKeyToState(key, &plan)
+	// Preserve the create receipt and one-time secret even if canonical reread fails.
+	for _, value := range []*types.String{&plan.CustApp, &plan.CustEnv, &plan.CustCloudProvider, &plan.CustAIAgentFramework, &plan.CreatedBy} {
+		if value.IsUnknown() {
+			*value = types.StringNull()
+		}
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	found, err := findApiKeyByID(ctx, r.client, key.ApiKeyID)
+	if err != nil || found == nil {
+		resp.Diagnostics.AddError("Failed to verify created API key", "The creation receipt was saved, but canonical key metadata could not be read. Refresh before retrying.")
+		return
+	}
+	mapApiKeyMetadata(found, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -168,26 +211,22 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	found := findApiKeyByID(ctx, r.client, state.ApiKeyID.ValueString())
+	found, err := findApiKeyByID(ctx, r.client, state.ApiKeyID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to read API key", err.Error())
+		return
+	}
 	if found == nil {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	// Preserve write-only/input values from state since they may not be returned.
-	apiKeyVal := state.ApiKey
-	createdByVal := state.CreatedBy
-	authCodeVal := state.AuthCode
-	custAppVal := state.CustApp
-	rotationIntervalVal := state.RotationTimeInterval
-	rotationUnitVal := state.RotationTimeUnit
+	// Only the one-time secret is unavailable after create. Readable creation
+	// metadata follows the canonical list response; an imported secret stays null.
+	secret := state.ApiKey
 	mapApiKeyToState(found, &state)
-	state.ApiKey = apiKeyVal
-	state.CreatedBy = createdByVal
-	state.AuthCode = authCodeVal
-	state.CustApp = custAppVal
-	state.RotationTimeInterval = rotationIntervalVal
-	state.RotationTimeUnit = rotationUnitVal
+	state.ApiKey = secret
+	mapApiKeyMetadata(found, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -209,19 +248,20 @@ func (r *apiKeyResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	_, err := r.client.ApiKeys.Delete(ctx, state.ApiKeyName.ValueString(), createdBy)
-	if err != nil {
-		if strings.Contains(err.Error(), "failed to parse response JSON") {
-			return
-		}
-		resp.Diagnostics.AddError("Failed to delete API key", err.Error())
-		return
-	}
+	finishDelete(ctx, err, "API key", func(ctx context.Context) (bool, error) {
+		found, lookupErr := findApiKeyByID(ctx, r.client, state.ApiKeyID.ValueString())
+		return found == nil, lookupErr
+	}, &resp.Diagnostics)
 }
 
 func (r *apiKeyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	apiKeyID := req.ID
 
-	found := findApiKeyByID(ctx, r.client, apiKeyID)
+	found, err := findApiKeyByID(ctx, r.client, apiKeyID)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to import API key", err.Error())
+		return
+	}
 	if found == nil {
 		resp.Diagnostics.AddError("API key not found", "No API key with ID: "+apiKeyID)
 		return
@@ -229,30 +269,45 @@ func (r *apiKeyResource) ImportState(ctx context.Context, req resource.ImportSta
 
 	var state ApiKeyResourceModel
 	mapApiKeyToState(found, &state)
-	// api_key and auth_code values are not available during import
-	state.ApiKey = types.StringValue("")
-	state.AuthCode = types.StringValue(found.AuthCode)
+	// The creation-time api_key is unavailable during import.
+	state.ApiKey = types.StringNull()
+	mapApiKeyMetadata(found, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// findApiKeyByID searches for an API key by ID using paginated list calls.
-func findApiKeyByID(ctx context.Context, client *airsruntime.Client, apiKeyID string) *airsruntime.ApiKey {
+// findApiKeyByID searches for an API key by ID using paginated list calls. A
+// nil key with a nil error means the key does not exist; list failures are
+// returned so a transient error is never mistaken for a deleted key.
+func findApiKeyByID(ctx context.Context, client *airsruntime.Client, apiKeyID string) (*airsruntime.ApiKey, error) {
 	offset := 0
 	limit := 100
+	seen := map[string]bool{}
 	for {
 		listResp, err := client.ApiKeys.List(ctx, airsruntime.ListOpts{Limit: limit, Offset: offset})
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		for i := range listResp.Items {
 			if listResp.Items[i].ApiKeyID == apiKeyID {
-				return &listResp.Items[i]
+				return &listResp.Items[i], nil
 			}
 		}
-		if len(listResp.Items) < limit {
-			return nil
+		if len(listResp.Items) == 0 && listResp.NextOffset > offset {
+			return nil, fmt.Errorf("key list returned an empty advancing page")
 		}
-		offset += limit
+		for _, key := range listResp.Items {
+			if key.ApiKeyID == "" || seen[key.ApiKeyID] {
+				return nil, fmt.Errorf("key list omitted identity or repeated a page")
+			}
+			seen[key.ApiKeyID] = true
+		}
+		if listResp.NextOffset > offset {
+			offset = listResp.NextOffset
+		} else if len(listResp.Items) >= limit {
+			offset += len(listResp.Items)
+		} else {
+			return nil, nil
+		}
 	}
 }
 
@@ -267,4 +322,22 @@ func mapApiKeyToState(key *airsruntime.ApiKey, state *ApiKeyResourceModel) {
 	if key.ApiKey != "" {
 		state.ApiKey = types.StringValue(key.ApiKey)
 	}
+}
+
+func mapApiKeyMetadata(key *airsruntime.ApiKey, state *ApiKeyResourceModel) {
+	state.AuthCode = types.StringValue(key.AuthCode)
+	state.CustApp = optionalString(key.CustApp)
+	state.CustEnv = optionalString(key.CustEnv)
+	state.CustCloudProvider = optionalString(key.CustCloudProvider)
+	state.CustAIAgentFramework = optionalString(key.CustAIAgentFramework)
+	state.CreatedBy = optionalString(key.CreatedBy)
+	state.RotationTimeInterval = types.Int64Value(int64(key.RotationTimeInterval))
+	state.RotationTimeUnit = types.StringValue(key.RotationTimeUnit)
+}
+
+func optionalString(value string) types.String {
+	if value == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(value)
 }

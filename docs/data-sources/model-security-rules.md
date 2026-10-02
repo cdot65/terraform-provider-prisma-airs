@@ -29,3 +29,7 @@ This data source takes no arguments.
     - `source_type` - Compatible source types (comma-separated).
     - `rule_type` - Rule type (`METADATA`, `ARTIFACT`).
     - `created_at` - Creation timestamp.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_model_security_rules.md) for all nested fields, types, and sensitivity flags.

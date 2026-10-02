@@ -1,110 +1,70 @@
 # Configuration
 
-The provider uses OAuth2 client credentials for authentication across all service domains.
+Use one OAuth identity per provider configuration. Credentials are shared across Management, Model Security, and Red Team clients; API endpoint overrides remain service-specific.
 
-## Provider Block
+## Environment configuration
 
 ```hcl
-provider "prisma-airs" {
-  client_id     = var.panw_client_id
-  client_secret = var.panw_client_secret
-  tsg_id        = var.panw_tsg_id
-}
+provider "prisma-airs" {}
 ```
 
-All attributes support environment variable fallback — see [Environment Variables](../reference/environment-variables.md).
+Set `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` through your secret manager. See [Authentication](authentication.md) for setup and permission requirements.
 
-## Authentication
-
-### OAuth2 Client Credentials
-
-Used for all operations (Management, Model Security, Red Team).
+## Explicit configuration
 
 ```hcl
-provider "prisma-airs" {
-  client_id     = var.panw_client_id
-  client_secret = var.panw_client_secret
-  tsg_id        = var.panw_tsg_id
-}
-```
-
-The provider handles the full OAuth2 token lifecycle automatically — token acquisition, caching, proactive refresh, and 401/403 auto-retry.
-
-## Endpoint Overrides
-
-For non-default regions or custom deployments:
-
-```hcl
-provider "prisma-airs" {
-  client_id     = var.panw_client_id
-  client_secret = var.panw_client_secret
-  tsg_id        = var.panw_tsg_id
-
-  # Management API
-  mgmt_endpoint  = "https://api.sase.paloaltonetworks.com/aisec"
-  token_endpoint  = "https://auth.apps.paloaltonetworks.com/oauth2/access_token"
-
-  # Model Security (separate data/mgmt planes)
-  model_sec_data_endpoint = "https://api.sase.paloaltonetworks.com/aims/data"
-  model_sec_mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aims/mgmt"
-
-  # Red Team (separate data/mgmt planes)
-  red_team_data_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/data-plane"
-  red_team_mgmt_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/mgmt-plane"
-}
-```
-
-## Using Variables
-
-Best practice is to use variables for sensitive values:
-
-```hcl
-variable "panw_client_id" {
-  type      = string
-  sensitive = true
-}
-
-variable "panw_client_secret" {
-  type      = string
-  sensitive = true
-}
-
-variable "panw_tsg_id" {
+variable "airs_client_id" {
   type = string
 }
+
+variable "airs_client_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "airs_tsg_id" {
+  type = string
+}
+
+provider "prisma-airs" {
+  client_id     = var.airs_client_id
+  client_secret = var.airs_client_secret
+  tsg_id        = var.airs_tsg_id
+}
 ```
 
-Or rely entirely on environment variables for CI/CD:
+Explicit attributes override the corresponding environment variables. The provider accepts a common `token_endpoint` and separate management, Model Security, and Red Team API endpoints. Leave overrides unset to use SDK defaults; the [configuration reference](../reference/provider-configuration.md) lists their exact names.
 
-```bash
-export PANW_MGMT_CLIENT_ID=your-client-id
-export PANW_MGMT_CLIENT_SECRET=your-client-secret
-export PANW_MGMT_TSG_ID=1234567890
+## Separate tenants
+
+Use provider aliases and explicit credentials for a second tenant:
+
+```hcl
+variable "second_client_id" {
+  type = string
+}
+
+variable "second_client_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "second_tsg_id" {
+  type = string
+}
+
+provider "prisma-airs" {
+  alias         = "second"
+  client_id     = var.second_client_id
+  client_secret = var.second_client_secret
+  tsg_id        = var.second_tsg_id
+}
+
+resource "prisma-airs_model_security_group" "second" {
+  provider    = prisma-airs.second
+  name        = "second-tenant-models"
+  source_type = "HUGGING_FACE"
+}
 ```
 
-## Using .env Files
-
-For local development, store credentials in a `.env` file instead of exporting them manually:
-
-```bash
-# .env
-PANW_MGMT_CLIENT_ID=your-client-id
-PANW_MGMT_CLIENT_SECRET=your-client-secret
-PANW_MGMT_TSG_ID=1234567890
-```
-
-Then either source it before running Terraform:
-
-```bash
-source .env
-terraform plan
-```
-
-Or use the provided helper script which loads `.env` automatically:
-
-```bash
-../../scripts/terraform-env.sh plan
-../../scripts/terraform-env.sh apply
-```
-
-**Important:** Never commit `.env` files — add them to `.gitignore`.
+Pass aliases explicitly into modules. Verify the second tenant's entitlement before applying Model Security resources.

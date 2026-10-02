@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
-//go:generate terraform-plugin-docs generate --provider-name prisma-airs
+//go:generate python3 docs-site/scripts/schema_reference.py
 
 var version = "dev"
 

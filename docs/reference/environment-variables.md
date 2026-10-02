@@ -1,62 +1,23 @@
-# Environment Variables
+# Environment variables
 
-All provider configuration attributes can be set via environment variables.
+The provider reads these environment variables when their corresponding attributes are unset. It resolves one common OAuth identity and passes it to all service clients.
 
-## Management API (OAuth2)
+| Variable | Provider attribute | Purpose |
+| --- | --- | --- |
+| `PANW_MGMT_CLIENT_ID` | `client_id` | OAuth client ID |
+| `PANW_MGMT_CLIENT_SECRET` | `client_secret` | OAuth client secret; sensitive |
+| `PANW_MGMT_TSG_ID` | `tsg_id` | Tenant service group ID |
+| `PANW_MGMT_ENDPOINT` | `mgmt_endpoint` | Management API override |
+| `PANW_MGMT_TOKEN_ENDPOINT` | `token_endpoint` | Common OAuth token endpoint override |
+| `PANW_MODEL_SEC_DATA_ENDPOINT` | `model_sec_data_endpoint` | Model Security data API override |
+| `PANW_MODEL_SEC_MGMT_ENDPOINT` | `model_sec_mgmt_endpoint` | Model Security management API override |
+| `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team_data_endpoint` | Red Team data API override |
+| `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team_mgmt_endpoint` | Red Team management API override |
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PANW_MGMT_CLIENT_ID` | For management operations | OAuth2 client ID |
-| `PANW_MGMT_CLIENT_SECRET` | For management operations | OAuth2 client secret |
-| `PANW_MGMT_TSG_ID` | For management operations | Tenant Service Group ID |
-| `PANW_MGMT_ENDPOINT` | Optional | Management API endpoint override |
-| `PANW_MGMT_TOKEN_ENDPOINT` | Optional | OAuth2 token endpoint override |
+An explicit provider attribute takes precedence over its corresponding variable. Service-specific SDK credential prefixes do not establish separate identities through this provider. Use [aliased configurations](../getting-started/configuration.md#separate-tenants) for distinct credentials.
 
-## Model Security API
+## Local development
 
-Falls back to `PANW_MGMT_*` variables if not set.
+`TF_CLI_CONFIG_FILE` selects your Terraform CLI configuration, including a development override. See [Installation](../getting-started/installation.md).
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PANW_MODEL_SEC_CLIENT_ID` | Optional | Client ID (falls back to `PANW_MGMT_CLIENT_ID`) |
-| `PANW_MODEL_SEC_CLIENT_SECRET` | Optional | Client secret (falls back to `PANW_MGMT_CLIENT_SECRET`) |
-| `PANW_MODEL_SEC_TSG_ID` | Optional | TSG ID (falls back to `PANW_MGMT_TSG_ID`) |
-| `PANW_MODEL_SEC_DATA_ENDPOINT` | Optional | Data plane endpoint |
-| `PANW_MODEL_SEC_MGMT_ENDPOINT` | Optional | Management plane endpoint |
-
-## Red Team API
-
-Falls back to `PANW_MGMT_*` variables if not set.
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PANW_RED_TEAM_CLIENT_ID` | Optional | Client ID (falls back to `PANW_MGMT_CLIENT_ID`) |
-| `PANW_RED_TEAM_CLIENT_SECRET` | Optional | Client secret (falls back to `PANW_MGMT_CLIENT_SECRET`) |
-| `PANW_RED_TEAM_TSG_ID` | Optional | TSG ID (falls back to `PANW_MGMT_TSG_ID`) |
-| `PANW_RED_TEAM_DATA_ENDPOINT` | Optional | Data plane endpoint |
-| `PANW_RED_TEAM_MGMT_ENDPOINT` | Optional | Management plane endpoint |
-
-## Using .env Files
-
-For local development, you can store credentials in a `.env` file:
-
-```bash
-# .env
-PANW_MGMT_CLIENT_ID=your-client-id
-PANW_MGMT_CLIENT_SECRET=your-client-secret
-PANW_MGMT_TSG_ID=1234567890
-```
-
-The repo includes a helper at `scripts/terraform-env.sh` that loads `.env` before running Terraform:
-
-```bash
-../../scripts/terraform-env.sh plan
-```
-
-Never commit `.env` files to version control.
-
-## Precedence
-
-1. Provider block attribute (explicit value)
-2. Service-specific environment variable
-3. Fallback `PANW_MGMT_*` environment variable
+Terraform does not load `.env` automatically. Repository examples may use `../../scripts/terraform-env.sh plan` to load a local file; CI should use its secret-store integration. Keep credentials and state out of source control.

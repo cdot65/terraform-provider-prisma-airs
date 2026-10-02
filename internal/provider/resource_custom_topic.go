@@ -2,6 +2,9 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -63,7 +66,9 @@ func (r *customTopicResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "Description of the custom topic.",
+				Computed:    true,
+				Description: "Description of the custom topic. Omission adopts the server description; explicit empty strings are unsupported.",
+				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"examples": schema.ListAttribute{
 				Optional:    true,
@@ -132,9 +137,12 @@ func (r *customTopicResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	// The SDK Topics.List has an offset bug (offset=0 is omitted but required by API).
-	// Work around by paginating with offset=1 and searching all pages.
-	found := findTopicByID(ctx, r.client, state.TopicID.ValueString())
+	// There is no single-topic GET; page through the list and filter by ID.
+	found, err := findTopicByID(ctx, r.client, state.TopicID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to read custom topic", err.Error())
+		return
+	}
 	if found == nil {
 		resp.State.RemoveResource(ctx)
 		return
@@ -157,21 +165,21 @@ func (r *customTopicResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	updateReq := airsruntime.UpdateTopicRequest{
-		TopicName:   plan.TopicName.ValueString(),
-		Description: plan.Description.ValueString(),
+	name, description := plan.TopicName.ValueString(), plan.Description.ValueString()
+	examples := []string{}
+	updateReq := airsruntime.UpdateTopicFieldsRequest{TopicName: &name, Examples: &examples}
+	if !plan.Description.IsUnknown() && !plan.Description.IsNull() {
+		updateReq.Description = &description
 	}
 
 	if !plan.Examples.IsNull() && !plan.Examples.IsUnknown() {
-		var examples []string
 		resp.Diagnostics.Append(plan.Examples.ElementsAs(ctx, &examples, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		updateReq.Examples = examples
 	}
 
-	topic, err := r.client.Topics.Update(ctx, state.TopicID.ValueString(), updateReq)
+	topic, err := r.client.Topics.UpdateFields(ctx, state.TopicID.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update custom topic", err.Error())
 		return
@@ -189,16 +197,20 @@ func (r *customTopicResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	_, err := r.client.Topics.ForceDelete(ctx, state.TopicID.ValueString(), "terraform")
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to delete custom topic", err.Error())
-		return
-	}
+	finishDelete(ctx, err, "custom topic", func(ctx context.Context) (bool, error) {
+		found, lookupErr := findTopicByID(ctx, r.client, state.TopicID.ValueString())
+		return found == nil, lookupErr
+	}, &resp.Diagnostics)
 }
 
 func (r *customTopicResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	topicID := req.ID
 
-	found := findTopicByID(ctx, r.client, topicID)
+	found, err := findTopicByID(ctx, r.client, topicID)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to import custom topic", err.Error())
+		return
+	}
 	if found == nil {
 		resp.Diagnostics.AddError("Topic not found", "No topic with ID: "+topicID)
 		return
@@ -209,24 +221,39 @@ func (r *customTopicResource) ImportState(ctx context.Context, req resource.Impo
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// findTopicByID searches for a topic by ID using paginated list calls.
-func findTopicByID(ctx context.Context, client *airsruntime.Client, topicID string) *airsruntime.CustomTopic {
+// findTopicByID searches for a topic by ID using paginated list calls. A nil
+// topic with a nil error means the topic does not exist; list failures are
+// returned so a transient error is never mistaken for a deleted topic.
+func findTopicByID(ctx context.Context, client *airsruntime.Client, topicID string) (*airsruntime.CustomTopic, error) {
 	offset := 0
 	limit := 100
+	seen := map[string]bool{}
 	for {
 		listResp, err := client.Topics.List(ctx, airsruntime.ListOpts{Limit: limit, Offset: offset})
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		for i := range listResp.Items {
 			if listResp.Items[i].TopicID == topicID {
-				return &listResp.Items[i]
+				return &listResp.Items[i], nil
 			}
 		}
-		if len(listResp.Items) < limit {
-			return nil
+		if len(listResp.Items) == 0 && listResp.NextOffset > offset {
+			return nil, fmt.Errorf("topic list returned an empty page with an advancing cursor")
 		}
-		offset += limit
+		for _, item := range listResp.Items {
+			if item.TopicID == "" || seen[item.TopicID] {
+				return nil, fmt.Errorf("topic list repeated a page or omitted an identity")
+			}
+			seen[item.TopicID] = true
+		}
+		if listResp.NextOffset > offset {
+			offset = listResp.NextOffset
+		} else if len(listResp.Items) >= limit {
+			offset += len(listResp.Items)
+		} else {
+			return nil, nil
+		}
 	}
 }
 
@@ -242,7 +269,9 @@ func mapTopicToState(ctx context.Context, topic *airsruntime.CustomTopic, state 
 		examplesList, d := types.ListValueFrom(ctx, types.StringType, topic.Examples)
 		diags.Append(d...)
 		state.Examples = examplesList
-	} else {
+	} else if state.Examples.IsNull() || state.Examples.IsUnknown() {
 		state.Examples = types.ListNull(types.StringType)
+	} else {
+		state.Examples, _ = types.ListValueFrom(ctx, types.StringType, []string{})
 	}
 }

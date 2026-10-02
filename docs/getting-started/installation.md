@@ -2,50 +2,18 @@
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.25 (for building from source)
+Use Terraform 1.0 or later. Building the provider from source requires Go 1.25.6 or later; developing the documentation site requires Node 24+.
 
-## Terraform Registry
+## Install from the Terraform Registry
 
-Add the provider to your Terraform configuration:
-
-```hcl
-terraform {
-  required_providers {
-    prisma-airs = {
-      source  = "cdot65/prisma-airs"
-      version = "~> 0.6"
-    }
-  }
-}
-```
-
-Then run:
-
-```bash
-terraform init
-```
-
-## Building from Source
-
-```bash
-git clone https://github.com/cdot65/prisma-airs-provider.git
-cd prisma-airs-provider
-make install
-```
-
-This builds the provider binary and installs it to `~/.terraform.d/plugins/` for local development.
-
-## Verify Installation
-
-Create a minimal configuration to verify the provider loads correctly:
+Provider v0.7.0 uses Go SDK v0.6.1 and supports the native target blocks in these guides. Review [migration](../guides/migration.md) before upgrading from v0.6.3 or earlier.
 
 ```hcl
 terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.6"
+      version = "~> 0.7.0"
     }
   }
 }
@@ -57,3 +25,45 @@ provider "prisma-airs" {}
 terraform init
 terraform providers
 ```
+
+For an existing working directory, remove any development override and run `terraform init -upgrade`. Commit the resulting `.terraform.lock.hcl` with your configuration.
+
+## Use the updated provider from source
+
+Use a development override when testing unreleased changes:
+
+```bash
+git clone https://github.com/cdot65/terraform-provider-prisma-airs.git
+cd terraform-provider-prisma-airs
+make build
+```
+
+Create a Terraform CLI configuration file with the **absolute** path to the directory containing `terraform-provider-prisma-airs`:
+
+```hcl
+provider_installation {
+  dev_overrides {
+    "cdot65/prisma-airs" = "/absolute/path/to/terraform-provider-prisma-airs"
+  }
+  direct {}
+}
+```
+
+Select it in your shell:
+
+```bash
+export TF_CLI_CONFIG_FILE=/absolute/path/to/dev.tfrc
+```
+
+For provider-only configurations, run `terraform validate`, `terraform plan`, and `terraform apply` directly. `dev_overrides` bypasses normal provider installation and registry version selection. Configurations with other providers or modules may still need `terraform init` to install those dependencies.
+
+The local `0.7.0-dev` directory label is a development setting. Provider and SDK release version numbers are independent.
+
+## Verify the selected binary
+
+```bash
+terraform providers schema -json
+terraform validate
+```
+
+The `prisma-airs_red_team_target` schema includes `openai`, `rest`, `streaming`, and the other [connection blocks](../resources/red-team-target.md#connection-blocks). It has no `connection_params` input.

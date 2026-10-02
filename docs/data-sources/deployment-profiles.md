@@ -22,8 +22,12 @@ output "profiles" {
 ## Attribute Reference
 
 - `items` - List of deployment profiles. Each item contains:
-    - `profile_id` - Deployment profile ID (same value as `auth_code`).
+    - `profile_id` - Sensitive legacy alias of `auth_code`; no separate ID is supplied by the API.
     - `profile_name` - Deployment profile name.
-    - `auth_code` - Auth code for API key creation.
-    - `details` - Full profile details as a JSON string.
+    - `auth_code` - Sensitive auth code for API key creation.
+    - `details` - Sensitive full profile details as a JSON string.
 - `total_count` - Number of profiles returned.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_deployment_profiles.md) for all nested fields, types, and sensitivity flags.
