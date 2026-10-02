@@ -31,7 +31,12 @@ test('hero and all homepage paths reach provider-specific guides', async ({page}
   await expect(page.locator('#hero-title')).toHaveText('Policy as code.Security under control.');
   await expect(page.locator('main > section').nth(1).locator('a')).toHaveCount(4);
   await expect(page.locator('.theme-doc-sidebar-container')).toHaveCount(0);
-  await expect(page.getByRole('img', {name: 'Prisma AIRS shield and prism spectrum'})).toBeVisible();
+  const logo = page.getByRole('img', {name: 'Prisma AIRS Terraform shield and prism spectrum'});
+  await expect(logo).toBeVisible();
+  await expect.poll(() => logo.evaluate(element => element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0)).toBe(true);
+  const favicon = await page.locator('link[rel="icon"]').getAttribute('href');
+  expect(favicon).toContain('/img/terraform-logo.png');
+  expect((await page.request.get(new URL(favicon!, page.url()).href)).ok()).toBe(true);
   await page.getByRole('link', {name: 'Get started →', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Getting started', exact: true})).toBeVisible();
   await expect(page.locator('pre.language-hcl').first()).toContainText('prisma-airs_security_profile');

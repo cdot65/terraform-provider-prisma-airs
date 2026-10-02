@@ -31,7 +31,7 @@
     {
       "path": "static/img/brand-logo.png",
       "sha256": "9f3c2588c304132c96dd9377fd6a7fcb015d538dee10eba1160268541bfc6c43",
-      "copiedUnchanged": true
+      "referenceOnly": true
     },
     {
       "path": "src/pages/index.tsx",
@@ -54,5 +54,12 @@
       "referenceOnly": true
     }
   ],
-  "referenceDocusaurusVersion": "3.10.1"
+  "referenceDocusaurusVersion": "3.10.1",
+  "productAssets": {
+    "static/img/terraform-logo.png": {
+      "sha256": "af6b50e7c6bd6343f224327de9a1074c6ba3f14c195365af129f5ca19d4075ac",
+      "source": "Owner-provided /var/tmp/terraform.png",
+      "requested": "2026-10-02"
+    }
+  }
 }
