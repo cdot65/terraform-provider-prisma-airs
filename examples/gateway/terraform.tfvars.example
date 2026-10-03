@@ -1,0 +1,4 @@
+workspace_id = "existing-workspace-uuid"
+ai_provider_id = "provider-family-uuid"
+# Supply upstream_api_key through a secret manager; do not commit it.
+model = "existing-supported-model-name"

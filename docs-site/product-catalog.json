@@ -70,10 +70,135 @@
   {
     "id": "gateway",
     "label": "AI Gateway",
-    "implemented": false,
-    "endpoints": [],
-    "resources": [],
-    "data_sources": []
+    "implemented": true,
+    "endpoints": [
+      {
+        "name": "data_endpoint",
+        "environment": "PANW_AI_GW_DATA_ENDPOINT",
+        "description": "Gateway data-plane management endpoint override."
+      },
+      {
+        "name": "admin_endpoint",
+        "environment": "PANW_AI_GW_ADMIN_ENDPOINT",
+        "description": "Gateway admin-plane management endpoint override."
+      }
+    ],
+    "resources": [
+      {
+        "name": "prisma-airs_gateway_config",
+        "guide": "resources/gateway-config"
+      },
+      {
+        "name": "prisma-airs_gateway_guardrail",
+        "guide": "resources/gateway-guardrail"
+      },
+      {
+        "name": "prisma-airs_gateway_org_guardrail",
+        "guide": "resources/gateway-org-guardrail"
+      },
+      {
+        "name": "prisma-airs_gateway_integration",
+        "guide": "resources/gateway-integration"
+      },
+      {
+        "name": "prisma-airs_gateway_provider",
+        "guide": "resources/gateway-provider"
+      },
+      {
+        "name": "prisma-airs_gateway_mcp_integration",
+        "guide": "resources/gateway-mcp-integration"
+      },
+      {
+        "name": "prisma-airs_gateway_mcp_server",
+        "guide": "resources/gateway-mcp-server"
+      },
+      {
+        "name": "prisma-airs_gateway_service_api_key",
+        "guide": "resources/gateway-service-api-key"
+      },
+      {
+        "name": "prisma-airs_gateway_user_api_key",
+        "guide": "resources/gateway-user-api-key"
+      },
+      {
+        "name": "prisma-airs_gateway_usage_limit",
+        "guide": "resources/gateway-usage-limit"
+      },
+      {
+        "name": "prisma-airs_gateway_rate_limit",
+        "guide": "resources/gateway-rate-limit"
+      },
+      {
+        "name": "prisma-airs_gateway_secret_reference",
+        "guide": "resources/gateway-secret-reference"
+      },
+      {
+        "name": "prisma-airs_gateway_deployment",
+        "guide": "resources/gateway-deployment"
+      },
+      {
+        "name": "prisma-airs_gateway_integration_workspace_binding",
+        "guide": "resources/gateway-integration-workspace-binding"
+      },
+      {
+        "name": "prisma-airs_gateway_mcp_integration_workspace_binding",
+        "guide": "resources/gateway-mcp-integration-workspace-binding"
+      }
+    ],
+    "data_sources": [
+      {
+        "name": "prisma-airs_gateway_configs",
+        "guide": "data-sources/gateway-configs"
+      },
+      {
+        "name": "prisma-airs_gateway_guardrails",
+        "guide": "data-sources/gateway-guardrails"
+      },
+      {
+        "name": "prisma-airs_gateway_org_guardrails",
+        "guide": "data-sources/gateway-org-guardrails"
+      },
+      {
+        "name": "prisma-airs_gateway_integrations",
+        "guide": "data-sources/gateway-integrations"
+      },
+      {
+        "name": "prisma-airs_gateway_providers",
+        "guide": "data-sources/gateway-providers"
+      },
+      {
+        "name": "prisma-airs_gateway_mcp_integrations",
+        "guide": "data-sources/gateway-mcp-integrations"
+      },
+      {
+        "name": "prisma-airs_gateway_mcp_servers",
+        "guide": "data-sources/gateway-mcp-servers"
+      },
+      {
+        "name": "prisma-airs_gateway_service_api_keys",
+        "guide": "data-sources/gateway-service-api-keys"
+      },
+      {
+        "name": "prisma-airs_gateway_user_api_keys",
+        "guide": "data-sources/gateway-user-api-keys"
+      },
+      {
+        "name": "prisma-airs_gateway_usage_limits",
+        "guide": "data-sources/gateway-usage-limits"
+      },
+      {
+        "name": "prisma-airs_gateway_rate_limits",
+        "guide": "data-sources/gateway-rate-limits"
+      },
+      {
+        "name": "prisma-airs_gateway_secret_references",
+        "guide": "data-sources/gateway-secret-references"
+      },
+      {
+        "name": "prisma-airs_gateway_deployments",
+        "guide": "data-sources/gateway-deployments"
+      }
+    ]
   },
   {
     "id": "supply_chain",

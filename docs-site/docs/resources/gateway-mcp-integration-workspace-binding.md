@@ -1,0 +1,28 @@
+# AI Gateway mcp integration workspace binding
+
+Manages `prisma-airs_gateway_mcp_integration_workspace_binding` with provider v0.9.0 and published Go SDK v0.6.1.
+
+## Example
+
+```hcl
+resource "prisma-airs_gateway_mcp_integration_workspace_binding" "example" {
+  integration_id = var.mcp_integration_id
+  workspace_id = var.workspace_id
+}
+```
+
+## Ownership and lifecycle
+
+This owns one enabled organization MCP integration/workspace pair. Creation merges that pair; an existing enabled pair must be imported. Destroy disables only this pair. MCP servers must depend on the binding so they are removed before access is disabled. It never creates or archives a workspace.
+
+## Import
+
+```bash
+terraform import prisma-airs_gateway_mcp_integration_workspace_binding.example <integration_uuid>/<workspace_uuid>
+```
+
+Import reads the active remote object. Archived objects are rejected. Sensitive desired inputs and one-time outputs are not recovered from masked reads; supply desired inputs and preserve previously exported secrets externally.
+
+## Complete schema
+
+See the [exact schema reference](../reference/generated/prisma-airs_gateway_mcp_integration_workspace_binding.md) for every argument, computed value and sensitivity flag, and the [Gateway workflow](../guides/gateway-workflow.md) for dependency ordering.

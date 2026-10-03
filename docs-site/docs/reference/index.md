@@ -27,7 +27,36 @@ See [provider configuration](provider-configuration.md), [environment variables]
 
 ## AI Gateway
 
-Not yet implemented. There are no Gateway resources, data sources, or configuration settings in this release. See [AI Gateway status](../products/gateway.md).
+| Terraform type | Kind | Guide | Schema |
+| --- | --- | --- | --- |
+| `prisma-airs_gateway_config` | Resource | [Lifecycle](../resources/gateway-config.md) | [Attributes](generated/prisma-airs_gateway_config.md) |
+| `prisma-airs_gateway_guardrail` | Resource | [Lifecycle](../resources/gateway-guardrail.md) | [Attributes](generated/prisma-airs_gateway_guardrail.md) |
+| `prisma-airs_gateway_org_guardrail` | Resource | [Lifecycle](../resources/gateway-org-guardrail.md) | [Attributes](generated/prisma-airs_gateway_org_guardrail.md) |
+| `prisma-airs_gateway_integration` | Resource | [Lifecycle](../resources/gateway-integration.md) | [Attributes](generated/prisma-airs_gateway_integration.md) |
+| `prisma-airs_gateway_provider` | Resource | [Lifecycle](../resources/gateway-provider.md) | [Attributes](generated/prisma-airs_gateway_provider.md) |
+| `prisma-airs_gateway_mcp_integration` | Resource | [Lifecycle](../resources/gateway-mcp-integration.md) | [Attributes](generated/prisma-airs_gateway_mcp_integration.md) |
+| `prisma-airs_gateway_mcp_server` | Resource | [Lifecycle](../resources/gateway-mcp-server.md) | [Attributes](generated/prisma-airs_gateway_mcp_server.md) |
+| `prisma-airs_gateway_service_api_key` | Resource | [Lifecycle](../resources/gateway-service-api-key.md) | [Attributes](generated/prisma-airs_gateway_service_api_key.md) |
+| `prisma-airs_gateway_user_api_key` | Resource | [Lifecycle](../resources/gateway-user-api-key.md) | [Attributes](generated/prisma-airs_gateway_user_api_key.md) |
+| `prisma-airs_gateway_usage_limit` | Resource | [Lifecycle](../resources/gateway-usage-limit.md) | [Attributes](generated/prisma-airs_gateway_usage_limit.md) |
+| `prisma-airs_gateway_rate_limit` | Resource | [Lifecycle](../resources/gateway-rate-limit.md) | [Attributes](generated/prisma-airs_gateway_rate_limit.md) |
+| `prisma-airs_gateway_secret_reference` | Resource | [Lifecycle](../resources/gateway-secret-reference.md) | [Attributes](generated/prisma-airs_gateway_secret_reference.md) |
+| `prisma-airs_gateway_deployment` | Resource | [Lifecycle](../resources/gateway-deployment.md) | [Attributes](generated/prisma-airs_gateway_deployment.md) |
+| `prisma-airs_gateway_integration_workspace_binding` | Resource | [Lifecycle](../resources/gateway-integration-workspace-binding.md) | [Attributes](generated/prisma-airs_gateway_integration_workspace_binding.md) |
+| `prisma-airs_gateway_mcp_integration_workspace_binding` | Resource | [Lifecycle](../resources/gateway-mcp-integration-workspace-binding.md) | [Attributes](generated/prisma-airs_gateway_mcp_integration_workspace_binding.md) |
+| `prisma-airs_gateway_configs` | Data source | [Lifecycle](../data-sources/gateway-configs.md) | [Attributes](generated/prisma-airs_gateway_configs.md) |
+| `prisma-airs_gateway_guardrails` | Data source | [Lifecycle](../data-sources/gateway-guardrails.md) | [Attributes](generated/prisma-airs_gateway_guardrails.md) |
+| `prisma-airs_gateway_org_guardrails` | Data source | [Lifecycle](../data-sources/gateway-org-guardrails.md) | [Attributes](generated/prisma-airs_gateway_org_guardrails.md) |
+| `prisma-airs_gateway_integrations` | Data source | [Lifecycle](../data-sources/gateway-integrations.md) | [Attributes](generated/prisma-airs_gateway_integrations.md) |
+| `prisma-airs_gateway_providers` | Data source | [Lifecycle](../data-sources/gateway-providers.md) | [Attributes](generated/prisma-airs_gateway_providers.md) |
+| `prisma-airs_gateway_mcp_integrations` | Data source | [Lifecycle](../data-sources/gateway-mcp-integrations.md) | [Attributes](generated/prisma-airs_gateway_mcp_integrations.md) |
+| `prisma-airs_gateway_mcp_servers` | Data source | [Lifecycle](../data-sources/gateway-mcp-servers.md) | [Attributes](generated/prisma-airs_gateway_mcp_servers.md) |
+| `prisma-airs_gateway_service_api_keys` | Data source | [Lifecycle](../data-sources/gateway-service-api-keys.md) | [Attributes](generated/prisma-airs_gateway_service_api_keys.md) |
+| `prisma-airs_gateway_user_api_keys` | Data source | [Lifecycle](../data-sources/gateway-user-api-keys.md) | [Attributes](generated/prisma-airs_gateway_user_api_keys.md) |
+| `prisma-airs_gateway_usage_limits` | Data source | [Lifecycle](../data-sources/gateway-usage-limits.md) | [Attributes](generated/prisma-airs_gateway_usage_limits.md) |
+| `prisma-airs_gateway_rate_limits` | Data source | [Lifecycle](../data-sources/gateway-rate-limits.md) | [Attributes](generated/prisma-airs_gateway_rate_limits.md) |
+| `prisma-airs_gateway_secret_references` | Data source | [Lifecycle](../data-sources/gateway-secret-references.md) | [Attributes](generated/prisma-airs_gateway_secret_references.md) |
+| `prisma-airs_gateway_deployments` | Data source | [Lifecycle](../data-sources/gateway-deployments.md) | [Attributes](generated/prisma-airs_gateway_deployments.md) |
 
 ## AI Supply Chain Security
 

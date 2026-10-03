@@ -1,7 +1,7 @@
 # AI Gateway
 
-AI Gateway is **not yet implemented** in this provider. This release has no Gateway resources, data sources, or provider configuration block.
+AI Gateway management is available in provider **v0.9.0**: 15 resources and 13 metadata data sources, native HCL routing documents, explicit workspace bindings, and verified deletion/archival.
 
-Gateway management is the next implementation milestone. The product catalog reserves its place in the four-product architecture without accepting settings that have no effect. Use the Prisma AIRS Go SDK, CLI, or product interface for Gateway operations until Terraform functionality ships.
+Start with the [Gateway workflow](../guides/gateway-workflow.md), [complete example](../examples/gateway.md), or [generated product inventory](../reference/index.md). Shared OAuth credentials and an existing Gateway workspace are required. See [provider settings](../reference/provider-configuration.md) for the `gateway` endpoint block.
 
-See [product coverage](../reference/index.md) for the resources available today.
+See the workflow for ownership, secret/import limits, and the management extensions that remain outside this release.

@@ -13,7 +13,7 @@ The [product catalog](reference/index.md) derives available resources and data s
 
 - **AI Runtime Security:** profiles, custom topics, API keys, customer apps, DLP profiles, and deployment profiles.
 - **AI Red Teaming:** targets and custom prompt sets.
-- **AI Gateway:** not yet implemented; no configuration settings or Terraform types in this release.
+- **AI Gateway:** routing configs, guardrails, integrations, workspace bindings, MCP servers, keys, limits, secret references, deployments, and metadata discovery.
 - **AI Supply Chain Security:** Model Security groups and the rule catalog.
 
 ## Key Features
@@ -28,7 +28,7 @@ The [product catalog](reference/index.md) derives available resources and data s
 
 Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](development/architecture.md) for the product modules.
 
-These guides describe provider v0.8.0 built on Go SDK v0.6.1. See [Getting started](getting-started/index.md) and [Migration](guides/migration.md) for the installation and state transition.
+These guides describe provider v0.9.0 built on Go SDK v0.6.1. See [Getting started](getting-started/index.md) and [Migration](guides/migration.md) for the installation and state transition.
 
 ## Quick Links
 
@@ -44,7 +44,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.8.0"
+      version = "~> 0.9.0"
     }
   }
 }
@@ -74,4 +74,4 @@ provider "prisma-airs" {
 }
 ```
 
-There is no Gateway block until Gateway functionality ships. See [product configuration](reference/provider-configuration.md) for environment mappings and [migration](guides/migration.md) before upgrading existing state.
+Gateway endpoint overrides use the optional `gateway` block. See the [Gateway workflow](guides/gateway-workflow.md). See [product configuration](reference/provider-configuration.md) for environment mappings and [migration](guides/migration.md) before upgrading existing state.

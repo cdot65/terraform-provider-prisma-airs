@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 func configureFixture(t *testing.T, values map[string]string, endpoints map[string]map[string]string) provider.ConfigureResponse {
@@ -55,7 +56,7 @@ func configureFixture(t *testing.T, values map[string]string, endpoints map[stri
 		}
 		return types.StringNull()
 	}
-	model := PrismaAIRSProviderModel{ClientID: stringValue("client_id"), ClientSecret: stringValue("client_secret"), TsgID: stringValue("tsg_id"), TokenEndpoint: stringValue("token_endpoint"), Runtime: blocks["runtime"], RedTeam: blocks["red_team"], SupplyChain: blocks["supply_chain"]}
+	model := PrismaAIRSProviderModel{ClientID: stringValue("client_id"), ClientSecret: stringValue("client_secret"), TsgID: stringValue("tsg_id"), TokenEndpoint: stringValue("token_endpoint"), Runtime: blocks["runtime"], RedTeam: blocks["red_team"], SupplyChain: blocks["supply_chain"], Gateway: blocks["gateway"]}
 	state := tfsdk.State{Schema: schema.Schema}
 	if diagnostics := state.Set(ctx, model); diagnostics.HasError() {
 		t.Fatal(diagnostics)
@@ -105,11 +106,11 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 			sources[entry.Name] = true
 		}
 	}
-	if len(wantLabels) != 0 || len(resources) != 7 || len(sources) != 3 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
+	if len(wantLabels) != 0 || len(resources) != 22 || len(sources) != 16 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
 		t.Fatal("catalog has missing or unclassified types")
 	}
-	if len(response.Provider.Block.Attributes) != 4 || len(response.Provider.Block.BlockTypes) != 3 {
-		t.Fatal("expected shared credentials and three implemented product blocks")
+	if len(response.Provider.Block.Attributes) != 4 || len(response.Provider.Block.BlockTypes) != 4 {
+		t.Fatal("expected shared credentials and four implemented product blocks")
 	}
 	for _, attribute := range response.Provider.Block.Attributes {
 		if attribute.Name == "client_secret" && !attribute.Sensitive {
@@ -117,8 +118,8 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 		}
 	}
 	for _, block := range response.Provider.Block.BlockTypes {
-		if block.TypeName == "gateway" {
-			t.Error("Gateway settings arrived before functionality")
+		if block.TypeName == "gateway" && len(block.Block.Attributes) != 2 {
+			t.Error("Gateway requires data and admin endpoint settings")
 		}
 	}
 }
@@ -146,6 +147,9 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 						_, _ = w.Write([]byte(`{"access_token":"fixture-token","token_type":"Bearer","expires_in":3600}`))
 						return
 					}
+					if strings.HasPrefix(label, "gateway-") && r.Header.Get("x-tsg-id") != "fixture-tsg" {
+						t.Error("Gateway shared TSG header missing")
+					}
 					if r.Header.Get("Authorization") != "Bearer fixture-token" {
 						t.Error("token not used")
 					}
@@ -153,12 +157,12 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 				}
 			}
 			servers := map[string]*httptest.Server{}
-			for _, label := range []string{"token", "runtime", "red-data", "red-mgmt", "supply-data", "supply-mgmt"} {
+			for _, label := range []string{"token", "runtime", "red-data", "red-mgmt", "supply-data", "supply-mgmt", "gateway-data", "gateway-admin"} {
 				servers[label] = httptest.NewServer(handler(label))
 				t.Cleanup(servers[label].Close)
 			}
 			values := map[string]string{"client_id": "fixture-client", "client_secret": "fixture-secret", "tsg_id": "fixture-tsg", "token_endpoint": servers["token"].URL}
-			envs := map[string]string{"PANW_MGMT_CLIENT_ID": values["client_id"], "PANW_MGMT_CLIENT_SECRET": values["client_secret"], "PANW_MGMT_TSG_ID": values["tsg_id"], "PANW_MGMT_TOKEN_ENDPOINT": values["token_endpoint"], "PANW_MGMT_ENDPOINT": servers["runtime"].URL, "PANW_RED_TEAM_DATA_ENDPOINT": servers["red-data"].URL, "PANW_RED_TEAM_MGMT_ENDPOINT": servers["red-mgmt"].URL, "PANW_MODEL_SEC_DATA_ENDPOINT": servers["supply-data"].URL, "PANW_MODEL_SEC_MGMT_ENDPOINT": servers["supply-mgmt"].URL}
+			envs := map[string]string{"PANW_MGMT_CLIENT_ID": values["client_id"], "PANW_MGMT_CLIENT_SECRET": values["client_secret"], "PANW_MGMT_TSG_ID": values["tsg_id"], "PANW_MGMT_TOKEN_ENDPOINT": values["token_endpoint"], "PANW_MGMT_ENDPOINT": servers["runtime"].URL, "PANW_RED_TEAM_DATA_ENDPOINT": servers["red-data"].URL, "PANW_RED_TEAM_MGMT_ENDPOINT": servers["red-mgmt"].URL, "PANW_MODEL_SEC_DATA_ENDPOINT": servers["supply-data"].URL, "PANW_MODEL_SEC_MGMT_ENDPOINT": servers["supply-mgmt"].URL, "PANW_AI_GW_DATA_ENDPOINT": servers["gateway-data"].URL, "PANW_AI_GW_ADMIN_ENDPOINT": servers["gateway-admin"].URL}
 			for key, value := range envs {
 				if explicit {
 					t.Setenv(key, "wrong-environment-value")
@@ -168,13 +172,14 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 			}
 			var settings map[string]map[string]string
 			if explicit {
-				settings = map[string]map[string]string{"runtime": {"mgmt_endpoint": servers["runtime"].URL}, "red_team": {"data_endpoint": servers["red-data"].URL, "mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"data_endpoint": servers["supply-data"].URL, "mgmt_endpoint": servers["supply-mgmt"].URL}}
+				settings = map[string]map[string]string{"runtime": {"mgmt_endpoint": servers["runtime"].URL}, "red_team": {"data_endpoint": servers["red-data"].URL, "mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"data_endpoint": servers["supply-data"].URL, "mgmt_endpoint": servers["supply-mgmt"].URL}, "gateway": {"data_endpoint": servers["gateway-data"].URL, "admin_endpoint": servers["gateway-admin"].URL}}
 			} else {
 				values = nil
 				if name == "partial nested overrides" {
 					t.Setenv("PANW_RED_TEAM_MGMT_ENDPOINT", "wrong-environment-value")
 					t.Setenv("PANW_MODEL_SEC_MGMT_ENDPOINT", "wrong-environment-value")
-					settings = map[string]map[string]string{"runtime": {}, "red_team": {"mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"mgmt_endpoint": servers["supply-mgmt"].URL}}
+					t.Setenv("PANW_AI_GW_ADMIN_ENDPOINT", "wrong-environment-value")
+					settings = map[string]map[string]string{"runtime": {}, "red_team": {"mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"mgmt_endpoint": servers["supply-mgmt"].URL}, "gateway": {"admin_endpoint": servers["gateway-admin"].URL}}
 				}
 			}
 			configured := configureFixture(t, values, settings)
@@ -201,7 +206,46 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 			if _, err := supply.Scans.List(ctx, modelsecurity.ScanListOpts{}); err != nil {
 				t.Fatal(err)
 			}
-			for _, label := range []string{"token", "runtime", "red-data", "red-mgmt", "supply-data", "supply-mgmt"} {
+
+			for _, definition := range products.All() {
+				if definition.ID != "gateway" {
+					continue
+				}
+				for _, index := range []int{0, 2} {
+					source := definition.DataSources[index].New()
+					var sr datasource.SchemaResponse
+					source.Schema(ctx, datasource.SchemaRequest{}, &sr)
+					attrs := map[string]attr.Value{}
+					ts := map[string]attr.Type{}
+					for key, a := range sr.Schema.Attributes {
+						ts[key] = a.GetType()
+						v, e := ts[key].ValueFromTerraform(ctx, tftypes.NewValue(ts[key].TerraformType(ctx), nil))
+						if e != nil {
+							t.Fatal(e)
+						}
+						attrs[key] = v
+					}
+					if _, ok := attrs["workspace_id"]; ok {
+						attrs["workspace_id"] = types.StringValue("fixture-workspace")
+					}
+					model := types.ObjectValueMust(ts, attrs)
+					state := tfsdk.State{Schema: sr.Schema}
+					if d := state.Set(ctx, model); d.HasError() {
+						t.Fatal(d)
+					}
+					var cr datasource.ConfigureResponse
+					source.(datasource.DataSourceWithConfigure).Configure(ctx, datasource.ConfigureRequest{ProviderData: data}, &cr)
+					if cr.Diagnostics.HasError() {
+						t.Fatal(cr.Diagnostics)
+					}
+					rr := datasource.ReadResponse{State: tfsdk.State{Schema: sr.Schema}}
+					source.Read(ctx, datasource.ReadRequest{Config: tfsdk.Config{Schema: sr.Schema, Raw: state.Raw}}, &rr)
+					if rr.Diagnostics.HasError() {
+						t.Fatal(rr.Diagnostics)
+					}
+				}
+			}
+			for _, label := range []string{"token", "runtime", "red-data", "red-mgmt", "supply-data", "supply-mgmt", "gateway-data", "gateway-admin"} {
 				if requests[label] == 0 {
 					t.Errorf("endpoint %s not reached", label)
 				}

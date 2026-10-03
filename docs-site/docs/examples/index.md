@@ -9,6 +9,7 @@ Use these complete configurations with the [updated provider](../getting-started
 | --- | --- | --- |
 | [Runtime policy](runtime-policy.md) | Custom topic and versioned security profile | Runtime management |
 | [Native targets](native-targets.md) | All seven native HCL connection families | Red Team management |
+| [Gateway](gateway.md) | Integration, workspace binding, provider and native routing config | Gateway management and an existing workspace |
 | [Model Security](model-security.md) | Group and rule catalog | Licensed Model Security |
 | [Repository configurations](repository-configurations.md) | Multi-resource working examples | Services used by each configuration |
 
