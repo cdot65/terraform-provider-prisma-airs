@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test:browser": "playwright test",
     "check": "npm run check:source && npm run typecheck && npm run build && npm run test:browser && npm run test:parity",
-    "check:source": "python3 scripts/design_source.py && python3 scripts/check_content.py && python3 scripts/schema_reference.py --check",
+    "check:source": "python3 scripts/test_schema_reference.py && python3 scripts/design_source.py && python3 scripts/check_content.py && python3 scripts/schema_reference.py --check",
     "test:parity": "python3 scripts/check_design_parity.py",
     "generate:reference": "python3 scripts/schema_reference.py"
   },

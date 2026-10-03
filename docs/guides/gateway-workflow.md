@@ -4,17 +4,17 @@ page_title: "AI Gateway workflow"
 
 # AI Gateway workflow
 
-Provider v0.9.0 introduces 15 Gateway resources and 13 metadata data sources, covering CRUD for the twelve SDK families plus service/user key separation and two explicit workspace-binding resources. See the [derived product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/reference/) for exact names and schemas.
+Provider v0.10.0 includes 16 Gateway resources and 15 metadata data sources, covering CRUD for the twelve SDK families plus service/user key separation and two explicit workspace-binding resources. See the [derived product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/reference/) for exact names and schemas.
 
 ## Configure access
 
-Use the shared SCM OAuth credentials and TSG defaults. The optional `gateway` block accepts `data_endpoint` and `admin_endpoint`; otherwise `PANW_AI_GW_DATA_ENDPOINT`, `PANW_AI_GW_ADMIN_ENDPOINT` and SDK defaults apply. A Gateway-enabled tenant and existing workspace are prerequisites. Workspaces and IAM are externally managed.
+Use the shared SCM OAuth credentials and TSG defaults. The optional `gateway` block accepts `data_endpoint`, `admin_endpoint` and `iam_endpoint`; otherwise `PANW_AI_GW_DATA_ENDPOINT`, `PANW_AI_GW_ADMIN_ENDPOINT`, `PANW_IAM_ENDPOINT` and SDK defaults apply. A Gateway-enabled tenant and appropriate existing role grants are prerequisites. Use the [managed workspace guide](https://cdot65.github.io/terraform-provider-prisma-airs/resources/gateway-workspace/) to coordinate a dedicated scope and workspace, or supply an existing externally managed workspace.
 
 ## Establish dependencies
 
 Create an organization integration, then its workspace-binding resource, then a workspace provider or MCP server. Declare `depends_on` on the binding. Bindings manage only their own integration/workspace pair; they never replace every workspace mapping or create default providers. Import existing enabled pairs before managing them. If workspace-list metadata reports truncation and the pair is not visible, Terraform returns a verification error and retains state rather than declaring the binding absent.
 
-See the [complete Gateway example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/). Use `airs cli aigateway workspaces list` and `airs cli aigateway integrations providers` for discovery of externally managed workspaces and provider-family identifiers.
+See the [complete Gateway example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/). Use `airs cli aigateway workspaces list` and `airs cli aigateway integrations providers` for workspace and provider-family discovery.
 
 ## Review routing changes
 
@@ -34,6 +34,6 @@ Data sources return a page of safe metadata. Config and deployment routes expose
 
 ## Destroy owned objects
 
-Providers and servers depend on their workspace bindings and are removed first. Binding destruction disables only the owned pair. Deployment destruction archives the registration and verifies its status; discovery may still list archived records. Other resources verify remote absence. Externally archived/deleted resources leave managed state on refresh.
+Providers and servers depend on their workspace bindings and are removed first. Binding destruction disables only the owned pair. Deployment destruction archives the registration and verifies its status; discovery may still list archived records. Other resources verify remote absence. Externally archived/deleted child objects leave managed state on refresh. Managed workspaces retain archived identities for owned-scope cleanup before replacement.
 
-The provider does not perform inference, MCP tool invocation, scans, connectivity probes, connection termination, usage-counter resets, infrastructure/workspace/IAM provisioning, integration model selection, MCP capabilities/access synchronization, or guardrail MCP mapping synchronization. Those lifecycle/configuration extensions need their own ownership designs and tests. Other product API gaps remain separate follow-up work.
+The provider does not perform inference, MCP tool invocation, scans, connectivity probes, connection termination, usage-counter resets, infrastructure provisioning, IAM access-policy grants and workspace membership, integration model selection, MCP capabilities/access synchronization, or guardrail MCP mapping synchronization. Those lifecycle/configuration extensions need their own ownership designs and tests. Other product API gaps remain separate follow-up work.

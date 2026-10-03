@@ -25,6 +25,7 @@ Nesting: `single`.
 | --- | --- | --- | --- | --- |
 | `admin_endpoint` | `string` | optional | — | Gateway admin-plane management endpoint override. Can also be set via PANW_AI_GW_ADMIN_ENDPOINT. |
 | `data_endpoint` | `string` | optional | — | Gateway data-plane management endpoint override. Can also be set via PANW_AI_GW_DATA_ENDPOINT. |
+| `iam_endpoint` | `string` | optional | — | SCM IAM endpoint override for workspace scope orchestration. Can also be set via PANW_IAM_ENDPOINT. |
 
 ## red_team
 
@@ -57,3 +58,5 @@ Nesting: `single`.
 | --- | --- | --- | --- | --- |
 | `data_endpoint` | `string` | optional | — | Supply Chain Security model-management data endpoint override. Can also be set via PANW_MODEL_SEC_DATA_ENDPOINT. |
 | `mgmt_endpoint` | `string` | optional | — | Supply Chain Security model-management endpoint override. Can also be set via PANW_MODEL_SEC_MGMT_ENDPOINT. |
+| `skill_scanning_data_endpoint` | `string` | optional | — | Skill Scanning data base URL, including its product prefix. Both Skill Scanning endpoints are required when using its resources. Can also be set via PANW_SKILL_SCANNING_DATA_ENDPOINT. |
+| `skill_scanning_mgmt_endpoint` | `string` | optional | — | Skill Scanning management base URL, including its product prefix. Can also be set via PANW_SKILL_SCANNING_MGMT_ENDPOINT. |

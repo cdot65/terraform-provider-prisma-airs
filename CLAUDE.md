@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Organized around AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security. Gateway manages configuration objects; Supply Chain Security currently covers Model Security groups and rules.
+Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Organized around AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security. Gateway manages configuration objects; Supply Chain Security covers Model Security groups/rules and Skill Scanning registration, policy and trust.
 
 ## Commands
+
+Before `make test` or `make check`, install Terraform 1.11+ on `PATH` or set `TF_ACC_TERRAFORM_PATH` to its binary. Mock lifecycle tests run without API credentials; CI installs Terraform 1.16.4 explicitly.
 
 ```bash
 make fmt            # gofmt -s -w .
@@ -43,7 +45,7 @@ internal/products/catalog.go    # product inventory, including Gateway
 internal/products/runtime/      # Runtime Security lifecycle, data sources, SDK adapter
 internal/products/gateway/     # Gateway management, bindings and metadata discovery
 internal/products/redteam/      # Red Teaming lifecycle and native target inputs
-internal/products/supplychain/  # Supply Chain Security groups/rules, SDK adapter
+internal/products/supplychain/  # Model Security and Skill Scanning, product-owned clients
 internal/tfutil/                # shared SDK error/deletion handling
 cmd/product-catalog/            # metadata for docs and schema consistency checks
 ```
@@ -75,3 +77,5 @@ cmd/product-catalog/            # metadata for docs and schema consistency check
 ## Docs
 
 Docusaurus site in `docs-site/`, authored guides in `docs-site/docs/`. For documentation changes, read `docs-site/docs/development/documentation.md` for schema generation and pinned Harness design checks. Complete `make docs-check` before declaring documentation changes verified. Existing public routes remain under cdot65.github.io/terraform-provider-prisma-airs/.
+
+For Skill Scanning lifecycle changes, read `specs/skill-scanning-scope.md` for API ownership and `docs-site/docs/resources/skill-scanning-instance.md` for complete registration PUT semantics and write-only authorization codes.

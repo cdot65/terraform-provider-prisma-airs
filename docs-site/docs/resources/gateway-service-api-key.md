@@ -1,6 +1,6 @@
 # AI Gateway service api key
 
-Manages `prisma-airs_gateway_service_api_key` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_service_api_key` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 

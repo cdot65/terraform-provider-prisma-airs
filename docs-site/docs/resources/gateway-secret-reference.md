@@ -1,6 +1,6 @@
 # AI Gateway secret reference
 
-Manages `prisma-airs_gateway_secret_reference` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_secret_reference` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 

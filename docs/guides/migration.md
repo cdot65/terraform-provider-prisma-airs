@@ -4,7 +4,7 @@ page_title: "Migrate to the updated provider"
 
 # Migrate to the updated provider
 
-Provider v0.8.0 groups existing functionality by product and uses Go SDK v0.6.1. The provider address remains `cdot65/prisma-airs`. Upgrade HCL and state together before applying; the provider does not register aliases for old type names.
+Provider v0.8.0 groups existing functionality by product and uses Go SDK v0.8.1. The provider address remains `cdot65/prisma-airs`. Upgrade HCL and state together before applying; the provider does not register aliases for old type names.
 
 ## Migrate v0.7.0 names and settings
 
@@ -121,3 +121,10 @@ terraform plan -detailed-exitcode
 ```
 
 Inspect every replacement and profile-name change before apply. A stable follow-up plan should exit 0. Protect the saved plan and state, including sensitive deployment-profile aliases. If outputting deployment details or API-key values, declare `sensitive = true`.
+
+
+## v0.10.0 workspaces and Skill Scanning
+
+Existing product-prefixed addresses remain registered. Go SDK v0.8.1 is adopted without local replacements. Skill Scanning adds tenant configuration, individual rule state, trusted overrides and read-only scan discovery; authorization-code inputs require Terraform 1.11+.
+
+Workspace ownership is explicit. Creating a managed scope with an existing name is refused. Import an existing workspace in external mode by default, or explicitly adopt a dedicated, already-bound scope using the managed import prefix. Imported optional settings remain unmanaged until configured. Review [workspace ownership and recovery](https://cdot65.github.io/terraform-provider-prisma-airs/resources/gateway-workspace/) before adopting objects or changing scope mode/name.

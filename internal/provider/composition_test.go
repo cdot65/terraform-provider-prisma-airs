@@ -9,11 +9,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/cdot65/prisma-airs-go/aisec/agentguard"
 	"github.com/cdot65/prisma-airs-go/aisec/modelsecurity"
 	"github.com/cdot65/prisma-airs-go/aisec/redteam"
 	airsruntime "github.com/cdot65/prisma-airs-go/aisec/runtime"
 	"github.com/cdot65/prisma-airs-provider/internal/product"
 	"github.com/cdot65/prisma-airs-provider/internal/products"
+	"github.com/cdot65/prisma-airs-provider/internal/products/supplychain"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -106,7 +108,7 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 			sources[entry.Name] = true
 		}
 	}
-	if len(wantLabels) != 0 || len(resources) != 22 || len(sources) != 16 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
+	if len(wantLabels) != 0 || len(resources) != 26 || len(sources) != 27 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
 		t.Fatal("catalog has missing or unclassified types")
 	}
 	if len(response.Provider.Block.Attributes) != 4 || len(response.Provider.Block.BlockTypes) != 4 {
@@ -118,8 +120,8 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 		}
 	}
 	for _, block := range response.Provider.Block.BlockTypes {
-		if block.TypeName == "gateway" && len(block.Block.Attributes) != 2 {
-			t.Error("Gateway requires data and admin endpoint settings")
+		if block.TypeName == "gateway" && len(block.Block.Attributes) != 3 {
+			t.Error("Gateway requires data, admin and IAM endpoint settings")
 		}
 	}
 }
@@ -162,7 +164,7 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 				t.Cleanup(servers[label].Close)
 			}
 			values := map[string]string{"client_id": "fixture-client", "client_secret": "fixture-secret", "tsg_id": "fixture-tsg", "token_endpoint": servers["token"].URL}
-			envs := map[string]string{"PANW_MGMT_CLIENT_ID": values["client_id"], "PANW_MGMT_CLIENT_SECRET": values["client_secret"], "PANW_MGMT_TSG_ID": values["tsg_id"], "PANW_MGMT_TOKEN_ENDPOINT": values["token_endpoint"], "PANW_MGMT_ENDPOINT": servers["runtime"].URL, "PANW_RED_TEAM_DATA_ENDPOINT": servers["red-data"].URL, "PANW_RED_TEAM_MGMT_ENDPOINT": servers["red-mgmt"].URL, "PANW_MODEL_SEC_DATA_ENDPOINT": servers["supply-data"].URL, "PANW_MODEL_SEC_MGMT_ENDPOINT": servers["supply-mgmt"].URL, "PANW_AI_GW_DATA_ENDPOINT": servers["gateway-data"].URL, "PANW_AI_GW_ADMIN_ENDPOINT": servers["gateway-admin"].URL}
+			envs := map[string]string{"PANW_MGMT_CLIENT_ID": values["client_id"], "PANW_MGMT_CLIENT_SECRET": values["client_secret"], "PANW_MGMT_TSG_ID": values["tsg_id"], "PANW_MGMT_TOKEN_ENDPOINT": values["token_endpoint"], "PANW_MGMT_ENDPOINT": servers["runtime"].URL, "PANW_RED_TEAM_DATA_ENDPOINT": servers["red-data"].URL, "PANW_RED_TEAM_MGMT_ENDPOINT": servers["red-mgmt"].URL, "PANW_MODEL_SEC_DATA_ENDPOINT": servers["supply-data"].URL, "PANW_MODEL_SEC_MGMT_ENDPOINT": servers["supply-mgmt"].URL, "PANW_AI_GW_DATA_ENDPOINT": servers["gateway-data"].URL, "PANW_AI_GW_ADMIN_ENDPOINT": servers["gateway-admin"].URL, "PANW_SKILL_SCANNING_DATA_ENDPOINT": servers["supply-data"].URL, "PANW_SKILL_SCANNING_MGMT_ENDPOINT": servers["supply-mgmt"].URL}
 			for key, value := range envs {
 				if explicit {
 					t.Setenv(key, "wrong-environment-value")
@@ -172,7 +174,7 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 			}
 			var settings map[string]map[string]string
 			if explicit {
-				settings = map[string]map[string]string{"runtime": {"mgmt_endpoint": servers["runtime"].URL}, "red_team": {"data_endpoint": servers["red-data"].URL, "mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"data_endpoint": servers["supply-data"].URL, "mgmt_endpoint": servers["supply-mgmt"].URL}, "gateway": {"data_endpoint": servers["gateway-data"].URL, "admin_endpoint": servers["gateway-admin"].URL}}
+				settings = map[string]map[string]string{"runtime": {"mgmt_endpoint": servers["runtime"].URL}, "red_team": {"data_endpoint": servers["red-data"].URL, "mgmt_endpoint": servers["red-mgmt"].URL}, "supply_chain": {"data_endpoint": servers["supply-data"].URL, "mgmt_endpoint": servers["supply-mgmt"].URL, "skill_scanning_data_endpoint": servers["supply-data"].URL, "skill_scanning_mgmt_endpoint": servers["supply-mgmt"].URL}, "gateway": {"data_endpoint": servers["gateway-data"].URL, "admin_endpoint": servers["gateway-admin"].URL}}
 			} else {
 				values = nil
 				if name == "partial nested overrides" {
@@ -190,7 +192,7 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 			ctx := context.Background()
 			runtime := data["runtime"].(*airsruntime.Client)
 			red := data["red_team"].(*redteam.Client)
-			supply := data["supply_chain"].(*modelsecurity.Client)
+			supply := data["supply_chain"].(*supplychain.Clients).Models
 			if _, err := runtime.DlpProfiles.List(ctx, airsruntime.ListOpts{}); err != nil {
 				t.Fatal(err)
 			}
@@ -207,6 +209,13 @@ func TestProductEndpointAndCredentialRouting(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			skills := data["supply_chain"].(*supplychain.Clients).Skills
+			if _, err := skills.Rules.List(ctx, agentguard.ListOpts{}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := skills.Scans.List(ctx, agentguard.ScanListOpts{}); err != nil {
+				t.Fatal(err)
+			}
 			for _, definition := range products.All() {
 				if definition.ID != "gateway" {
 					continue

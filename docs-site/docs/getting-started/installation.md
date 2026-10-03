@@ -2,11 +2,11 @@
 
 ## Requirements
 
-Use Terraform 1.0 or later. Building the provider from source requires Go 1.25.6 or later; developing the documentation site requires Node 24+.
+Use Terraform 1.0 or later for ordinary resources; Skill Scanning write-only authorization codes require Terraform 1.11+. Building the provider from source requires Go 1.25.6 or later; developing the documentation site requires Node 24+.
 
 ## Install from the Terraform Registry
 
-Provider v0.9.0 uses Go SDK v0.6.1 and uses product-prefixed Terraform types and nested product endpoint blocks. Review [migration](../guides/migration.md) before upgrading from v0.7.0 or earlier.
+Provider v0.10.0 uses Go SDK v0.8.1 and uses product-prefixed Terraform types and nested product endpoint blocks. Review [migration](../guides/migration.md) before upgrading from v0.7.0 or earlier.
 
 ```hcl
 # Setup: Declare the provider required by this configuration.
@@ -14,7 +14,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.9.0"
+      version = "~> 0.10.0"
     }
   }
 }

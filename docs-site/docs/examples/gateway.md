@@ -4,7 +4,7 @@ Create an owned upstream integration, authorize an existing workspace to use it,
 
 ## Before you start
 
-Install [provider v0.9.0](../getting-started/installation.md) and load the three [management environment variables](../getting-started/authentication.md). You also need an existing Gateway workspace UUID, a provider-family UUID, and a model available through that connection.
+Install [provider v0.10.0](../getting-started/installation.md) and load the three [management environment variables](../getting-started/authentication.md). You also need an existing Gateway workspace UUID, a provider-family UUID, and a model available through that connection.
 
 Supply `workspace_id`, `ai_provider_id`, and `model` through a nonsecret `terraform.tfvars` file. Load the real upstream key through `TF_VAR_upstream_api_key` from your secret store. The model service and workspace are external prerequisites; model enablement is outside this provider's scope.
 
@@ -18,7 +18,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.9.0"
+      version = "~> 0.10.0"
     }
   }
 }

@@ -35,3 +35,5 @@ These complete inline configurations use the [released provider](../getting-star
 Examples use short `# Concept: purpose` comments at dependency and product boundaries. Nested objects and lists are expanded so request shapes, references, and sensitive inputs are easy to follow. Variable descriptions and surrounding guide text explain individual inputs.
 
 Load OAuth credentials outside the HCL. Review a saved plan before applying, then check for a stable post-apply plan. Cleanup accounts for [revision history, archives, tombstones, and key/app cascades](../guides/import-and-state.md).
+
+[Gateway workspace and routing](gateway-workspaces.md) creates a dedicated scope, workspace and child config.

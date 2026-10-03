@@ -13,6 +13,7 @@ The provider reads these environment variables when their corresponding attribut
 | `PANW_MODEL_SEC_MGMT_ENDPOINT` | `supply_chain.mgmt_endpoint` | Supply Chain Security model management API override |
 | `PANW_AI_GW_DATA_ENDPOINT` | `gateway.data_endpoint` | Gateway data-plane management override |
 | `PANW_AI_GW_ADMIN_ENDPOINT` | `gateway.admin_endpoint` | Gateway admin-plane management override |
+| `PANW_IAM_ENDPOINT` | `gateway.iam_endpoint` | SCM IAM override for workspace scope orchestration |
 | `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team.data_endpoint` | Red Team data API override |
 | `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team.mgmt_endpoint` | Red Team management API override |
 
@@ -23,3 +24,7 @@ An explicit provider attribute takes precedence over its corresponding variable.
 `TF_CLI_CONFIG_FILE` selects your Terraform CLI configuration, including a development override. See [Installation](../getting-started/installation.md).
 
 Terraform does not load `.env` automatically. Repository examples may use `../../scripts/terraform-env.sh plan` to load a local file; CI should use its secret-store integration. Keep credentials and state out of source control.
+
+## Skill Scanning
+
+`PANW_SKILL_SCANNING_DATA_ENDPOINT` and `PANW_SKILL_SCANNING_MGMT_ENDPOINT` configure the two bases under `supply_chain`. Both are required for Skill Scanning resources and data sources. Explicit `skill_scanning_data_endpoint` / `skill_scanning_mgmt_endpoint` settings take precedence. Established `PANW_AGENT_GUARD_*_ENDPOINT` SDK variables remain fallback aliases; shared `PANW_MGMT_*` credentials are used.

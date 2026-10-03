@@ -24,10 +24,13 @@ Each block is optional. Omitting it still allows endpoint environment overrides.
 | AI Red Teaming | `red_team.mgmt_endpoint` | `PANW_RED_TEAM_MGMT_ENDPOINT` | `https://api.sase.paloaltonetworks.com/ai-red-teaming/mgmt-plane` |
 | AI Gateway | `gateway.data_endpoint` | `PANW_AI_GW_DATA_ENDPOINT` | `https://api.apps.paloaltonetworks.com/ai_gw/v2` |
 | AI Gateway | `gateway.admin_endpoint` | `PANW_AI_GW_ADMIN_ENDPOINT` | `https://api.apps.paloaltonetworks.com/ai_gw/admin/v2` |
+| AI Gateway | `gateway.iam_endpoint` | `PANW_IAM_ENDPOINT` | `https://api.apps.paloaltonetworks.com/iam/v1` |
 | AI Supply Chain Security | `supply_chain.data_endpoint` | `PANW_MODEL_SEC_DATA_ENDPOINT` | `https://api.sase.paloaltonetworks.com/aims/data` |
+| AI Supply Chain Security | `supply_chain.skill_scanning_data_endpoint` | `PANW_SKILL_SCANNING_DATA_ENDPOINT` | Required when using Skill Scanning |
+| AI Supply Chain Security | `supply_chain.skill_scanning_mgmt_endpoint` | `PANW_SKILL_SCANNING_MGMT_ENDPOINT` | Required when using Skill Scanning |
 | AI Supply Chain Security | `supply_chain.mgmt_endpoint` | `PANW_MODEL_SEC_MGMT_ENDPOINT` | `https://api.sase.paloaltonetworks.com/aims/mgmt` |
 
-The Supply Chain Security module currently manages Model Security groups and rules; it does not claim coverage of every product capability.
+The Supply Chain Security module manages Model Security groups/rules and Skill Scanning instance configuration, policy rules, trusted skills, and read-only scan discovery. Skill Scanning requires both explicit bases; no URL defaults are inferred.
 
 ## Example
 
@@ -50,6 +53,7 @@ provider "prisma-airs" {
   gateway {
     data_endpoint  = "https://api.apps.paloaltonetworks.com/ai_gw/v2"
     admin_endpoint = "https://api.apps.paloaltonetworks.com/ai_gw/admin/v2"
+    iam_endpoint   = "https://api.apps.paloaltonetworks.com/iam/v1"
   }
 
   supply_chain {

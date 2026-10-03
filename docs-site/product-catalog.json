@@ -81,6 +81,11 @@
         "name": "admin_endpoint",
         "environment": "PANW_AI_GW_ADMIN_ENDPOINT",
         "description": "Gateway admin-plane management endpoint override."
+      },
+      {
+        "name": "iam_endpoint",
+        "environment": "PANW_IAM_ENDPOINT",
+        "description": "SCM IAM endpoint override for workspace scope orchestration."
       }
     ],
     "resources": [
@@ -143,6 +148,10 @@
       {
         "name": "prisma-airs_gateway_mcp_integration_workspace_binding",
         "guide": "resources/gateway-mcp-integration-workspace-binding"
+      },
+      {
+        "name": "prisma-airs_gateway_workspace",
+        "guide": "resources/gateway-workspace"
       }
     ],
     "data_sources": [
@@ -197,6 +206,14 @@
       {
         "name": "prisma-airs_gateway_deployments",
         "guide": "data-sources/gateway-deployments"
+      },
+      {
+        "name": "prisma-airs_gateway_workspace",
+        "guide": "data-sources/gateway-workspace"
+      },
+      {
+        "name": "prisma-airs_gateway_workspaces",
+        "guide": "data-sources/gateway-workspaces"
       }
     ]
   },
@@ -214,18 +231,76 @@
         "name": "mgmt_endpoint",
         "environment": "PANW_MODEL_SEC_MGMT_ENDPOINT",
         "description": "Supply Chain Security model-management endpoint override."
+      },
+      {
+        "name": "skill_scanning_data_endpoint",
+        "environment": "PANW_SKILL_SCANNING_DATA_ENDPOINT",
+        "description": "Skill Scanning data base URL, including its product prefix. Both Skill Scanning endpoints are required when using its resources."
+      },
+      {
+        "name": "skill_scanning_mgmt_endpoint",
+        "environment": "PANW_SKILL_SCANNING_MGMT_ENDPOINT",
+        "description": "Skill Scanning management base URL, including its product prefix."
       }
     ],
     "resources": [
       {
         "name": "prisma-airs_supply_chain_security_group",
         "guide": "resources/model-security-group"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_instance",
+        "guide": "resources/skill-scanning-instance"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_rule",
+        "guide": "resources/skill-scanning-rule"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_override",
+        "guide": "resources/skill-scanning-override"
       }
     ],
     "data_sources": [
       {
         "name": "prisma-airs_supply_chain_security_rules",
         "guide": "data-sources/model-security-rules"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_instance",
+        "guide": "data-sources/skill-scanning-instance"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_rules",
+        "guide": "data-sources/skill-scanning-rules"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_rule_instances",
+        "guide": "data-sources/skill-scanning-rule-instances"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_overrides",
+        "guide": "data-sources/skill-scanning-overrides"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_scan",
+        "guide": "data-sources/skill-scanning-scan"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_scans",
+        "guide": "data-sources/skill-scanning-scans"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_vulnerabilities",
+        "guide": "data-sources/skill-scanning-vulnerabilities"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_attack_chains",
+        "guide": "data-sources/skill-scanning-attack-chains"
+      },
+      {
+        "name": "prisma-airs_supply_chain_skill_scanning_statistics",
+        "guide": "data-sources/skill-scanning-statistics"
       }
     ]
   }

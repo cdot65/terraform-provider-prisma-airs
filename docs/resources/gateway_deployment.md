@@ -5,7 +5,7 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_deployment Resource
 
-Manages `prisma-airs_gateway_deployment` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_deployment` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 

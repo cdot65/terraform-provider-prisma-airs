@@ -113,5 +113,29 @@ test('product navigation agrees with implemented coverage', async ({page}) => {
     }
   }
   await page.goto('products/gateway/');
-  await expect(page.locator('article')).toContainText('15 resources and 13 metadata data sources');
+  await expect(page.locator('article')).toContainText('16 resources and 15 metadata data sources');
+});
+
+
+test('Skill Scanning resource and data source have distinct exact schemas', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_supply_chain_skill_scanning_instance/');
+  await expect(page.locator('article')).toContainText('auth_code_version');
+  await expect(page.locator('article')).toContainText('support_account_id');
+  await page.goto('reference/generated/data-source-prisma-airs_supply_chain_skill_scanning_instance/');
+  await expect(page.locator('article')).toContainText('result');
+  await expect(page.locator('article')).not.toContainText('auth_code_version');
+  await page.goto('guides/skill-scanning-workflow/');
+  await expect(page.locator('article')).toContainText('original_state');
+});
+
+
+test('workspace resource and lookup expose distinct exact schemas', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_gateway_workspace/');
+  await expect(page.locator('article')).toContainText('scope_management');
+  await expect(page.locator('article')).toContainText('scope_ownership_token');
+  await page.goto('reference/generated/data-source-prisma-airs_gateway_workspace/');
+  await expect(page.locator('article')).toContainText('workspace_id');
+  await expect(page.locator('article')).not.toContainText('scope_management');
+  await page.goto('examples/gateway-workspaces/');
+  await expect(page.locator('article')).toContainText('scope_management');
 });

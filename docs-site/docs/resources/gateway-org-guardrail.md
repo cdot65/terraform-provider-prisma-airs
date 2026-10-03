@@ -1,6 +1,6 @@
 # AI Gateway org guardrail
 
-Manages `prisma-airs_gateway_org_guardrail` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_org_guardrail` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 

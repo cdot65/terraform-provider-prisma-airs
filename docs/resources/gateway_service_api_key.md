@@ -5,7 +5,7 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_service_api_key Resource
 
-Manages `prisma-airs_gateway_service_api_key` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_service_api_key` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
@@ -59,4 +59,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `scopes` | `set(string)` | required | — | Gateway permissions granted to the key. |
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

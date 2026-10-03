@@ -5,7 +5,7 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_usage_limit Resource
 
-Manages `prisma-airs_gateway_usage_limit` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_usage_limit` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
@@ -72,4 +72,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `type` | `string` | required | — | Usage measurement type. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

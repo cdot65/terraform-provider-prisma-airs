@@ -10,7 +10,7 @@ flowchart LR
   Catalog --> RedTeam[AI Red Teaming]
   Catalog --> Gateway[AI Gateway]
   Catalog --> SupplyChain[AI Supply Chain Security]
-  Runtime --> SDK[Prisma AIRS Go SDK v0.6.1]
+  Runtime --> SDK[Prisma AIRS Go SDK v0.8.1]
   RedTeam --> SDK
   Gateway --> SDK
   SupplyChain --> SDK
@@ -24,7 +24,7 @@ flowchart LR
 
 `internal/provider` resolves shared OAuth defaults and nested endpoint settings, then delegates client construction. Product-owned client slots flow through the framework's provider data; resources retrieve their own SDK type. Credential copies and cross-product SDK fields are not retained in the composition module.
 
-The current Supply Chain Security functionality is Model Security group and rule management. The provider does not execute runtime scans, model scan jobs, or red team inference. Network Broker channels remain externally managed. Gateway manages configuration objects; workspaces, IAM, inference and connected infrastructure remain external.
+The current Supply Chain Security functionality is Model Security group and rule management. The provider does not execute runtime scans, model scan jobs, or red team inference. Network Broker channels remain externally managed. Gateway manages workspaces with dedicated IAM scope orchestration and configuration objects. Access policies, membership, inference and connected infrastructure remain external.
 
 ## Lifecycle modules
 
@@ -39,3 +39,8 @@ The current Supply Chain Security functionality is Model Security group and rule
 ## Validation
 
 Product-local tests cover conversion, revision plans, and pagination. Composed-provider tests cover registration, configuration routing, and live lifecycle acceptance. The catalog generator checks exact schema ownership, guide existence, and documentation freshness. Browser and pixel tests verify the shared Harness design. See [product refactor verification](product-refactor-verification.md) and the historical [SDK upgrade report](sdk-upgrade-verification.md).
+
+
+## Workspace orchestration
+
+The Gateway product owns one workspace resource with private lifecycle and native-settings helpers. It coordinates IAM and admin-plane writes while recording intermediate identities in Terraform state. Dedicated scope ownership is explicit; external scopes receive no writes. Shared SDK transport handles OAuth and typed errors; the provider owns recovery, import, drift and cleanup confirmation. Safe singular/list discovery uses the admin plane and preserves incomplete-inventory evidence.

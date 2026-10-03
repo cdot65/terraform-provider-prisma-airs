@@ -38,7 +38,7 @@ func common(fields map[string]field, workspace bool) map[string]field {
 	fields["last_updated_at"] = computed("string", "Last remote update timestamp.")
 	fields["organisation_id"] = stableComputed("string", "Internal organisation UUID from reads; writes use the shared TSG ID.")
 	if workspace {
-		fields["workspace_id"] = immutable("string", "Existing Gateway workspace UUID. Workspace and IAM provisioning are external.")
+		fields["workspace_id"] = immutable("string", "Gateway workspace UUID, including a managed gateway_workspace.id reference.")
 	}
 	return fields
 }
