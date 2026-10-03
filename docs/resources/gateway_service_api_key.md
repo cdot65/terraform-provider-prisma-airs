@@ -29,6 +29,8 @@ terraform import prisma-airs_gateway_service_api_key.example <uuid>
 
 Import reads the active remote object. Archived objects are rejected. Sensitive desired inputs and one-time outputs are not recovered from masked reads; supply desired inputs and preserve previously exported secrets externally.
 
+An existing `expires_at` remains when the argument is removed. Use a supported explicit future timestamp or deliberately replace the owned object; omission does not disable expiry.
+
 ## Optional values
 
 Omitting an optional setting leaves the remote value or service default in place; removing it from HCL does not clear it. Use an explicit empty string for descriptions/notes documented as clearable. Collection, object and timestamp removal does not send a remote reset; retain an explicit supported value or replace the owned resource deliberately. Sensitive settings remain desired inputs through masked reads.
@@ -47,7 +49,7 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `created_at` | `string` | computed | — | Creation timestamp. |
 | `defaults` | `dynamic` | optional, computed | — | Native HCL key defaults; config_id, allow_config_override and metadata. |
 | `description` | `string` | optional, computed | — | Key description. |
-| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. |
+| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry. |
 | `id` | `string` | computed | — | Stable resource identifier. |
 | `key` | `string` | computed | yes | One-time key material; export securely. Import cannot recover it. |
 | `last_updated_at` | `string` | computed | — | Last remote update timestamp. |

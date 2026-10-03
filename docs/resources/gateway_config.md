@@ -27,6 +27,8 @@ Credential detection includes named/header-style fields and recognizable key/tok
 
 Server normalization appears as readable drift on refresh. Apply preserves configured values; provide a document accepted by the service to keep subsequent plans empty.
 
+Legitimate provider settings that resemble credential fields belong in the sensitive integration `configurations` object. Routing validation recognizes common GitHub, Google, Slack and GitLab credential prefixes as well as API-key, bearer and private-key patterns. Model `start_token` and `stop_token` fields remain visible nonsecret settings.
+
 ## Import
 
 ```bash

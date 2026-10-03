@@ -494,7 +494,7 @@ func TestAccGatewayIntegrationGraphs(t *testing.T) {
 		}
 		steps = append(steps, step)
 	}
-	steps = append(steps, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true)}, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true), PlanOnly: true})
+	steps = append(steps, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true)}, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}})
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(client, w), Steps: steps})
 }
 func gatewayGraphConfig(name, w, family string, updated bool) string {

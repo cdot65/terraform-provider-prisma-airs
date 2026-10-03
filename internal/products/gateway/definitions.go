@@ -131,7 +131,7 @@ func definitions() []definition {
 			return listSDK(c.sdk.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "provider", description: "Manages a workspace provider backed by an organisation integration. Establish an integration_workspace_binding first. Import uses workspace_uuid/provider_uuid.", workspace: true, pagination: true, scopedImport: true,
-		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh.")}, true),
+		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry.")}, true),
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			return writeSDK(ctx, b, c.sdk.Providers.Create)
 		},
@@ -192,7 +192,7 @@ func definitions() []definition {
 		},
 	})
 	for _, kind := range []gw.APIKeyKind{gw.APIKeyService, gw.APIKeyUser} {
-		fields := common(map[string]field{"name": required("string", "Key name."), "description": optional("string", "Key description."), "scopes": required("strings", "Gateway permissions granted to the key."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh."), "alert_emails": optional("strings", "Usage alert recipients."), "defaults": optional("object", "Native HCL key defaults; config_id, allow_config_override and metadata."), "key": computed("string", "One-time key material; export securely. Import cannot recover it.")}, true)
+		fields := common(map[string]field{"name": required("string", "Key name."), "description": optional("string", "Key description."), "scopes": required("strings", "Gateway permissions granted to the key."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry."), "alert_emails": optional("strings", "Usage alert recipients."), "defaults": optional("object", "Native HCL key defaults; config_id, allow_config_override and metadata."), "key": computed("string", "One-time key material; export securely. Import cannot recover it.")}, true)
 		f := fields["key"]
 		f.sensitive = true
 		fields["key"] = f

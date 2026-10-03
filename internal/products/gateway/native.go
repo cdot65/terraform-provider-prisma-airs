@@ -239,7 +239,7 @@ func routingCredentials(value any) bool {
 func credentialField(key string) bool {
 	// Identifiers point to separately managed credentials; they are safe to show.
 	switch key {
-	case "pad_token", "eos_token", "bos_token", "unk_token", "sep_token", "mask_token", "cls_token", "decoder_start_token":
+	case "pad_token", "eos_token", "bos_token", "unk_token", "sep_token", "mask_token", "cls_token", "decoder_start_token", "start_token", "stop_token":
 		return false
 	}
 	if key == "virtual_key" || key == "provider" || key == "secret_reference_id" || strings.HasSuffix(key, "_secret_reference_id") {
@@ -254,7 +254,7 @@ func credentialField(key string) bool {
 	return strings.Contains(compact, "serviceaccount") || compact == "clientsecret"
 }
 
-var credentialValue = regexp.MustCompile(`^(sk-[A-Za-z0-9_-]{20,}|sk_(live|test)_[A-Za-z0-9]{16,}|AKIA[A-Z0-9]{16})$`)
+var credentialValue = regexp.MustCompile(`^(sk-[A-Za-z0-9_-]{20,}|sk_(live|test)_[A-Za-z0-9]{16,}|AKIA[A-Z0-9]{16}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[bp]-[A-Za-z0-9-]{20,}|AIza[A-Za-z0-9_-]{30,}|glpat-[A-Za-z0-9_-]{20,})$`)
 
 func recognizableCredential(value string) bool {
 	value = strings.TrimSpace(value)

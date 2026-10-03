@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 type field struct {
@@ -318,6 +319,11 @@ func (r *gatewayResource) mapAppliedState(ctx context.Context, plan types.Object
 			values[k] = mapped
 		}
 	}
+	for k, v := range values {
+		if _, err := nativeJSON(v); err != nil {
+			diags.AddAttributeError(path.Root(k), "Gateway response left an unknown value", "The detail response and write receipt did not resolve this planned input. Inspect the owned remote object before retrying; no response values are included.")
+		}
+	}
 	result, d := types.ObjectValue(result.AttributeTypes(ctx), values)
 	diags.Append(d...)
 	return result
@@ -377,7 +383,27 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 	values["id"] = types.StringValue(id)
 	model = types.ObjectValueMust(model.AttributeTypes(ctx), values)
 	// Persist identity and one-time secrets even if the subsequent GET fails.
-	provisional := r.mapAppliedState(ctx, model, document{}, receipt, &resp.Diagnostics)
+	provisional := r.mapState(ctx, model, document{}, receipt, &resp.Diagnostics)
+	// A recovery checkpoint must contain identity/secrets but no unknown children.
+	raw, checkpointErr := provisional.ToTerraformValue(ctx)
+	if checkpointErr == nil {
+		raw, checkpointErr = tftypes.Transform(raw, func(_ *tftypes.AttributePath, value tftypes.Value) (tftypes.Value, error) {
+			if !value.IsKnown() {
+				return tftypes.NewValue(value.Type(), nil), nil
+			}
+			return value, nil
+		})
+	}
+	if checkpointErr != nil {
+		resp.Diagnostics.AddError("Cannot save Gateway recovery state", "The create receipt could not be represented safely in state.")
+		return
+	}
+	checkpoint, checkpointErr := provisional.Type(ctx).ValueFromTerraform(ctx, raw)
+	if checkpointErr != nil {
+		resp.Diagnostics.AddError("Cannot save Gateway recovery state", "The create receipt could not be represented safely in state.")
+		return
+	}
+	provisional = checkpoint.(types.Object)
 	resp.Diagnostics.Append(resp.State.Set(ctx, provisional)...)
 	_, workspace := resourceIDs(model)
 	remote, e := r.definition.read(ctx, r.client, id, workspace)
@@ -524,10 +550,8 @@ func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportSt
 	}
 	model := types.ObjectValueMust(ts, values)
 	if r.definition.name == "secret_reference" {
-		if value := model.Attributes()["allowed_workspaces"]; value != nil && !value.IsNull() && !value.IsUnknown() {
-			if _, present := remote["allowed_workspaces"]; !present {
-				resp.Diagnostics.AddAttributeWarning(path.Root("allowed_workspaces"), "Workspace access cannot be verified", "The Gateway detail response omits allowed_workspaces. The desired workspace list is retained, but out-of-band access changes cannot be detected; verify this access policy in Gateway.")
-			}
+		if _, present := remote["allowed_workspaces"]; !present {
+			resp.Diagnostics.AddAttributeWarning(path.Root("allowed_workspaces"), "Workspace access unavailable on import", "The Gateway detail response omits allowed_workspaces. Supply the intended workspace list in configuration and verify the access policy in Gateway.")
 		}
 	}
 	model = r.mapState(ctx, model, remote, nil, &resp.Diagnostics)

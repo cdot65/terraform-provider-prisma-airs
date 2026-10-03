@@ -508,3 +508,68 @@ func TestSecretWorkspaceDriftLimitationProducesActionableWarning(t *testing.T) {
 		t.Fatal("unavailable workspace policy erased")
 	}
 }
+
+func TestUnknownSetMembersResolveWithoutOrderDependentAmbiguity(t *testing.T) {
+	remote := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("a"), types.StringValue("b")})
+	for _, elements := range [][]attr.Value{
+		{types.StringUnknown(), types.StringValue("a")},
+		{types.StringValue("a"), types.StringUnknown()},
+		{types.StringUnknown(), types.StringUnknown()},
+	} {
+		got, err := honorPlanned(types.SetValueMust(types.StringType, elements), remote)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !got.Equal(remote) {
+			t.Fatal("unknown set did not resolve to known remote members")
+		}
+	}
+}
+
+func TestApplyUsesReceiptForOmittedAccessListAndRejectsUnresolvedState(t *testing.T) {
+	r := &gatewayResource{definition: resourceDefinition(t, "secret_reference")}
+	plan := modelFixture(t, r, map[string]attr.Value{"allowed_workspaces": types.SetValueMust(types.StringType, []attr.Value{types.StringValue("a"), types.StringUnknown()})})
+	var d diag.Diagnostics
+	got := r.mapAppliedState(context.Background(), plan, document{}, document{"allowed_workspaces": []any{"a", "b"}}, &d)
+	noErrors(t, d)
+	expected := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("a"), types.StringValue("b")})
+	if !got.Attributes()["allowed_workspaces"].Equal(expected) {
+		t.Fatal("write receipt not used for omitted access list")
+	}
+	d = nil
+	r.mapAppliedState(context.Background(), plan, document{}, nil, &d)
+	if !d.HasError() {
+		t.Fatal("unresolved nested value allowed in final state")
+	}
+}
+
+func TestSecretImportWarnsWhenWorkspacePolicyIsOmitted(t *testing.T) {
+	r, schemaResponse := configFixture(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"id":"reference","name":"test","manager_type":"aws_sm","secret_path":"path","allow_all_workspaces":false}`))
+	})
+	r.definition = resourceDefinition(t, "secret_reference")
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResponse)
+	response := resource.ImportStateResponse{State: tfsdk.State{Schema: schemaResponse.Schema}}
+	r.ImportState(context.Background(), resource.ImportStateRequest{ID: "reference"}, &response)
+	noErrors(t, response.Diagnostics)
+	found := false
+	for _, d := range response.Diagnostics {
+		if d.Summary() == "Workspace access unavailable on import" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("import did not warn about unavailable workspace policy")
+	}
+}
+
+func TestAdditionalCredentialPrefixes(t *testing.T) {
+	for _, value := range []string{"ghp_abcdefghijklmnopqrstuvwxyz", "github_pat_abcdefghijklmnopqrstuvwxyz", "xoxb-" + strings.Repeat("a", 24), "AIzaabcdefghijklmnopqrstuvwxyz123456", "glpat-abcdefghijklmnopqrstuvwxyz"} {
+		if !routingCredentials(map[string]any{"neutral": value}) {
+			t.Fatal("recognized secret prefix accepted")
+		}
+	}
+	if routingCredentials(map[string]any{"start_token": "<start>", "stop_token": "<stop>"}) {
+		t.Fatal("nonsecret model token rejected")
+	}
+}

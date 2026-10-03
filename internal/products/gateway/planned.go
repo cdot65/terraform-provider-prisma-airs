@@ -104,26 +104,50 @@ func honorPlanned(plan, remote attr.Value) (attr.Value, error) {
 	case types.Set:
 		candidates := remoteElements(remote)
 		used := map[int]bool{}
-		values := make([]attr.Value, len(p.Elements()))
-		for i, v := range p.Elements() {
+		values := []attr.Value{}
+		unknown := false
+		// Correlate known members before wildcard unknowns; set order is undefined.
+		for _, v := range p.Elements() {
+			if v.IsUnknown() {
+				unknown = true
+				continue
+			}
 			match := -1
 			for j, c := range candidates {
 				if !used[j] && knownMatch(v, c) {
 					if match >= 0 {
-						return nil, fmt.Errorf("ambiguous unknown set element")
+						return nil, fmt.Errorf("ambiguous partially known set element")
 					}
 					match = j
 				}
 			}
 			if match < 0 {
-				return nil, fmt.Errorf("unmatched unknown set element")
+				return nil, fmt.Errorf("unmatched known set element")
 			}
 			used[match] = true
 			mapped, err := honorPlanned(v, candidates[match])
 			if err != nil {
 				return nil, err
 			}
-			values[i] = mapped
+			values = append(values, mapped)
+		}
+		if unknown {
+			// Unknown members can resolve to any remaining conforming member,
+			// including duplicates of known members that collapse in a set.
+			for j, c := range candidates {
+				if used[j] {
+					continue
+				}
+				raw, err := c.ToTerraformValue(ctx)
+				if err != nil {
+					return nil, err
+				}
+				mapped, err := p.ElementType(ctx).ValueFromTerraform(ctx, raw)
+				if err != nil {
+					return nil, err
+				}
+				values = append(values, mapped)
+			}
 		}
 		value, d := types.SetValue(p.ElementType(ctx), values)
 		if d.HasError() {

@@ -11,7 +11,7 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `created_at` | `string` | computed | — | Creation timestamp. |
-| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. |
+| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry. |
 | `id` | `string` | computed | — | Stable resource identifier. |
 | `integration_id` | `string` | required | — | Bound organisation integration UUID. |
 | `last_updated_at` | `string` | computed | — | Last remote update timestamp. |
