@@ -50,6 +50,8 @@ Full docs: **[cdot65.github.io/terraform-provider-prisma-airs](https://cdot65.gi
 
 ## Development
 
+Install Go 1.25.6+ and Terraform 1.11+ (CI uses Terraform 1.16.4). Put Terraform on `PATH`, or point `TF_ACC_TERRAFORM_PATH` at an installed binary. Mock Terraform lifecycle tests require the CLI but no API credentials. CI uses golangci-lint v2.14.0.
+
 ```bash
 make build          # build provider binary
 make check          # fmt + vet + lint + test

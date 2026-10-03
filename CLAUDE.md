@@ -8,6 +8,8 @@ Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs
 
 ## Commands
 
+Before `make test` or `make check`, install Terraform 1.11+ on `PATH` or set `TF_ACC_TERRAFORM_PATH` to its binary. Mock lifecycle tests run without API credentials; CI installs Terraform 1.16.4 explicitly.
+
 ```bash
 make fmt            # gofmt -s -w .
 make vet            # go vet ./...
