@@ -9,7 +9,7 @@ Terraform provider for Palo Alto Networks **Prisma AIRS** — manage AI security
 
 Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK using the [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 
-Provider v0.9.0 uses Go SDK v0.6.1 and native HCL target blocks. Review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before upgrading existing configurations and state.
+The latest published provider is v0.9.0. Unreleased Skill Scanning support consumes Go SDK v0.7.0, with native HCL and a Terraform 1.11+ write-only authorization-code input. Review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before upgrading existing configurations and state.
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ terraform init && terraform apply
 | AI Runtime Security | Profiles, topics, API keys, customer apps, DLP and deployment catalogs |
 | AI Red Teaming | Targets and custom prompt sets |
 | AI Gateway | 15 management resources and 13 discovery data sources |
-| AI Supply Chain Security | Model Security groups and rule catalog |
+| AI Supply Chain Security | Model Security groups/rules plus Skill Scanning tenant instances, policy rules, trusted skills, and scan discovery |
 
 See the [generated product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/reference/) for exact Terraform names. Endpoint overrides use optional `runtime`, `red_team`, `gateway`, and `supply_chain` blocks; credentials remain shared.
 

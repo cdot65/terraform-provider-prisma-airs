@@ -63,4 +63,16 @@ See [provider configuration](provider-configuration.md), [environment variables]
 | Terraform type | Kind | Guide | Schema |
 | --- | --- | --- | --- |
 | `prisma-airs_supply_chain_security_group` | Resource | [Lifecycle](../resources/model-security-group.md) | [Attributes](generated/prisma-airs_supply_chain_security_group.md) |
+| `prisma-airs_supply_chain_skill_scanning_instance` | Resource | [Lifecycle](../resources/skill-scanning-instance.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_instance.md) |
+| `prisma-airs_supply_chain_skill_scanning_rule` | Resource | [Lifecycle](../resources/skill-scanning-rule.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_rule.md) |
+| `prisma-airs_supply_chain_skill_scanning_override` | Resource | [Lifecycle](../resources/skill-scanning-override.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_override.md) |
 | `prisma-airs_supply_chain_security_rules` | Data source | [Lifecycle](../data-sources/model-security-rules.md) | [Attributes](generated/prisma-airs_supply_chain_security_rules.md) |
+| `prisma-airs_supply_chain_skill_scanning_instance` | Data source | [Lifecycle](../data-sources/skill-scanning-instance.md) | [Attributes](generated/data-source-prisma-airs_supply_chain_skill_scanning_instance.md) |
+| `prisma-airs_supply_chain_skill_scanning_rules` | Data source | [Lifecycle](../data-sources/skill-scanning-rules.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_rules.md) |
+| `prisma-airs_supply_chain_skill_scanning_rule_instances` | Data source | [Lifecycle](../data-sources/skill-scanning-rule-instances.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_rule_instances.md) |
+| `prisma-airs_supply_chain_skill_scanning_overrides` | Data source | [Lifecycle](../data-sources/skill-scanning-overrides.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_overrides.md) |
+| `prisma-airs_supply_chain_skill_scanning_scan` | Data source | [Lifecycle](../data-sources/skill-scanning-scan.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_scan.md) |
+| `prisma-airs_supply_chain_skill_scanning_scans` | Data source | [Lifecycle](../data-sources/skill-scanning-scans.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_scans.md) |
+| `prisma-airs_supply_chain_skill_scanning_vulnerabilities` | Data source | [Lifecycle](../data-sources/skill-scanning-vulnerabilities.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_vulnerabilities.md) |
+| `prisma-airs_supply_chain_skill_scanning_attack_chains` | Data source | [Lifecycle](../data-sources/skill-scanning-attack-chains.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_attack_chains.md) |
+| `prisma-airs_supply_chain_skill_scanning_statistics` | Data source | [Lifecycle](../data-sources/skill-scanning-statistics.md) | [Attributes](generated/prisma-airs_supply_chain_skill_scanning_statistics.md) |

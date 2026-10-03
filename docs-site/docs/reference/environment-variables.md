@@ -23,3 +23,7 @@ An explicit provider attribute takes precedence over its corresponding variable.
 `TF_CLI_CONFIG_FILE` selects your Terraform CLI configuration, including a development override. See [Installation](../getting-started/installation.md).
 
 Terraform does not load `.env` automatically. Repository examples may use `../../scripts/terraform-env.sh plan` to load a local file; CI should use its secret-store integration. Keep credentials and state out of source control.
+
+## Skill Scanning
+
+`PANW_SKILL_SCANNING_DATA_ENDPOINT` and `PANW_SKILL_SCANNING_MGMT_ENDPOINT` configure the two bases under `supply_chain`. Both are required for Skill Scanning resources and data sources. Explicit `skill_scanning_data_endpoint` / `skill_scanning_mgmt_endpoint` settings take precedence. Established `PANW_AGENT_GUARD_*_ENDPOINT` SDK variables remain fallback aliases; shared `PANW_MGMT_*` credentials are used.

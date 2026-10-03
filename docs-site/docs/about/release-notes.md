@@ -1,5 +1,14 @@
 # Release Notes
 
+## Unreleased — Skill Scanning
+
+- Adopt published Go SDK v0.7.0, adding three Skill Scanning resources and nine data sources under AI Supply Chain Security.
+- Manage tenant instance configuration, individual policy-rule state, and trusted fingerprints through native HCL.
+- Keep rule identities stable, restore captured policy baselines on destroy, replace immutable trust overrides, and independently confirm deletion.
+- Add explicit Skill Scanning bases under `supply_chain`; invalid settings affect only Skill Scanning usage.
+- Use a true write-only authorization-code input with a nonsecret change version (Terraform 1.11+); redact upstream error bodies and retain identities for recovery.
+- Read scans, findings, chains, and nullable statistics as native Terraform objects. Scan execution/uploads/CSV remain SDK/CLI operations.
+
 ## v0.9.0 — AI Gateway management (2026-10-03)
 
 - Add 15 Gateway resources and 13 safe metadata data sources, with organization/workspace ownership and explicit service/user key routes.

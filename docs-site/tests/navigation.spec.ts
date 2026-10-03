@@ -115,3 +115,15 @@ test('product navigation agrees with implemented coverage', async ({page}) => {
   await page.goto('products/gateway/');
   await expect(page.locator('article')).toContainText('15 resources and 13 metadata data sources');
 });
+
+
+test('Skill Scanning resource and data source have distinct exact schemas', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_supply_chain_skill_scanning_instance/');
+  await expect(page.locator('article')).toContainText('auth_code_version');
+  await expect(page.locator('article')).toContainText('support_account_id');
+  await page.goto('reference/generated/data-source-prisma-airs_supply_chain_skill_scanning_instance/');
+  await expect(page.locator('article')).toContainText('result');
+  await expect(page.locator('article')).not.toContainText('auth_code_version');
+  await page.goto('guides/skill-scanning-workflow/');
+  await expect(page.locator('article')).toContainText('original_state');
+});

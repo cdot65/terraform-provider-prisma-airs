@@ -56,10 +56,17 @@ def product_catalog(schema):
     return catalog, owned
 
 
+def reference_name(name, kind, resource_names):
+    # Resource and data-source type names may legally be identical. Preserve
+    # existing resource URLs while giving the colliding read schema its own page.
+    return 'data-source-' + name if kind == 'data source' and name in resource_names else name
+
+
 def inventory(catalog):
     lines = ['---', 'title: Provider reference', 'slug: /reference', '---', '',
              'Product ownership is generated from the provider registrations. Lifecycle guides explain imports and updates; exact schemas list types, nested blocks, and sensitive fields.', '',
              'See [provider configuration](provider-configuration.md), [environment variables](environment-variables.md), and the [provider schema](generated/provider.md).', '']
+    resource_names = {entry['name'] for product in catalog for entry in product['resources']}
     for product in catalog:
         lines += ['## ' + product['label'], '']
         if not product['implemented']:
@@ -68,7 +75,7 @@ def inventory(catalog):
         lines += ['| Terraform type | Kind | Guide | Schema |', '| --- | --- | --- | --- |']
         for key, kind in [('resources', 'Resource'), ('data_sources', 'Data source')]:
             for entry in product[key]:
-                lines.append(f"| `{entry['name']}` | {kind} | [Lifecycle](../{entry['guide']}.md) | [Attributes](generated/{entry['name']}.md) |")
+                lines.append(f"| `{entry['name']}` | {kind} | [Lifecycle](../{entry['guide']}.md) | [Attributes](generated/{reference_name(entry['name'], kind.lower(), resource_names)}.md) |")
         lines.append('')
     return '\n'.join(lines).rstrip() + '\n'
 
@@ -91,7 +98,7 @@ def description(text):
 def attributes(rows, label, depth=2):
     lines = ['#' * depth + ' ' + label, '', '| Attribute | Type | Presence | Sensitive | Description |', '| --- | --- | --- | --- | --- |']
     for name, row in sorted(rows.items()):
-        presence = ', '.join(flag for flag in ['required', 'optional', 'computed'] if row.get(flag))
+        presence = ', '.join(flag for flag in ['required', 'optional', 'computed', 'write_only'] if row.get(flag))
         typ = type_name(row['type']) if 'type' in row else row['nested_type']['nesting_mode'] + '(object)'
         lines.append(f'| `{name}` | `{typ}` | {presence} | {"yes" if row.get("sensitive") else "—"} | {description(row.get("description", ""))} |')
     lines.append('')
@@ -165,7 +172,7 @@ def main():
     expected = {'provider.md': render('Provider', schema['provider'], 'provider')}
     for group, kind in [('resource_schemas', 'resource'), ('data_source_schemas', 'data source')]:
         for name, row in sorted(schema[group].items()):
-            expected[name + '.md'] = render(name, row, kind)
+            expected[reference_name(name, kind, schema['resource_schemas']) + '.md'] = render(name, row, kind)
     registry = {}
     for group, kind, folder in [('resource_schemas', 'resource', 'resources'), ('data_source_schemas', 'data source', 'data-sources')]:
         for name, row in sorted(schema[group].items()):

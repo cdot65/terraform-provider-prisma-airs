@@ -14,7 +14,7 @@ The [product catalog](reference/index.md) derives available resources and data s
 - **AI Runtime Security:** profiles, custom topics, API keys, customer apps, DLP profiles, and deployment profiles.
 - **AI Red Teaming:** targets and custom prompt sets.
 - **AI Gateway:** routing configs, guardrails, integrations, workspace bindings, MCP servers, keys, limits, secret references, deployments, and metadata discovery.
-- **AI Supply Chain Security:** Model Security groups and the rule catalog.
+- **AI Supply Chain Security:** Model Security groups/rules, Skill Scanning tenant configuration, policy rules, trusted skills, and scan discovery.
 
 ## Key Features
 
@@ -28,7 +28,7 @@ The [product catalog](reference/index.md) derives available resources and data s
 
 Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](development/architecture.md) for the product modules.
 
-These guides describe provider v0.9.0 built on Go SDK v0.6.1. See [Getting started](getting-started/index.md) and [Migration](guides/migration.md) for the installation and state transition.
+These guides describe the current provider, including Skill Scanning support built on Go SDK v0.7.0. See [Getting started](getting-started/index.md) and [Migration](guides/migration.md) for the installation and state transition.
 
 ## Quick Links
 
