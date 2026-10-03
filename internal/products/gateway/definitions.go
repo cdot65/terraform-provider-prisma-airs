@@ -25,13 +25,18 @@ func secret(kind, description string) field {
 func computed(kind, description string) field {
 	return field{kind: kind, computed: true, description: description}
 }
+func stableComputed(kind, description string) field {
+	f := computed(kind, description)
+	f.stable = true
+	return f
+}
 func common(fields map[string]field, workspace bool) map[string]field {
-	fields["id"] = computed("string", "Stable resource identifier.")
-	fields["slug"] = computed("string", "Server-assigned resource slug.")
+	fields["id"] = stableComputed("string", "Stable resource identifier.")
+	fields["slug"] = stableComputed("string", "Server-assigned resource slug.")
 	fields["status"] = computed("string", "Remote lifecycle status; externally archived objects leave Terraform state.")
-	fields["created_at"] = computed("string", "Creation timestamp.")
+	fields["created_at"] = stableComputed("string", "Creation timestamp.")
 	fields["last_updated_at"] = computed("string", "Last remote update timestamp.")
-	fields["organisation_id"] = computed("string", "Internal organisation UUID from reads; writes use the shared TSG ID.")
+	fields["organisation_id"] = stableComputed("string", "Internal organisation UUID from reads; writes use the shared TSG ID.")
 	if workspace {
 		fields["workspace_id"] = immutable("string", "Existing Gateway workspace UUID. Workspace and IAM provisioning are external.")
 	}
@@ -67,7 +72,7 @@ func definitions() []definition {
 		if org {
 			name = "org_guardrail"
 		}
-		fields := common(map[string]field{"name": required("string", "Guardrail name."), "checks": required("checks", "Native HCL check objects with id and optional name and is_enabled."), "check_parameters": secret("object", "Native HCL desired parameter objects keyed by check ID; sensitive and retained through masked reads."), "actions": required("actions", "Native HCL action object: deny, async, on_success.feedback and on_fail.feedback."), "target": computed("string", "Server-reported guardrail target."), "version_id": computed("string", "Guardrail revision UUID.")}, !org)
+		fields := common(map[string]field{"name": required("string", "Guardrail name."), "checks": required("checks", "Native HCL check objects with id and optional name and is_enabled."), "check_parameters": secret("object", "Native HCL desired parameter objects keyed by check ID; sensitive and retained through masked reads."), "actions": required("actions", "Native HCL action object: deny, async, on_success.feedback and on_fail.feedback."), "target": stableComputed("string", "Server-reported guardrail target."), "version_id": computed("string", "Guardrail revision UUID.")}, !org)
 		d := definition{name: name, description: "Manages a Gateway " + strings.ReplaceAll(name, "_", " ") + " with native HCL checks and actions. Import by UUID. Destroy verifies remote absence.", fields: fields, workspace: !org, pagination: true}
 		if org {
 			d.create = func(ctx context.Context, c *client, b document) (document, error) {
@@ -371,7 +376,12 @@ func bindingDefinition(mcp bool) definition {
 		if len(p) != 2 {
 			return fmt.Errorf("invalid binding identifier")
 		}
-		b := document{"workspaces": []any{map[string]any{"id": p[1], "enabled": enabled, "create_default_provider": false}}, "create_default_provider": false}
+		item := map[string]any{"id": p[1], "enabled": enabled}
+		b := document{"workspaces": []any{item}, "override_existing_workspace_access": false}
+		if !mcp {
+			b["create_default_provider"] = false
+			item["create_default_provider"] = false
+		}
 		if mcp {
 			_, e := writeSDK(ctx, b, func(ctx context.Context, q s.BulkUpdateMCPIntegrationWorkspaces) (*s.MCPIntegrationsSetWorkspacesResponse, error) {
 				return c.sdk.MCPIntegrations.SetWorkspaces(ctx, p[0], q)
@@ -384,7 +394,7 @@ func bindingDefinition(mcp bool) definition {
 		return e
 	}
 	return definition{name: name, description: "Owns one organisation integration/workspace access binding. Import uses integration_uuid/workspace_uuid. Destroy disables only this owned binding; it leaves the integration, workspace and other bindings intact.",
-		fields: map[string]field{"id": computed("string", "Stable resource identifier."), "integration_id": immutable("string", "Organisation integration UUID."), "workspace_id": immutable("string", "Existing workspace UUID.")},
+		fields: map[string]field{"id": stableComputed("string", "Stable resource identifier."), "integration_id": immutable("string", "Organisation integration UUID."), "workspace_id": immutable("string", "Existing workspace UUID.")},
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			id := b["integration_id"].(string) + "/" + b["workspace_id"].(string)
 			_, e := read(ctx, c, id, "")

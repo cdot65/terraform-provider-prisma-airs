@@ -21,7 +21,7 @@ This owns one enabled organization MCP integration/workspace pair. Creation merg
 terraform import prisma-airs_gateway_mcp_integration_workspace_binding.example <integration_uuid>/<workspace_uuid>
 ```
 
-Import reads the active remote object. Archived objects are rejected. Sensitive desired inputs and one-time outputs are not recovered from masked reads; supply desired inputs and preserve previously exported secrets externally.
+Import requires an existing enabled pair and an active parent integration. This resource has no secret inputs or outputs. It owns explicit workspace access only: global access settings are left unchanged, so disabling this pair does not revoke access granted by a global policy.
 
 ## Complete schema
 

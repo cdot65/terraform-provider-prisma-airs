@@ -18,6 +18,8 @@ resource "prisma-airs_gateway_config" "example" {
 
 The provider sends the complete desired document on update. A leaf edit remains an update at the same Terraform address and resource ID; `version_id` changes. Remote additions/removals in the document appear as drift. Imported configs containing recognized plaintext credentials are rejected before being stored.
 
+Server normalization appears as readable drift on refresh. Apply preserves configured values; provide a document accepted by the service to keep subsequent plans empty.
+
 ## Import
 
 ```bash
@@ -25,6 +27,10 @@ terraform import prisma-airs_gateway_config.example <uuid>
 ```
 
 Import reads the active remote object. Archived objects are rejected. Sensitive desired inputs and one-time outputs are not recovered from masked reads; supply desired inputs and preserve previously exported secrets externally.
+
+## Optional values
+
+Omitting an optional setting leaves the remote value or service default in place; removing it from HCL does not clear it. Use an explicit empty string for descriptions/notes documented as clearable. Collection, object and timestamp removal does not send a remote reset; retain an explicit supported value or replace the owned resource deliberately. Sensitive settings remain desired inputs through masked reads.
 
 ## Complete schema
 

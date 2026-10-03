@@ -138,7 +138,7 @@ func readNative(ctx context.Context, value any, prior attr.Value) (attr.Value, e
 		if p, ok := prior.(types.Map); ok {
 			v, d := types.MapValue(p.ElementType(ctx), values)
 			if d.HasError() {
-				return nil, fmt.Errorf("Gateway map contains incompatible remote values")
+				return nil, fmt.Errorf("gateway map contains incompatible remote values")
 			}
 			return v, nil
 		}
@@ -202,11 +202,8 @@ func routingCredentials(value any) bool {
 	case map[string]any:
 		for k, v := range x {
 			key := strings.ReplaceAll(strings.ToLower(k), "-", "_")
-			switch key {
-			case "api_key", "apikey", "x_api_key", "x_goog_api_key", "authorization", "client_secret", "clientsecret", "password", "access_token", "refresh_token", "bearer_token", "auth_token", "apitoken", "private_key", "privatekey", "token", "secret", "credentials", "aws_secret_access_key", "aws_session_token", "secret_access_key":
-				if v != nil {
-					return true
-				}
+			if v != nil && credentialField(key) {
+				return true
 			}
 			if routingCredentials(v) {
 				return true
@@ -220,4 +217,18 @@ func routingCredentials(value any) bool {
 		}
 	}
 	return false
+}
+
+func credentialField(key string) bool {
+	// Identifiers point to separately managed credentials; they are safe to show.
+	if key == "virtual_key" || key == "provider" || key == "secret_reference_id" || strings.HasSuffix(key, "_secret_reference_id") {
+		return false
+	}
+	compact := strings.ReplaceAll(key, "_", "")
+	for _, suffix := range []string{"apikey", "apitoken", "token", "secret", "password", "privatekey", "secretkey", "secretaccesskey", "credentials", "authorization"} {
+		if strings.HasSuffix(compact, suffix) {
+			return true
+		}
+	}
+	return strings.Contains(compact, "serviceaccount") || compact == "clientsecret"
 }

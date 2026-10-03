@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/cdot65/prisma-airs-provider/internal/product"
@@ -20,13 +21,15 @@ type gatewayDataSource struct {
 }
 
 var _ datasource.DataSourceWithConfigure = &gatewayDataSource{}
-var summaryKeys = []string{"id", "name", "slug", "status", "workspace_id", "organisation_id", "integration_id", "mcp_integration_id", "ai_provider_id", "user_id", "type", "created_at", "last_updated_at"}
+var summaryKeys = []string{"id", "name", "slug", "status", "workspace_id", "organisation_id", "integration_id", "mcp_integration_id", "ai_provider_id", "user_id", "type", "created_at", "last_updated_at", "version_id"}
 
 func summaryTypes() map[string]attr.Type {
 	ts := map[string]attr.Type{}
 	for _, k := range summaryKeys {
 		ts[k] = types.StringType
 	}
+	ts["is_default"] = types.BoolType
+	ts["enabled"] = types.BoolType
 	return ts
 }
 func plural(name string) string {
@@ -45,6 +48,9 @@ func (d *gatewayDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 	items := map[string]schema.Attribute{}
 	for _, k := range summaryKeys {
 		items[k] = schema.StringAttribute{Computed: true, Description: "Remote " + k + " when available; otherwise null."}
+	}
+	for _, k := range []string{"is_default", "enabled"} {
+		items[k] = schema.BoolAttribute{Computed: true, Description: "Remote " + k + " when available; otherwise null."}
 	}
 	attrs := map[string]schema.Attribute{"items": schema.ListNestedAttribute{Computed: true, Description: "Safe resource metadata for the returned page. Credentials and config documents are never included.", NestedObject: schema.NestedAttributeObject{Attributes: items}}, "total_count": schema.Int64Attribute{Computed: true, Description: "Server-reported total where available; otherwise the number of returned items."}}
 	if d.definition.workspace {
@@ -97,6 +103,17 @@ func (d *gatewayDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			attrs[k] = types.StringNull()
 			if x, ok := item[k].(string); ok {
 				attrs[k] = types.StringValue(x)
+			}
+		}
+		for _, k := range []string{"is_default", "enabled"} {
+			attrs[k] = types.BoolNull()
+			switch x := item[k].(type) {
+			case bool:
+				attrs[k] = types.BoolValue(x)
+			case json.Number:
+				if x == "0" || x == "1" {
+					attrs[k] = types.BoolValue(x == "1")
+				}
 			}
 		}
 		native[i] = types.ObjectValueMust(ts, attrs)

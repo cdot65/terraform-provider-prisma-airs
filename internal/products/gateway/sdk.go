@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/cdot65/prisma-airs-go/aisec/gateway"
 )
@@ -56,7 +58,12 @@ func writeSDK[Q, R any](ctx context.Context, body document, call func(context.Co
 	}
 	var q Q
 	if e = json.Unmarshal(b, &q); e != nil {
-		return nil, fmt.Errorf("invalid native Gateway settings for the SDK contract")
+		var typed *json.UnmarshalTypeError
+		if errors.As(e, &typed) {
+			// SDK field paths contain schema names, never submitted values.
+			return nil, &inputShapeError{field: typed.Field, detail: "has a type incompatible with the Gateway SDK contract"}
+		}
+		return nil, &inputShapeError{field: "settings", detail: "do not match the Gateway SDK contract"}
 	}
 	r, e := call(ctx, q)
 	if e != nil {
@@ -104,4 +111,17 @@ func listSDK[R any](r *R, err error) ([]document, int64, error) {
 		}
 	}
 	return items, total, nil
+}
+
+type inputShapeError struct{ field, detail string }
+
+func (e *inputShapeError) Error() string {
+	field := e.field
+	for _, c := range field {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.ContainsRune("_.[]", c)) {
+			field = "settings"
+			break
+		}
+	}
+	return "Gateway attribute " + field + " " + e.detail + ". No input values are included."
 }

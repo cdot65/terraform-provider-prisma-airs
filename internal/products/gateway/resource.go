@@ -27,9 +27,9 @@ import (
 )
 
 type field struct {
-	kind, description                                  string
-	required, immutable, sensitive, retained, computed bool
-	choices                                            []string
+	kind, description                                          string
+	required, immutable, sensitive, retained, computed, stable bool
+	choices                                                    []string
 }
 type definition struct {
 	name, description                   string
@@ -102,8 +102,8 @@ func (f field) attribute() schema.Attribute {
 				x.PlanModifiers = []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured()}
 			}
 		}
-		if f.computed && (f.sensitive || f.description == "Stable resource identifier.") {
-			x.PlanModifiers = []planmodifier.String{stringplanmodifier.UseStateForUnknown()}
+		if (f.computed && (f.sensitive || f.stable)) || (f.immutable && !f.required) {
+			x.PlanModifiers = append(x.PlanModifiers, stringplanmodifier.UseStateForUnknown())
 		}
 		return x
 	}
@@ -293,7 +293,28 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 	diags.Append(d...)
 	return result
 }
+
+// Apply must honor known planned inputs even if the service adds defaults.
+// Refresh remains authoritative and exposes readable remote drift afterwards.
+func (r *gatewayResource) mapAppliedState(ctx context.Context, plan types.Object, remote, receipt document, diags *diag.Diagnostics) types.Object {
+	result := r.mapState(ctx, plan, remote, receipt, diags)
+	values := result.Attributes()
+	for k, f := range r.definition.fields {
+		v := plan.Attributes()[k]
+		if !f.computed && !v.IsNull() && !v.IsUnknown() {
+			values[k] = honorPlanned(v, values[k])
+		}
+	}
+	result, d := types.ObjectValue(result.AttributeTypes(ctx), values)
+	diags.Append(d...)
+	return result
+}
+
 func gatewayError(err error) string {
+	var shape *inputShapeError
+	if errors.As(err, &shape) {
+		return shape.Error()
+	}
 	var e *aisec.AISecSDKError
 	if errors.As(err, &e) {
 		return fmt.Sprintf("Gateway request failed (HTTP %d). Check entitlement, workspace scope and the configured settings.", e.StatusCode)
@@ -341,7 +362,7 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 	values["id"] = types.StringValue(id)
 	model = types.ObjectValueMust(model.AttributeTypes(ctx), values)
 	// Persist identity and one-time secrets even if the subsequent GET fails.
-	provisional := r.mapState(ctx, model, document{}, receipt, &resp.Diagnostics)
+	provisional := r.mapAppliedState(ctx, model, document{}, receipt, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, provisional)...)
 	_, workspace := resourceIDs(model)
 	remote, e := r.definition.read(ctx, r.client, id, workspace)
@@ -349,7 +370,7 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 		resp.Diagnostics.AddError("Failed to refresh created Gateway "+r.definition.name, gatewayError(e))
 		return
 	}
-	final := r.mapState(ctx, model, remote, receipt, &resp.Diagnostics)
+	final := r.mapAppliedState(ctx, model, remote, receipt, &resp.Diagnostics)
 	if !resp.Diagnostics.HasError() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, final)...)
 	}
@@ -401,7 +422,7 @@ func (r *gatewayResource) Update(ctx context.Context, req resource.UpdateRequest
 		resp.Diagnostics.AddError("Failed to refresh updated Gateway "+r.definition.name, gatewayError(e))
 		return
 	}
-	model = r.mapState(ctx, model, remote, receipt, &resp.Diagnostics)
+	model = r.mapAppliedState(ctx, model, remote, receipt, &resp.Diagnostics)
 	if !resp.Diagnostics.HasError() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
 	}
@@ -454,6 +475,12 @@ func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportSt
 		resp.Diagnostics.AddError("Failed to import Gateway "+r.definition.name, gatewayError(e))
 		return
 	}
+	if r.definition.scopedImport {
+		if e := r.validateImportScope(ctx, remote, id, w); e != nil {
+			resp.Diagnostics.AddError("Invalid Gateway import scope", gatewayError(e))
+			return
+		}
+	}
 	if archived(remote) {
 		resp.Diagnostics.AddError("Cannot import archived Gateway resource", "Import an active object.")
 		return
@@ -484,4 +511,70 @@ func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportSt
 			break
 		}
 	}
+}
+
+// MCP detail reads can omit workspace_id. Validate membership using the scoped
+// inventory rather than accepting an unverified composite import identifier.
+func (r *gatewayResource) validateImportScope(ctx context.Context, remote document, id, workspace string) error {
+	if actual, ok := remote["workspace_id"].(string); ok && actual != "" {
+		if actual != workspace {
+			return &inputShapeError{field: "workspace_id", detail: "does not match the imported resource"}
+		}
+		return nil
+	}
+	seen := map[string]bool{}
+	for page := int64(1); page <= 1000; page++ {
+		items, _, err := r.definition.list(ctx, r.client, workspace, 100, page)
+		if err != nil {
+			return err
+		}
+		for _, item := range items {
+			itemID, _ := item["id"].(string)
+			if itemID == id {
+				return nil
+			}
+			if seen[itemID] {
+				return &inputShapeError{field: "workspace_id", detail: "could not be verified because inventory repeated a page"}
+			}
+			seen[itemID] = true
+		}
+		if len(items) < 100 {
+			break
+		}
+	}
+	return &inputShapeError{field: "workspace_id", detail: "does not contain the imported resource"}
+}
+
+// Optional+computed children can be unknown inside an otherwise known object.
+// Fill those from the response while retaining every known planned leaf.
+func honorPlanned(plan, remote attr.Value) attr.Value {
+	if plan.IsUnknown() {
+		return remote
+	}
+	if _, err := nativeJSON(plan); err == nil {
+		return plan
+	}
+	switch p := plan.(type) {
+	case types.Object:
+		r, ok := remote.(types.Object)
+		if !ok || r.IsNull() || r.IsUnknown() {
+			return remote
+		}
+		values := r.Attributes()
+		for k, v := range p.Attributes() {
+			values[k] = honorPlanned(v, values[k])
+		}
+		return types.ObjectValueMust(r.AttributeTypes(context.Background()), values)
+	case types.List:
+		r, ok := remote.(types.List)
+		if !ok || len(p.Elements()) != len(r.Elements()) {
+			return remote
+		}
+		values := r.Elements()
+		for i, v := range p.Elements() {
+			values[i] = honorPlanned(v, values[i])
+		}
+		return types.ListValueMust(r.ElementType(context.Background()), values)
+	}
+	return remote
 }

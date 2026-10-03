@@ -171,7 +171,7 @@ func TestAccGatewayCoreLifecycle(t *testing.T) {
 			case "secret_reference":
 				ignored = []string{"auth_config", "allowed_workspaces"}
 			case "deployment":
-				ignored = []string{"client_auth", "credentials"}
+				ignored = []string{"client_auth", "credentials", "deployment_config", "auth_settings"}
 			}
 			checks := []plancheck.PlanCheck{plancheck.ExpectResourceAction(addr, plancheck.ResourceActionUpdate)}
 			if kind == "config" {
@@ -408,7 +408,8 @@ check_parameters = { "default.isAllLowerCase" = {} }
 actions = { deny = false, async = false, on_success = { feedback = { value = 5, weight = 1, metadata = "" } }, on_fail = { feedback = { value = -5, weight = 1, metadata = "" } } }`
 	case "service_api_key", "user_api_key":
 		extra = fmt.Sprintf(`workspace_id = %q
-scopes = ["completions.write"]`, w)
+scopes = ["completions.write"]
+defaults = {allow_config_override = false, metadata = {terraform_test = "owned"}}`, w)
 		if kind == "user_api_key" {
 			extra += fmt.Sprintf("\nuser_id = %q", os.Getenv("PANW_AI_GW_TEST_USER_ID"))
 		}
@@ -434,7 +435,10 @@ allow_all_workspaces = false
 allowed_workspaces = [%q]`, w)
 	case "deployment":
 		extra = `type = "non_production"
-is_default = false`
+is_default = false
+deployment_config = {terraform_test = "owned"}
+auth_settings = {is_playground_proxy_allowed = 0}
+tags = {terraform_test = "owned"}`
 	}
 	return fmt.Sprintf("resource %q \"test\" {\nname = %q\n%s\n}\n", "prisma-airs_gateway_"+kind, name, extra)
 }
@@ -484,6 +488,8 @@ resource "prisma-airs_gateway_integration" "test" {
  ai_provider_id = %[3]q
  key = "terraform-verification-placeholder"
  description = %[4]q
+ secret_mappings = []
+ pricing_adjustments = {multiplier = {request_token = 1, response_token = 1}}
 }
 resource "prisma-airs_gateway_integration_workspace_binding" "test" {
  integration_id = prisma-airs_gateway_integration.test.id
@@ -494,6 +500,8 @@ resource "prisma-airs_gateway_provider" "test" {
  integration_id = prisma-airs_gateway_integration.test.id
  workspace_id = %[2]q
  note = %[4]q
+ usage_limits = {type = "tokens", credit_limit = 100000, alert_threshold = 20}
+ rate_limits = {type = "requests", unit = "rpm", value = 100}
  depends_on = [prisma-airs_gateway_integration_workspace_binding.test]
 }
 resource "prisma-airs_gateway_mcp_integration" "test" {
@@ -502,6 +510,7 @@ resource "prisma-airs_gateway_mcp_integration" "test" {
  auth_type = "none"
  transport = "http"
  configurations = {}
+ secret_mappings = []
  description = %[4]q
 }
 resource "prisma-airs_gateway_mcp_integration_workspace_binding" "test" {
@@ -534,4 +543,64 @@ func TestAccGatewayDiscovery(t *testing.T) {
 		config += fmt.Sprintf("data %q \"test\" {\n%s\n}\n", "prisma-airs_gateway_"+kind, attrs)
 	}
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, Steps: []resource.TestStep{{Config: config}, {Config: config, PlanOnly: true}}})
+}
+
+// Exercise the authored example, retaining its routing document and graph.
+// Only its unpublished version constraint, variable defaults and names are
+// substituted for the in-process test provider and disposable fixtures.
+func TestAccGatewayPublishedExample(t *testing.T) {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("TF_ACC not set")
+	}
+	testAccPreCheck(t)
+	w := accGatewayWorkspace(t)
+	family := os.Getenv("PANW_AI_GW_TEST_PROVIDER_ID")
+	if family == "" {
+		t.Fatal("PANW_AI_GW_TEST_PROVIDER_ID required")
+	}
+	source, err := os.ReadFile("../../examples/gateway/main.tf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := "tf-gw-acc-" + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	config := strings.ReplaceAll(string(source), `, version = "~> 0.9.0"`, "")
+	config = strings.ReplaceAll(config, `variable "workspace_id" { type = string }`, fmt.Sprintf(`variable "workspace_id" {
+ type = string
+ default = %q
+}`, w))
+	config = strings.ReplaceAll(config, `variable "ai_provider_id" { type = string }`, fmt.Sprintf(`variable "ai_provider_id" {
+ type = string
+ default = %q
+}`, family))
+	config = strings.ReplaceAll(config, `variable "model" { type = string }`, `variable "model" {
+ type = string
+ default = "gpt-4o"
+}`)
+	config = strings.ReplaceAll(config, "  sensitive = true", "  sensitive = true\n  default = \"terraform-verification-placeholder\"")
+	for _, old := range []string{"Example - Gateway - Development", "Example - Provider - Development", "Example - Routing - Development"} {
+		config = strings.ReplaceAll(config, old, name)
+	}
+	providerUpdated := strings.Replace(config, `resource "prisma-airs_gateway_provider" "application" {`, `resource "prisma-airs_gateway_provider" "application" {
+ note = "updated without routing revision"`, 1)
+	leafUpdated := strings.Replace(providerUpdated, "retry = { attempts = 1 }", "retry = { attempts = 2 }", 1)
+	addr := "prisma-airs_gateway_config.application"
+	var revision idRecorder
+	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(accGatewayClient(t), w), Steps: []resource.TestStep{
+		{Config: config, Check: revision.capture("version_id", addr)},
+		{Config: config}, // Bindings update parent metadata; refresh before the empty plan.
+		{Config: config, PlanOnly: true},
+		{Config: providerUpdated, ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectResourceAction(addr, plancheck.ResourceActionNoop)}}, Check: func(st *terraform.State) error {
+			if st.RootModule().Resources[addr].Primary.Attributes["version_id"] != revision.value {
+				return fmt.Errorf("provider note change created a config revision")
+			}
+			return nil
+		}},
+		{Config: leafUpdated, ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectResourceAction(addr, plancheck.ResourceActionUpdate)}}, Check: func(st *terraform.State) error {
+			if st.RootModule().Resources[addr].Primary.Attributes["version_id"] == revision.value {
+				return fmt.Errorf("leaf edit did not change revision")
+			}
+			return nil
+		}},
+		{Config: leafUpdated, PlanOnly: true},
+	}})
 }

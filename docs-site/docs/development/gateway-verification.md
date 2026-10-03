@@ -6,7 +6,7 @@ The v0.9.0 candidate adds 15 Gateway resources and 13 metadata data sources usin
 
 - `make check`: formatting, vet, lint and race-enabled tests pass.
 - Live Gateway tests execute with SCM OAuth on an entitled tenant and existing workspaces. No workspace/IAM provisioning or inference traffic is used.
-- All 15 resource types pass creation, import, stable subsequent plan and verified destruction. Mutable fields update at stable IDs; workspace bindings have immutable endpoints.
+- The earlier live suite covered all 15 resource types; the full suite is being rerun after review fixes against final source hashes for creation, import, stable subsequent plan and verified destruction. Mutable fields update at stable IDs; workspace bindings have immutable endpoints.
 - Nine core resource families recover from independent remote deletion or archival. Deployment destruction and refresh use archived status.
 - Config plan checks prove unchanged routing fields and resource ID remain known while the revision ID becomes computed; config leaf changes produce updates rather than replacement.
 - Both binding families preserve another workspace's access when their own binding is created and destroyed. Parent fixtures are independently confirmed absent after tests.
@@ -18,7 +18,7 @@ Private live logs, source manifests and read-only audit evidence are kept outsid
 
 ## Review gate
 
-Claude Code review is pending. Scores and any resulting corrections will be recorded here after the independent review.
+The first independent Claude Code review did not meet the required 9/10 gate. Corrections cover final-source test provenance, planned-state consistency, stable slugs, credential patterns, explicit binding merge requests and the complete example. A new review follows final verification; this candidate is not released.
 
 ## Limits
 

@@ -78,17 +78,12 @@ func writeChecks(v types.List) ([]any, error) {
 			if x.IsNull() {
 				continue
 			}
-			if x.IsUnknown() && k != "id" && k != "parameters" {
+			if x.IsUnknown() && k != "id" {
 				continue
 			}
 			encoded, e := nativeJSON(x)
 			if e != nil {
 				return nil, e
-			}
-			if k == "parameters" {
-				if _, ok := encoded.(map[string]any); !ok {
-					return nil, fmt.Errorf("check parameters must be native objects")
-				}
 			}
 			body[k] = encoded
 		}

@@ -22,8 +22,10 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | --- | --- | --- | --- | --- |
 | `ai_provider_id` | `string` | computed | — | Remote ai_provider_id when available; otherwise null. |
 | `created_at` | `string` | computed | — | Remote created_at when available; otherwise null. |
+| `enabled` | `bool` | computed | — | Remote enabled when available; otherwise null. |
 | `id` | `string` | computed | — | Remote id when available; otherwise null. |
 | `integration_id` | `string` | computed | — | Remote integration_id when available; otherwise null. |
+| `is_default` | `bool` | computed | — | Remote is_default when available; otherwise null. |
 | `last_updated_at` | `string` | computed | — | Remote last_updated_at when available; otherwise null. |
 | `mcp_integration_id` | `string` | computed | — | Remote mcp_integration_id when available; otherwise null. |
 | `name` | `string` | computed | — | Remote name when available; otherwise null. |
@@ -32,4 +34,5 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `status` | `string` | computed | — | Remote status when available; otherwise null. |
 | `type` | `string` | computed | — | Remote type when available; otherwise null. |
 | `user_id` | `string` | computed | — | Remote user_id when available; otherwise null. |
+| `version_id` | `string` | computed | — | Remote version_id when available; otherwise null. |
 | `workspace_id` | `string` | computed | — | Remote workspace_id when available; otherwise null. |
