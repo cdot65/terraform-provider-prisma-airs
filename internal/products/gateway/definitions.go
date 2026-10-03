@@ -88,7 +88,7 @@ func definitions() []definition {
 			}
 			d.delete = func(ctx context.Context, c *client, id, _ string) error { return c.sdk.OrgGuardrails.Delete(ctx, id) }
 			d.list = func(ctx context.Context, c *client, _ string, size, page int64) ([]document, int64, error) {
-				return listSDK(c.sdk.OrgGuardrails.List(ctx, s.OrgGuardrailsListOptions{PageSize: ptr(size), CurrentPage: ptr(page)}))
+				return listSDK(c.sdk.OrgGuardrails.List(ctx, s.OrgGuardrailsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 			}
 		} else {
 			d.create = func(ctx context.Context, c *client, b document) (document, error) {
@@ -104,7 +104,7 @@ func definitions() []definition {
 			}
 			d.delete = func(ctx context.Context, c *client, id, _ string) error { return c.sdk.Guardrails.Delete(ctx, id) }
 			d.list = func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-				return listSDK(c.sdk.Guardrails.List(ctx, s.GuardrailsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+				return listSDK(c.sdk.Guardrails.List(ctx, s.GuardrailsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 			}
 		}
 		result = append(result, d)
@@ -128,10 +128,10 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, _ string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "provider", description: "Manages a workspace provider backed by an organisation integration. Establish an integration_workspace_binding first. Import uses workspace_uuid/provider_uuid.", workspace: true, pagination: true, scopedImport: true,
-		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("object", "Native HCL provider usage limit settings."), "rate_limits": optional("object", "Native HCL provider rate limit settings."), "expires_at": optional("string", "Expiry timestamp.")}, true),
+		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("string", "Expiry timestamp.")}, true),
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			return writeSDK(ctx, b, c.sdk.Providers.Create)
 		},
@@ -148,7 +148,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.Providers.List(ctx, s.ProvidersListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.Providers.List(ctx, s.ProvidersListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "mcp_integration", description: "Manages an organisation MCP integration. Sensitive native configuration is desired input, never replaced by masked reads. Workspace access uses a separate mcp_integration_workspace_binding.", pagination: true,
 		fields: common(map[string]field{"name": required("string", "MCP integration name."), "description": optional("string", "Description; an empty string clears it."), "url": required("string", "MCP endpoint URL."), "auth_type": required("string", "MCP authentication type."), "transport": required("string", "MCP transport type."), "configurations": secret("object", "Native HCL desired connection settings; arbitrary masked configuration drift cannot be detected."), "secret_mappings": optional("array", "Native HCL secret reference mappings.")}, false),
@@ -168,7 +168,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, _ string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.MCPIntegrations.List(ctx, s.MCPIntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.MCPIntegrations.List(ctx, s.MCPIntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "mcp_server", description: "Manages a workspace MCP server backed by a bound organisation MCP integration. Connectivity tests and connection termination are operational and are not run automatically.", workspace: true, pagination: true, scopedImport: true,
 		fields: common(map[string]field{"name": required("string", "Server name."), "description": optional("string", "Description; an empty string clears it."), "mcp_integration_id": immutable("string", "Bound organisation MCP integration UUID.")}, true),
@@ -188,7 +188,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.MCPServers.List(ctx, s.MCPServersListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.MCPServers.List(ctx, s.MCPServersListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	})
 	for _, kind := range []gw.APIKeyKind{gw.APIKeyService, gw.APIKeyUser} {
@@ -219,7 +219,7 @@ func definitions() []definition {
 				return e
 			},
 			list: func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-				return listSDK(c.sdk.APIKeys.ListForKind(ctx, kind, s.APIKeysListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+				return listSDK(c.sdk.APIKeys.ListForKind(ctx, kind, s.APIKeysListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 			},
 		})
 	}
@@ -241,7 +241,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.UsageLimits.List(ctx, s.UsageLimitsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.UsageLimits.List(ctx, s.UsageLimitsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "rate_limit", description: "Manages a Gateway rate policy without sending traffic. Type, target and grouping are immutable.", workspace: true, pagination: true,
 		fields: common(map[string]field{"name": required("string", "Policy name."), "type": immutable("string", "Rate measurement type."), "unit": required("string", "Measurement unit, such as rpm."), "value": required("number", "Rate threshold; zero is explicit."), "conditions": required("array", "Native HCL condition objects."), "group_by": immutable("array", "Native HCL grouping objects."), "target": {kind: "string", immutable: true, description: "Optional policy target."}}, true),
@@ -261,7 +261,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, w string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.RateLimits.List(ctx, s.RateLimitsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.RateLimits.List(ctx, s.RateLimitsListOptions{WorkspaceID: ptr(w), PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "secret_reference", description: "Manages an external secret reference, not the upstream secret itself. Sensitive desired auth is retained through masked reads and cannot be recovered by import.", pagination: true,
 		fields: common(map[string]field{"name": required("string", "Reference name."), "description": optional("string", "Description."), "manager_type": immutable("string", "Secret manager type."), "auth_config": {kind: "object", required: true, sensitive: true, retained: true, description: "Native HCL external manager authentication settings."}, "secret_path": required("string", "External secret path."), "secret_key": optional("string", "Optional key within the upstream secret."), "allow_all_workspaces": optional("bool", "Allow every workspace; false is explicit."), "allowed_workspaces": optional("strings", "Explicitly allowed workspace UUIDs; an empty list removes all."), "tags": optional("object", "Native HCL string tag map.")}, false),
@@ -281,7 +281,7 @@ func definitions() []definition {
 			return e
 		},
 		list: func(ctx context.Context, c *client, _ string, size, page int64) ([]document, int64, error) {
-			return listSDK(c.sdk.SecretReferences.List(ctx, s.SecretReferencesListOptions{PageSize: ptr(size), CurrentPage: ptr(page)}))
+			return listSDK(c.sdk.SecretReferences.List(ctx, s.SecretReferencesListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "deployment", description: "Manages a Gateway deployment registration. Destroy archives and verifies lifecycle status. It does not provision infrastructure, connect it, rotate auth or change an existing default deployment automatically.",
 		fields: common(map[string]field{"name": required("string", "Registration name."), "type": required("string", "Deployment type, such as non_production."), "is_default": required("bool", "Whether to set this as default; use false for disposable registrations."), "deployment_config": secret("object", "Native HCL desired deployment settings; retained through masked reads."), "auth_settings": secret("object", "Native HCL desired inbound authentication settings."), "tags": optional("object", "Native HCL string tag map."), "client_auth": computed("string", "One-time client auth; import cannot recover it."), "credentials": computed("object", "One-time deployment credentials; import cannot recover them.")}, false),

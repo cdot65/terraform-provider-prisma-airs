@@ -61,6 +61,8 @@ func (f field) attribute() schema.Attribute {
 		return checksAttribute(f.description)
 	case "actions":
 		return actionsAttribute(f.description)
+	case "usage_settings":
+		return usageSettingsAttribute(f.description)
 	case "bool":
 		x := schema.BoolAttribute{Description: f.description, Required: f.required, Optional: optional, Computed: computed, Sensitive: f.sensitive}
 		if f.immutable {
@@ -184,6 +186,9 @@ func (r *gatewayResource) body(model types.Object, update bool, diags *diag.Diag
 		if f.kind == "checks" {
 			x, e = writeChecks(v.(types.List))
 		}
+		if f.kind == "usage_settings" {
+			x, e = writeSettings(v.(types.Object))
+		}
 		if e != nil {
 			diags.AddAttributeError(path.Root(k), "Unresolved Gateway input", "All configured values must be known before applying.")
 			continue
@@ -280,7 +285,7 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 		if f.kind == "checks" {
 			v, e = readChecks(ctx, value, old.(types.List))
 		}
-		if f.kind == "actions" {
+		if f.kind == "actions" || (f.kind == "usage_settings" && value != nil) {
 			v, e = readTypedObject(ctx, value, old.(types.Object))
 		}
 		if e != nil {

@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 func resourceDefinition(t *testing.T, name string) definition {
@@ -222,7 +223,7 @@ func TestScopedImportRejectsWrongWorkspaceAndMalformedIdentifier(t *testing.T) {
 
 func TestDiscoveryPaginationAndSafeTypedMetadata(t *testing.T) {
 	r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Query().Get("current_page") != "2" || req.URL.Query().Get("page_size") != "1" || req.URL.Query().Get("workspace_id") != "workspace" {
+		if req.URL.Query().Get("current_page") != "1" || req.URL.Query().Get("page_size") != "1" || req.URL.Query().Get("workspace_id") != "workspace" {
 			t.Error("paging or scope not forwarded", req.URL.Query())
 		}
 		_, _ = w.Write([]byte(`{"data":[{"id":"key-id","name":"test","version_id":"revision","is_default":0,"enabled":true,"key":"do-not-store","config":{"api_key":"do-not-store"}}],"total":12}`))
@@ -309,5 +310,41 @@ func TestSDKShapeDiagnosticNamesFieldWithoutInputValues(t *testing.T) {
 	message := gatewayError(err)
 	if err == nil || !strings.Contains(message, "defaults.allow_config_override") || strings.Contains(message, "sensitive-invalid-value") {
 		t.Fatal("shape diagnostic missing field or exposed value", message)
+	}
+}
+
+func TestProviderUsageSettingsSeparatePolicyMetadataFromManagedLeaves(t *testing.T) {
+	ctx := context.Background()
+	r := &gatewayResource{definition: resourceDefinition(t, "provider")}
+	typ := r.attributes()["usage_limits"].GetType().(types.ObjectType)
+	values := map[string]attr.Value{}
+	for k, kind := range typ.AttrTypes {
+		value, err := kind.ValueFromTerraform(ctx, tftypes.NewValue(kind.TerraformType(ctx), tftypes.UnknownValue))
+		if err != nil {
+			t.Fatal(err)
+		}
+		values[k] = value
+	}
+	values["type"] = types.StringValue("tokens")
+	values["credit_limit"] = types.Int64Value(100000)
+	values["alert_threshold"] = types.Int64Value(0)
+	planned := types.ObjectValueMust(typ.AttrTypes, values)
+	body, err := writeSettings(planned)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(body) != 3 || body["alert_threshold"] != int64(0) {
+		t.Fatal("unconfigured defaults sent or explicit zero lost")
+	}
+	remote, err := readTypedObject(ctx, map[string]any{"id": "server-only-policy-id", "type": "tokens", "credit_limit": json.Number("100000"), "alert_threshold": json.Number("0"), "periodic_reset": "monthly"}, planned)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapped := honorPlanned(planned, remote).(types.Object).Attributes()
+	if mapped["periodic_reset"].(types.String).ValueString() != "monthly" || mapped["alert_threshold"].(types.Int64).ValueInt64() != 0 {
+		t.Fatal("default or explicit zero not mapped")
+	}
+	if _, ok := mapped["id"]; ok {
+		t.Fatal("server policy metadata became managed config")
 	}
 }

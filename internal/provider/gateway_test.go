@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/cdot65/prisma-airs-go/aisec"
 	gw "github.com/cdot65/prisma-airs-go/aisec/gateway"
 	s "github.com/cdot65/prisma-airs-go/aisec/gateway/schema"
+	gatewayproduct "github.com/cdot65/prisma-airs-provider/internal/products/gateway"
+	fr "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -124,11 +127,17 @@ func gatewayRead(ctx context.Context, c *gw.Client, kind, id, w string) (map[str
 	return nil, fmt.Errorf("unknown Gateway resource")
 }
 func gatewayDestroy(c *gw.Client, w string) func(*terraform.State) error {
+	managed := map[string]bool{}
+	for _, entry := range gatewayproduct.Definition().Resources {
+		var metadata fr.MetadataResponse
+		entry.New().Metadata(context.Background(), fr.MetadataRequest{ProviderTypeName: "prisma-airs"}, &metadata)
+		managed[metadata.TypeName] = true
+	}
 	return func(st *terraform.State) error {
 		ctx, cancel := accCtx()
 		defer cancel()
 		for _, r := range st.RootModule().Resources {
-			if !strings.HasPrefix(r.Type, "prisma-airs_gateway_") {
+			if !managed[r.Type] || r.Primary == nil || r.Primary.ID == "" {
 				continue
 			}
 			kind := strings.TrimPrefix(r.Type, "prisma-airs_gateway_")
@@ -178,7 +187,7 @@ func TestAccGatewayCoreLifecycle(t *testing.T) {
 				checks = append(checks, gatewayConfigDeltaCheck{addr: addr, id: &rec.value})
 			}
 			resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(client, w), Steps: []resource.TestStep{
-				{Config: gatewayCoreConfig(kind, name, w, false), Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "name", name), resource.TestCheckResourceAttrSet(addr, "id"), rec.capture("id", addr))},
+				{Config: gatewayCoreDiscoveryConfig(kind, name, w), Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "name", name), resource.TestCheckResourceAttrSet(addr, "id"), rec.capture("id", addr), gatewayDiscoveryContainsOwned(kind, addr))},
 				{ResourceName: addr, ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: ignored},
 				{Config: gatewayCoreConfig(kind, name, w, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: checks}, Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "name", name+"-updated"), func(st *terraform.State) error {
 					if st.RootModule().Resources[addr].Primary.ID != rec.value {
@@ -455,7 +464,7 @@ func TestAccGatewayIntegrationGraphs(t *testing.T) {
 		t.Fatal("PANW_AI_GW_TEST_PROVIDER_ID required")
 	}
 	name := "tf-gw-acc-" + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	steps := []resource.TestStep{{Config: gatewayGraphConfig(name, w, family, false)}, {Config: gatewayGraphConfig(name, w, family, false)}}
+	steps := []resource.TestStep{{Config: gatewayGraphConfig(name, w, family, false), Check: resource.ComposeAggregateTestCheckFunc(gatewayDiscoveryContainsOwned("integration", "prisma-airs_gateway_integration.test"), gatewayDiscoveryContainsOwned("provider", "prisma-airs_gateway_provider.test"), gatewayDiscoveryContainsOwned("mcp_integration", "prisma-airs_gateway_mcp_integration.test"), gatewayDiscoveryContainsOwned("mcp_server", "prisma-airs_gateway_mcp_server.test"))}, {Config: gatewayGraphConfig(name, w, family, false)}}
 	for _, kind := range []string{"integration", "integration_workspace_binding", "provider", "mcp_integration", "mcp_integration_workspace_binding", "mcp_server"} {
 		addr := "prisma-airs_gateway_" + kind + ".test"
 		ignore := []string{}
@@ -501,7 +510,6 @@ resource "prisma-airs_gateway_provider" "test" {
  workspace_id = %[2]q
  note = %[4]q
  usage_limits = {type = "tokens", credit_limit = 100000, alert_threshold = 20}
- rate_limits = {type = "requests", unit = "rpm", value = 100}
  depends_on = [prisma-airs_gateway_integration_workspace_binding.test]
 }
 resource "prisma-airs_gateway_mcp_integration" "test" {
@@ -524,7 +532,18 @@ resource "prisma-airs_gateway_mcp_server" "test" {
  description = %[4]q
  depends_on = [prisma-airs_gateway_mcp_integration_workspace_binding.test]
 }
-`, name, w, family, desc)
+`, name, w, family, desc) + fmt.Sprintf(`
+ data "prisma-airs_gateway_integrations" "owned" { depends_on = [prisma-airs_gateway_integration.test] }
+ data "prisma-airs_gateway_providers" "owned" {
+  workspace_id = %q
+  depends_on = [prisma-airs_gateway_provider.test]
+ }
+ data "prisma-airs_gateway_mcp_integrations" "owned" { depends_on = [prisma-airs_gateway_mcp_integration.test] }
+ data "prisma-airs_gateway_mcp_servers" "owned" {
+  workspace_id = %q
+  depends_on = [prisma-airs_gateway_mcp_server.test]
+ }
+ `, w, w)
 }
 
 func TestAccGatewayDiscovery(t *testing.T) {
@@ -553,6 +572,7 @@ func TestAccGatewayPublishedExample(t *testing.T) {
 		t.Skip("TF_ACC not set")
 	}
 	testAccPreCheck(t)
+	t.Setenv("TF_ACC_PROVIDER_NAMESPACE", "cdot65")
 	w := accGatewayWorkspace(t)
 	family := os.Getenv("PANW_AI_GW_TEST_PROVIDER_ID")
 	if family == "" {
@@ -603,4 +623,45 @@ func TestAccGatewayPublishedExample(t *testing.T) {
 		}},
 		{Config: leafUpdated, PlanOnly: true},
 	}})
+}
+
+func TestGatewayDestroySkipsMetadataDataSources(t *testing.T) {
+	state := &terraform.State{Modules: []*terraform.ModuleState{{Path: []string{"root"}, Resources: map[string]*terraform.ResourceState{"prisma-airs_gateway_configs.workspace": {Type: "prisma-airs_gateway_configs", Primary: &terraform.InstanceState{ID: "discovery", Attributes: map[string]string{"total_count": "0"}}}}}}}
+	if err := gatewayDestroy(nil, "workspace")(state); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func gatewayCoreDiscoveryConfig(kind, name, w string) string {
+	plural := kind + "s"
+	attrs := ""
+	switch kind {
+	case "config", "guardrail", "service_api_key", "user_api_key", "usage_limit", "rate_limit":
+		attrs = fmt.Sprintf("workspace_id = %q", w)
+	}
+	return gatewayCoreConfig(kind, name, w, false) + fmt.Sprintf(`
+ data "prisma-airs_gateway_%s" "owned" {
+  %s
+  depends_on = [prisma-airs_gateway_%s.test]
+ }
+ `, plural, attrs, kind)
+}
+func gatewayDiscoveryContainsOwned(kind, addr string) resource.TestCheckFunc {
+	return func(st *terraform.State) error {
+		data := st.RootModule().Resources["data.prisma-airs_gateway_"+kind+"s.owned"]
+		if data == nil {
+			return fmt.Errorf("owned discovery source missing")
+		}
+		n, err := strconv.Atoi(data.Primary.Attributes["items.#"])
+		if err != nil {
+			return err
+		}
+		id := st.RootModule().Resources[addr].Primary.ID
+		for i := 0; i < n; i++ {
+			if data.Primary.Attributes[fmt.Sprintf("items.%d.id", i)] == id {
+				return nil
+			}
+		}
+		return fmt.Errorf("first Gateway discovery page did not include the owned %s", kind)
+	}
 }

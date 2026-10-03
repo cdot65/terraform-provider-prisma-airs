@@ -152,3 +152,30 @@ func readChecks(ctx context.Context, value any, prior types.List) (attr.Value, e
 	}
 	return v, nil
 }
+
+// Structured provider limits have a known SDK contract and server-only policy
+// metadata. Expose supported settings without importing that metadata as HCL.
+func usageSettingsAttribute(description string) schema.Attribute {
+	return schema.SingleNestedAttribute{Optional: true, Computed: true, Description: description, Attributes: map[string]schema.Attribute{
+		"type":                schema.StringAttribute{Optional: true, Computed: true, Description: "Usage measurement type: cost or tokens."},
+		"credit_limit":        schema.Int64Attribute{Optional: true, Computed: true, Description: "Maximum usage credits."},
+		"alert_threshold":     schema.Int64Attribute{Optional: true, Computed: true, Description: "Alert threshold; zero is explicit."},
+		"periodic_reset":      schema.StringAttribute{Optional: true, Computed: true, Description: "Reset cadence, such as monthly or weekly."},
+		"periodic_reset_days": schema.Int64Attribute{Optional: true, Computed: true, Description: "Custom reset interval in days."},
+		"next_usage_reset_at": schema.StringAttribute{Optional: true, Computed: true, Description: "Next reset timestamp."},
+	}}
+}
+func writeSettings(v types.Object) (map[string]any, error) {
+	body := map[string]any{}
+	for k, x := range v.Attributes() {
+		if x.IsNull() || x.IsUnknown() {
+			continue
+		}
+		encoded, err := nativeJSON(x)
+		if err != nil {
+			return nil, err
+		}
+		body[k] = encoded
+	}
+	return body, nil
+}

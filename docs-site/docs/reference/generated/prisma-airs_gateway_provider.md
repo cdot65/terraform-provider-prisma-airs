@@ -18,8 +18,18 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `name` | `string` | required | — | Provider name. |
 | `note` | `string` | optional, computed | — | Provider note; an empty string clears it. |
 | `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
-| `rate_limits` | `dynamic` | optional, computed | — | Native HCL provider rate limit settings. |
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
-| `usage_limits` | `dynamic` | optional, computed | — | Native HCL provider usage limit settings. |
+| `usage_limits` | `single(object)` | optional, computed | — | Provider usage limit settings, represented as native HCL attributes. |
 | `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+
+### Attributes.usage_limits
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `alert_threshold` | `number` | optional, computed | — | Alert threshold; zero is explicit. |
+| `credit_limit` | `number` | optional, computed | — | Maximum usage credits. |
+| `next_usage_reset_at` | `string` | optional, computed | — | Next reset timestamp. |
+| `periodic_reset` | `string` | optional, computed | — | Reset cadence, such as monthly or weekly. |
+| `periodic_reset_days` | `number` | optional, computed | — | Custom reset interval in days. |
+| `type` | `string` | optional, computed | — | Usage measurement type: cost or tokens. |

@@ -118,7 +118,7 @@ type inputShapeError struct{ field, detail string }
 func (e *inputShapeError) Error() string {
 	field := e.field
 	for _, c := range field {
-		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.ContainsRune("_.[]", c)) {
+		if !strings.ContainsRune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.[]", c) {
 			field = "settings"
 			break
 		}

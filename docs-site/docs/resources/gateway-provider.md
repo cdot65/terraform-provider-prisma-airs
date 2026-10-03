@@ -17,6 +17,8 @@ resource "prisma-airs_gateway_provider" "example" {
 
 Establish integration workspace access before creation. Add `depends_on` for that binding, since its ID is separate from `integration_id`. Workspace and integration changes require replacement. This resource owns the workspace provider, not the upstream organization integration.
 
+Inline provider rate limits on create currently fail live with upstream HTTP 503 through the published SDK contract. They are excluded from this resource. Manage rate policies with [`prisma-airs_gateway_rate_limit`](gateway-rate-limit.md); they have their own conditions and lifecycle. Provider usage limits expose supported settings as typed HCL.
+
 ## Import
 
 ```bash

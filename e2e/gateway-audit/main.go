@@ -83,37 +83,37 @@ func run(ctx context.Context, c *gw.Client, w, prefix string) error {
 			return c.Configs.List(ctx, s.ConfigsListOptions{WorkspaceID: w})
 		}},
 		{"guardrails", true, func(ctx context.Context, p int64) (any, error) {
-			return c.Guardrails.List(ctx, s.GuardrailsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.Guardrails.List(ctx, s.GuardrailsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"org_guardrails", true, func(ctx context.Context, p int64) (any, error) {
-			return c.OrgGuardrails.List(ctx, s.OrgGuardrailsListOptions{PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.OrgGuardrails.List(ctx, s.OrgGuardrailsListOptions{PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"integrations", true, func(ctx context.Context, p int64) (any, error) {
-			return c.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"providers", true, func(ctx context.Context, p int64) (any, error) {
-			return c.Providers.List(ctx, s.ProvidersListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.Providers.List(ctx, s.ProvidersListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"mcp_integrations", true, func(ctx context.Context, p int64) (any, error) {
-			return c.MCPIntegrations.List(ctx, s.MCPIntegrationsListOptions{PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.MCPIntegrations.List(ctx, s.MCPIntegrationsListOptions{PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"mcp_servers", true, func(ctx context.Context, p int64) (any, error) {
-			return c.MCPServers.List(ctx, s.MCPServersListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.MCPServers.List(ctx, s.MCPServersListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"service_keys", true, func(ctx context.Context, p int64) (any, error) {
-			return c.APIKeys.ListForKind(ctx, gw.APIKeyService, s.APIKeysListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.APIKeys.ListForKind(ctx, gw.APIKeyService, s.APIKeysListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"user_keys", true, func(ctx context.Context, p int64) (any, error) {
-			return c.APIKeys.ListForKind(ctx, gw.APIKeyUser, s.APIKeysListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.APIKeys.ListForKind(ctx, gw.APIKeyUser, s.APIKeysListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"usage_limits", true, func(ctx context.Context, p int64) (any, error) {
-			return c.UsageLimits.List(ctx, s.UsageLimitsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.UsageLimits.List(ctx, s.UsageLimitsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"rate_limits", true, func(ctx context.Context, p int64) (any, error) {
-			return c.RateLimits.List(ctx, s.RateLimitsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.RateLimits.List(ctx, s.RateLimitsListOptions{WorkspaceID: &w, PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"secret_references", true, func(ctx context.Context, p int64) (any, error) {
-			return c.SecretReferences.List(ctx, s.SecretReferencesListOptions{PageSize: ptr(int64(100)), CurrentPage: &p})
+			return c.SecretReferences.List(ctx, s.SecretReferencesListOptions{PageSize: ptr(int64(100)), CurrentPage: ptr(p - 1)})
 		}},
 		{"deployments", false, func(ctx context.Context, _ int64) (any, error) {
 			return c.Deployments.List(ctx, s.DeploymentsListOptions{})
