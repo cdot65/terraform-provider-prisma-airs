@@ -5,8 +5,10 @@ Reads the catalog of model security rules from Prisma AIRS Model Security API. R
 ## Example Usage
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_supply_chain_security_rules" "all" {}
 
+# Outputs: Expose results for the next configuration or application step.
 output "rule_count" {
   value = length(data.prisma-airs_supply_chain_security_rules.all.rules)
 }

@@ -5,10 +5,12 @@ Reads deployment profiles from Prisma AIRS Management API.
 ## Example Usage
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }
 
+# Outputs: Expose results for the next configuration or application step.
 output "profiles" {
   value = [for p in data.prisma-airs_runtime_deployment_profiles.all.items : p.profile_name]
 }

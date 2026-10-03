@@ -63,24 +63,40 @@ Back up state in your protected backend and inventory the resources already mana
 ## Write target inputs as native HCL
 
 ```hcl
+# Inputs: Supply environment-specific values; load sensitive values from your secret store.
 variable "app_token" {
   type      = string
   sensitive = true
 }
 
+# Target: Register the endpoint contract; apply does not run an assessment.
 resource "prisma-airs_red_team_target" "app" {
   name = "production-app"
 
   rest {
-    api_endpoint    = "https://app.example.com/chat"
-    request_headers = { "Content-Type" = "application/json" }
-    request_body    = { prompt = "{INPUT}", stream = false, temperature = 0 }
-    response_body   = { answer = "{RESPONSE}" }
-    response_key    = "answer"
+    api_endpoint = "https://app.example.com/chat"
+
+    request_headers = {
+      "Content-Type" = "application/json"
+    }
+
+    request_body = {
+      prompt      = "{INPUT}"
+      stream      = false
+      temperature = 0
+    }
+
+    response_body = {
+      answer = "{RESPONSE}"
+    }
+
+    response_key = "answer"
   }
 
   headers_auth {
-    headers = { Authorization = "Bearer ${var.app_token}" }
+    headers = {
+      Authorization = "Bearer ${var.app_token}"
+    }
   }
 }
 ```

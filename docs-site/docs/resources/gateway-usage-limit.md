@@ -5,14 +5,26 @@ Manages `prisma-airs_gateway_usage_limit` with provider v0.9.0 and published Go 
 ## Example
 
 ```hcl
+# Usage limits: Set a budget; Terraform does not reset accumulated usage.
 resource "prisma-airs_gateway_usage_limit" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
-  type = "tokens"
-  credit_limit = 100000
+  name            = "Example - Gateway - Development"
+  workspace_id    = var.workspace_id
+  type            = "tokens"
+  credit_limit    = 100000
   alert_threshold = 0
-  conditions = [{key = "metadata.application", value = "example"}]
-  group_by = [{key = "metadata.application"}]
+
+  conditions = [
+    {
+      key   = "metadata.application"
+      value = "example"
+    }
+  ]
+
+  group_by = [
+    {
+      key = "metadata.application"
+    }
+  ]
 }
 ```
 

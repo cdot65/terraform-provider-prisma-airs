@@ -5,6 +5,7 @@ For a complete installation-to-cleanup walkthrough, use [Getting started](index.
 ## Security profile
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "example" {
   profile_name = "my-ai-security-profile"
 
@@ -24,15 +25,28 @@ Policy changes create a new AIRS UUID and revision while Terraform keeps the res
 ## Custom REST target
 
 ```hcl
+# Target: Register the endpoint contract; apply does not run an assessment.
 resource "prisma-airs_red_team_target" "app" {
   name = "my-ai-application"
 
   rest {
-    api_endpoint    = "https://app.example.com/chat"
-    request_headers = { "Content-Type" = "application/json" }
-    request_body    = { prompt = "{INPUT}", temperature = 0, stream = false }
-    response_body   = { output = "{RESPONSE}" }
-    response_key    = "output"
+    api_endpoint = "https://app.example.com/chat"
+
+    request_headers = {
+      "Content-Type" = "application/json"
+    }
+
+    request_body = {
+      prompt      = "{INPUT}"
+      temperature = 0
+      stream      = false
+    }
+
+    response_body = {
+      output = "{RESPONSE}"
+    }
+
+    response_key = "output"
   }
 }
 ```

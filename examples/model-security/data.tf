@@ -1,8 +1,2 @@
-# ---------------------------------------------------------------------------
-# Data Sources
-# ---------------------------------------------------------------------------
-# Read existing model security rules to understand the current
-# security posture and integrate with other tooling.
-# ---------------------------------------------------------------------------
-
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_supply_chain_security_rules" "all" {}

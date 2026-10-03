@@ -5,9 +5,10 @@ Manages `prisma-airs_gateway_mcp_integration_workspace_binding` with provider v0
 ## Example
 
 ```hcl
+# Workspace access: Authorize this workspace to use the MCP integration.
 resource "prisma-airs_gateway_mcp_integration_workspace_binding" "example" {
   integration_id = var.mcp_integration_id
-  workspace_id = var.workspace_id
+  workspace_id   = var.workspace_id
 }
 ```
 

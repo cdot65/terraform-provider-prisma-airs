@@ -5,8 +5,9 @@ Reads `prisma-airs_gateway_mcp_integrations` metadata without modifying remote o
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_mcp_integrations" "example" {
-  page_size = 100
+  page_size    = 100
   current_page = 1
 }
 ```

@@ -5,8 +5,10 @@ Reads DLP data profiles from Prisma AIRS Management API.
 ## Example Usage
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_runtime_dlp_profiles" "all" {}
 
+# Outputs: Expose results for the next configuration or application step.
 output "profile_count" {
   value = data.prisma-airs_runtime_dlp_profiles.all.total_count
 }

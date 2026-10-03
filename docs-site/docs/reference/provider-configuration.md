@@ -32,6 +32,7 @@ The Supply Chain Security module currently manages Model Security groups and rul
 ## Example
 
 ```hcl
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {
   client_id     = var.panw_client_id
   client_secret = var.panw_client_secret
@@ -47,7 +48,7 @@ provider "prisma-airs" {
   }
 
   gateway {
-    data_endpoint = "https://api.apps.paloaltonetworks.com/ai_gw/v2"
+    data_endpoint  = "https://api.apps.paloaltonetworks.com/ai_gw/v2"
     admin_endpoint = "https://api.apps.paloaltonetworks.com/ai_gw/admin/v2"
   }
 

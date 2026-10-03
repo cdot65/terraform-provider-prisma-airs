@@ -13,24 +13,38 @@ Manages multiple AI security profiles with varying protection levels — from hi
 | `slack_moderation` | Internal Slack bot | Prompt injection only (lightweight) |
 | `hipaa_compliance` | Healthcare agent | HIPAA DLP profile + topic guardrails |
 
-## Usage
+## Before you start
+
+The profiles reference existing custom topics and DLP profiles by name. Inspect `profiles.tf` and select names already available in your tenant, or provision those dependencies separately. These files do not create them.
+
+Load `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from your secret store into the environment. See the [authentication guide](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/).
+
+Copy `terraform.tfvars.example` to `terraform.tfvars` and set a distinct `profile_prefix`. Keep only the use cases you want to manage before the first apply. Removing profiles already in state proposes their destruction.
+
+## Apply and inspect
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars if needed
-
-# For local development builds:
-export TF_CLI_CONFIG_FILE=/path/to/.dev.tfrc
-
-# Set provider credentials
-export PANW_MGMT_CLIENT_ID="..."
-export PANW_MGMT_CLIENT_SECRET="..."
-export PANW_MGMT_TSG_ID="..."
-
 terraform init
-terraform plan
-terraform apply
+terraform validate
+terraform plan -out=create.tfplan
+terraform apply create.tfplan
+terraform output
 ```
+
+After editing the configuration, review another saved plan before applying it. An unchanged `terraform plan -detailed-exitcode` should exit 0.
+
+Outputs identify each owned profile. Edit a protection action to practice an update; Terraform keeps the resource address while the service creates a new profile UUID and revision.
+
+## Clean up
+
+Use the same inputs, credentials, and state to remove the owned resources:
+
+```bash
+terraform plan -destroy -out=cleanup.tfplan
+terraform apply cleanup.tfplan
+```
+
+Profile deletion covers all revisions owned by that profile. Existing topic and DLP dependencies remain external. For a self-contained profile, topic, application, and API-key workflow, use the [public Runtime Security project](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-runtime-security).
 
 ## Files
 

@@ -5,6 +5,7 @@ Reads `prisma-airs_gateway_configs` metadata without modifying remote objects.
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_configs" "example" {
   workspace_id = var.workspace_id
 }

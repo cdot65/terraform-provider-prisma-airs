@@ -10,9 +10,10 @@ Reads `prisma-airs_gateway_mcp_servers` metadata without modifying remote object
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_mcp_servers" "example" {
   workspace_id = var.workspace_id
-  page_size = 100
+  page_size    = 100
   current_page = 1
 }
 ```

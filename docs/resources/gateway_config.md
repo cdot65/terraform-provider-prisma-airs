@@ -10,10 +10,22 @@ Manages `prisma-airs_gateway_config` with provider v0.9.0 and published Go SDK v
 ## Example
 
 ```hcl
+# Routing: Keep the visible routing document free of upstream credentials.
 resource "prisma-airs_gateway_config" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  config = { provider = "openai", retry = { attempts = 1 }, cache = { mode = "simple" } }
+
+  config = {
+    provider = "openai"
+
+    retry = {
+      attempts = 1
+    }
+
+    cache = {
+      mode = "simple"
+    }
+  }
 }
 ```
 

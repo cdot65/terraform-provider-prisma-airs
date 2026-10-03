@@ -10,11 +10,12 @@ Manages `prisma-airs_gateway_user_api_key` with provider v0.9.0 and published Go
 ## Example
 
 ```hcl
+# Developer access: Issue a key for an existing authorized workspace user.
 resource "prisma-airs_gateway_user_api_key" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  user_id = var.user_id
-  scopes = ["completions.write"]
+  user_id      = var.user_id
+  scopes       = ["completions.write"]
 }
 ```
 

@@ -5,14 +5,26 @@ Manages `prisma-airs_gateway_rate_limit` with provider v0.9.0 and published Go S
 ## Example
 
 ```hcl
+# Request limits: Match and aggregate traffic using application metadata.
 resource "prisma-airs_gateway_rate_limit" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  type = "requests"
-  unit = "rpm"
-  value = 100
-  conditions = [{key = "metadata.application", value = "example"}]
-  group_by = [{key = "metadata.application"}]
+  type         = "requests"
+  unit         = "rpm"
+  value        = 100
+
+  conditions = [
+    {
+      key   = "metadata.application"
+      value = "example"
+    }
+  ]
+
+  group_by = [
+    {
+      key = "metadata.application"
+    }
+  ]
 }
 ```
 

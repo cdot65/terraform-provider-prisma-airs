@@ -15,6 +15,7 @@ Destroy deletes every revision under the currently managed name, including histo
 ## Creating a Profile
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "production" {
   profile_name = "production-ai-security"
 
@@ -60,6 +61,7 @@ resource "prisma-airs_runtime_security_profile" "production" {
 Create custom detection topics and reference them in profiles:
 
 ```hcl
+# Topic: Describe the content that a security profile should recognize.
 resource "prisma-airs_runtime_custom_topic" "financial" {
   topic_name  = "financial-data"
   description = "Detects discussions about internal financial data"
@@ -70,6 +72,7 @@ resource "prisma-airs_runtime_custom_topic" "financial" {
   ]
 }
 
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "with_topics" {
   profile_name = "finance-team-profile"
 
@@ -108,10 +111,12 @@ The provider automatically resolves `topic_name` to `topic_id` and `revision` â€
 API keys require a deployment profile auth code, a rotation interval, and a rotation time unit:
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }
 
+# Scanning access: Issue a key using an authorized deployment profile.
 resource "prisma-airs_runtime_api_key" "scanner" {
   api_key_name           = "production-scanner-key"
   auth_code              = data.prisma-airs_runtime_deployment_profiles.all.items[0].auth_code
@@ -120,6 +125,7 @@ resource "prisma-airs_runtime_api_key" "scanner" {
   created_by             = "terraform"
 }
 
+# Outputs: Expose results for the next configuration or application step.
 output "api_key_value" {
   value     = prisma-airs_runtime_api_key.scanner.api_key
   sensitive = true
@@ -131,8 +137,10 @@ Deleting an API key can also delete its associated customer app. Capture the one
 ## Listing DLP Profiles
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_runtime_dlp_profiles" "available" {}
 
+# Outputs: Expose results for the next configuration or application step.
 output "dlp_profiles" {
   value = data.prisma-airs_runtime_dlp_profiles.available.items[*].profile_name
 }
@@ -143,6 +151,7 @@ output "dlp_profiles" {
 Control URL filtering and malicious code detection:
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "app_secured" {
   profile_name = "app-protection-enabled"
 
@@ -170,14 +179,15 @@ resource "prisma-airs_runtime_security_profile" "app_secured" {
 For more granular URL category control, use `allow_url_category`, `block_url_category`, or `alert_url_category` lists:
 
 ```hcl
-    app_protection {
-      allow_url_category = [
-        "dynamic-dns",
-        "grayware",
-        "high-risk",
-      ]
-      url_detected_action = "block"
-    }
+app_protection {
+  allow_url_category = [
+    "dynamic-dns",
+    "grayware",
+    "high-risk",
+  ]
+
+  url_detected_action = "block"
+}
 ```
 
 ## Database Security
@@ -185,6 +195,7 @@ For more granular URL category control, use `allow_url_category`, `block_url_cat
 Control which database operations AI models can perform:
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "db_protected" {
   profile_name = "database-security-enabled"
 

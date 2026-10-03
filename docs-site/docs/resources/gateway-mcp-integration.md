@@ -5,11 +5,12 @@ Manages `prisma-airs_gateway_mcp_integration` with provider v0.9.0 and published
 ## Example
 
 ```hcl
+# MCP connection: Register an external tool service; provision it separately.
 resource "prisma-airs_gateway_mcp_integration" "example" {
-  name = "Example - Gateway - Development"
-  url = "https://mcp.deepwiki.com/mcp"
-  auth_type = "none"
-  transport = "http"
+  name           = "Example - Gateway - Development"
+  url            = "https://mcp.deepwiki.com/mcp"
+  auth_type      = "none"
+  transport      = "http"
   configurations = {}
 }
 ```

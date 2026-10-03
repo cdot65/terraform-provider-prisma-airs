@@ -1,13 +1,13 @@
 # Model Security
 
-Manages model security groups for monitoring AI models from various sources. Reads existing model security rules for integration with other tooling.
+Creates two independently named Hugging Face model-security groups and reads the existing rule catalog. This configures collections; it does not scan a model.
 
 ## Resources
 
 | Resource | Source | Description |
 |----------|--------|-------------|
 | `hugging_face` | Hugging Face Hub | Monitor for supply chain attacks, malicious weights |
-| `custom_models` | Custom/Internal | Monitor internally-trained or fine-tuned models |
+| `custom_models` | Hugging Face Hub | Second collection; the legacy Terraform address is retained |
 
 ## Data Sources
 
@@ -15,21 +15,38 @@ Manages model security groups for monitoring AI models from various sources. Rea
 |-------------|-------------|
 | `prisma-airs_supply_chain_security_rules.all` | All model security rules |
 
-## Usage
+## Before you start
+
+Use a tenant with Model Security enabled. Both groups declare `source_type = "HUGGING_FACE"`; choose distinct names for the collections you intend to manage.
+
+Load `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from your secret store into the environment. See the [authentication guide](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/).
+
+Copy `terraform.tfvars.example` to `terraform.tfvars` and set `group_prefix` to distinguish your example resources.
+
+## Apply and inspect
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars if needed
-
-# Set provider credentials
-export PANW_MGMT_CLIENT_ID="..."
-export PANW_MGMT_CLIENT_SECRET="..."
-export PANW_MGMT_TSG_ID="..."
-
 terraform init
-terraform plan
-terraform apply
+terraform validate
+terraform plan -out=create.tfplan
+terraform apply create.tfplan
+terraform output
 ```
+
+After editing the configuration, review another saved plan before applying it. An unchanged `terraform plan -detailed-exitcode` should exit 0.
+
+Outputs expose the group IDs and catalog rule count. Change names or descriptions to practice updates. Changing `source_type` replaces a group.
+
+## Clean up
+
+Use the same inputs, credentials, and state to remove the owned resources:
+
+```bash
+terraform plan -destroy -out=cleanup.tfplan
+terraform apply cleanup.tfplan
+```
+
+Deleted groups remain visible as tombstones in the service. For the broader workflow, use the [public Supply Chain Security project](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-supply-chain-security).
 
 ## Files
 
