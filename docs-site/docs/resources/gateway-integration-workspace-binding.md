@@ -5,9 +5,10 @@ Manages `prisma-airs_gateway_integration_workspace_binding` with provider v0.9.0
 ## Example
 
 ```hcl
+# Workspace access: Authorize this workspace to use the owned integration.
 resource "prisma-airs_gateway_integration_workspace_binding" "example" {
   integration_id = var.integration_id
-  workspace_id = var.workspace_id
+  workspace_id   = var.workspace_id
 }
 ```
 

@@ -1,16 +1,4 @@
-# ---------------------------------------------------------------------------
-# Security Profiles
-# ---------------------------------------------------------------------------
-# Each profile maps to a real-world use case with appropriate protection
-# levels. Profiles range from high-security (all protections enabled,
-# strict blocking) to lightweight (minimal protections for low-risk apps).
-# ---------------------------------------------------------------------------
-
-# ── High Security Profile ─────────────────────────────────────────────
-# Maximum protection: blocks prompt injection, toxic content, data leaks,
-# agent abuse, and malicious URLs. Includes DLP with IP address detection
-# and URL category filtering for high-risk categories.
-
+# Policy: Combine strict blocking with DLP and URL controls.
 resource "prisma-airs_runtime_security_profile" "high_security" {
   profile_name = "${var.profile_prefix}InfoSec - AI Firewall - Strict"
 
@@ -114,6 +102,7 @@ resource "prisma-airs_runtime_security_profile" "high_security" {
         "phishing",
         "sports",
       ]
+
       url_detected_action = "block"
 
       malicious_code_protection {
@@ -163,11 +152,7 @@ resource "prisma-airs_runtime_security_profile" "high_security" {
   }
 }
 
-# ── Agent App Profile (Truffles) ──────────────────────────────────────
-# Balanced profile for an AI agent: blocks prompt injection, allows moderate
-# toxic content through, masks data inline, and uses topic guardrails to
-# allow recipe generation while blocking ASCII art abuse.
-
+# Policy: Limit agent topics and mask detected data leaks.
 resource "prisma-airs_runtime_security_profile" "truffles_agent" {
   profile_name = "${var.profile_prefix}Truffles - Agent Security - Moderate"
 
@@ -254,11 +239,7 @@ resource "prisma-airs_runtime_security_profile" "truffles_agent" {
   }
 }
 
-# ── Recipe Extractor Profile ──────────────────────────────────────────
-# Moderate profile for a recipe extraction agent on AWS. Allows moderate
-# toxic content, uses topic guardrails to permit recipe discussions,
-# and blocks prompt injection.
-
+# Policy: Scope recipe extraction topics and moderate toxic content.
 resource "prisma-airs_runtime_security_profile" "recipe_extractor" {
   profile_name = "${var.profile_prefix}Truffles - Recipe Extractor - Moderate"
 
@@ -320,11 +301,7 @@ resource "prisma-airs_runtime_security_profile" "recipe_extractor" {
   }
 }
 
-# ── IDE Integration Profile (Cursor) ─────────────────────────────────
-# Strict profile for code-assistant IDE integrations. Blocks all model
-# threats with strict toxic content filtering. Includes malicious code
-# detection via app protection.
-
+# Policy: Apply strict content and data-leak controls to a code assistant.
 resource "prisma-airs_runtime_security_profile" "cursor_ide" {
   profile_name = "${var.profile_prefix}InfoSec - Code Assistant - Strict"
 
@@ -394,20 +371,12 @@ resource "prisma-airs_runtime_security_profile" "cursor_ide" {
   }
 }
 
-# ── Slack Moderation Profile ──────────────────────────────────────────
-# Profile for the OpenClaw Slack bot. Blocks prompt injection, filters
-# malicious URLs, and enables data protection. Latency timeout set to
-# allow to avoid blocking chat responses.
-#
-# NOTE: The API's default-url-category and url-detected-action fields
-# are not yet supported by the SDK/provider. Those must be set manually
-# or added in a future SDK release.
-
+# Policy: Keep Slack moderation focused on injection and malicious URLs.
 resource "prisma-airs_runtime_security_profile" "slack_moderation" {
   profile_name = "${var.profile_prefix}OpenClaw - Slack Moderation - Moderate"
 
   ai_security_profile {
-    model_type        = "default"
+    model_type           = "default"
     mask_data_in_storage = false
 
     latency {
@@ -433,11 +402,7 @@ resource "prisma-airs_runtime_security_profile" "slack_moderation" {
   }
 }
 
-# ── HIPAA Compliance Profile ──────────────────────────────────────────
-# Healthcare-focused profile with HIPAA DLP data profile attached.
-# Topic guardrails allow specific safe topics (Star Wars debates) while
-# blocking everything else by default.
-
+# Policy: Reference an existing HIPAA DLP profile and topic controls.
 resource "prisma-airs_runtime_security_profile" "hipaa_compliance" {
   profile_name = "${var.profile_prefix}OpenClaw - HIPAA Compliance - Strict"
 

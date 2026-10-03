@@ -5,6 +5,7 @@ Use one OAuth identity per provider configuration. Credentials are shared across
 ## Environment configuration
 
 ```hcl
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}
 ```
 
@@ -13,6 +14,7 @@ Set `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` thr
 ## Explicit configuration
 
 ```hcl
+# Inputs: Supply environment-specific values; load sensitive values from your secret store.
 variable "airs_client_id" {
   type = string
 }
@@ -26,6 +28,7 @@ variable "airs_tsg_id" {
   type = string
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {
   client_id     = var.airs_client_id
   client_secret = var.airs_client_secret
@@ -40,6 +43,7 @@ Explicit attributes override the corresponding environment variables. The provid
 Use provider aliases and explicit credentials for a second tenant:
 
 ```hcl
+# Inputs: Supply environment-specific values; load sensitive values from your secret store.
 variable "second_client_id" {
   type = string
 }
@@ -53,6 +57,7 @@ variable "second_tsg_id" {
   type = string
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {
   alias         = "second"
   client_id     = var.second_client_id
@@ -60,6 +65,7 @@ provider "prisma-airs" {
   tsg_id        = var.second_tsg_id
 }
 
+# Model group: Organize models; onboarding and scans are separate operations.
 resource "prisma-airs_supply_chain_security_group" "second" {
   provider    = prisma-airs.second
   name        = "second-tenant-models"

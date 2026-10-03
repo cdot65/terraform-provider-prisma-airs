@@ -40,6 +40,7 @@ These guides describe provider v0.9.0 built on Go SDK v0.6.1. See [Getting start
 ## Example Usage
 
 ```hcl
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
@@ -49,6 +50,7 @@ terraform {
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}
 ```
 
@@ -59,14 +61,17 @@ Configure `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_I
 OAuth credentials (`client_id`, sensitive `client_secret`, and `tsg_id`) and `token_endpoint` are shared. Endpoint overrides live in optional product blocks; omit them for environment/SDK defaults.
 
 ```hcl
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {
   runtime {
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aisec"
   }
+
   red_team {
     data_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/data-plane"
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/mgmt-plane"
   }
+
   supply_chain {
     data_endpoint = "https://api.sase.paloaltonetworks.com/aims/data"
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aims/mgmt"

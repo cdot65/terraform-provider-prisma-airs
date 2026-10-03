@@ -22,6 +22,8 @@ make docs-check
 
 The schema generator uses Terraform's provider-schema protocol with a temporary development override. It needs Terraform and the built provider; it performs no live API calls. `--check` detects missing, extra, or stale generated pages and catalog metadata. Every built Terraform type must have exactly one implemented product owner and an existing lifecycle guide. Docusaurus navigation and Registry subcategories use that catalog. Keep the reference inventory generated; edit product definitions or lifecycle guides instead.
 
+Use terse `# Concept: purpose` comments at dependency and product boundaries, with expanded nested HCL objects and lists. `check_content.py` enforces Terraform formatting for the HCL fences and validates them offline; the Terraform CLI configuration and explicitly nested fragment remain separate non-root examples.
+
 Examples described as complete must include a provider requirement and all variable declarations. Add complete examples to the offline Terraform validation fixtures when extending the guide catalog. Live lifecycle evidence remains in [SDK upgrade verification](sdk-upgrade-verification.md).
 
 ## Maintain the shared design

@@ -5,6 +5,7 @@ Manages a custom detection topic in Prisma AIRS Management API.
 ## Example Usage
 
 ```hcl
+# Topic: Describe the content that a security profile should recognize.
 resource "prisma-airs_runtime_custom_topic" "sensitive_data" {
   topic_name  = "sensitive-financial-data"
   description = "Detects discussions about internal financial projections"

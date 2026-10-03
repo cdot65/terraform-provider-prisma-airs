@@ -29,6 +29,7 @@ export PANW_MGMT_TSG_ID="your-tsg-id"
 ```
 
 ```hcl
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}
 ```
 

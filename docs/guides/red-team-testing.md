@@ -15,30 +15,40 @@ Choose exactly one connection family: `openai`, `hugging_face`, `databricks`, `b
 ## Step 1: Create a Target
 
 ```hcl
+# Inputs: Supply environment-specific values; load sensitive values from your secret store.
 variable "chatbot_api_key" {
   type      = string
   sensitive = true
 }
 
+# Target: Register the endpoint contract; apply does not run an assessment.
 resource "prisma-airs_red_team_target" "chatbot" {
-  name            = "customer-chatbot"
-  target_type     = "APPLICATION"
-  description     = "Customer-facing chatbot application"
+  name        = "customer-chatbot"
+  target_type = "APPLICATION"
+  description = "Customer-facing chatbot application"
+
   rest {
     api_endpoint = "https://chatbot.example.com/api/chat"
+
     request_headers = {
-      "Content-Type"  = "application/json"
+      "Content-Type" = "application/json"
     }
+
     request_body = {
       prompt = "{INPUT}"
     }
+
     response_body = {
       output = "{RESPONSE}"
     }
+
     response_key = "output"
   }
+
   headers_auth {
-    headers = { Authorization = "Bearer ${var.chatbot_api_key}" }
+    headers = {
+      Authorization = "Bearer ${var.chatbot_api_key}"
+    }
   }
 }
 ```
@@ -48,6 +58,7 @@ resource "prisma-airs_red_team_target" "chatbot" {
 Create custom prompt sets for targeted testing:
 
 ```hcl
+# Prompts: Create a container; populate attack prompts separately.
 resource "prisma-airs_red_team_custom_prompt_set" "injection_tests" {
   name        = "custom-injection-tests"
   description = "Custom prompt injection test cases for our domain"

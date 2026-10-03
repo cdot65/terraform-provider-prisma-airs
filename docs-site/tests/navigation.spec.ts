@@ -5,8 +5,8 @@ const entries = catalog.flatMap(product => [...product.resources, ...product.dat
 const routes = [
   'overview/', 'getting-started/', ...['installation', 'configuration', 'quick-start', 'authentication'].map(name => `getting-started/${name}/`),
   ...entries.map(entry => `${entry.guide}/`), 'products/gateway/',
-  ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
-  'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'repository-configurations'].map(name => `examples/${name}/`),
+  ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'gateway-workflow', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
+  'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'gateway', 'repository-configurations'].map(name => `examples/${name}/`),
   'reference/', ...['provider-configuration', 'environment-variables', 'error-handling'].map(name => `reference/${name}/`),
   'reference/generated/provider/', ...entries.map(entry => `reference/generated/${entry.name}/`),
   ...['architecture', 'documentation', 'design-parity', 'sdk-upgrade-verification', 'product-refactor-verification'].map(name => `development/${name}/`),
@@ -48,7 +48,7 @@ test('HCL highlights, callouts, architecture diagram, and authentication guide r
   await page.goto('examples/native-targets/');
   await expect(page.locator('pre.language-hcl')).toContainText('response_stop_value');
   expect(await page.locator('pre.language-hcl .token').count()).toBeGreaterThan(10);
-  await expect(page.getByRole('button', {name: /Copy code to clipboard/})).toBeAttached();
+  await expect(page.locator('.theme-code-block').filter({has: page.locator('pre.language-hcl')}).getByRole('button', {name: /Copy code to clipboard/})).toBeAttached();
   await page.goto('resources/api-key/');
   await expect(page.locator('.theme-admonition').filter({hasText: 'only available after creation'})).toBeVisible();
   await page.goto('development/architecture/');

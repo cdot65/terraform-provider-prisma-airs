@@ -1,17 +1,4 @@
-# ---------------------------------------------------------------------------
-# Security Profiles at Scale
-# ---------------------------------------------------------------------------
-# Manages multiple AI security profiles with varying levels of protection.
-# Demonstrates how to use Terraform to maintain a fleet of security profiles
-# across different applications and use cases.
-#
-# Prerequisites:
-#   1. Copy tfvars:         cp terraform.tfvars.example terraform.tfvars
-#   2. Set provider credentials via env vars or .env file:
-#        cp ../../.env.example .env   # then fill in values
-#        source .env                  # or use: ../../scripts/terraform-env.sh plan
-# ---------------------------------------------------------------------------
-
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
@@ -21,4 +8,5 @@ terraform {
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}

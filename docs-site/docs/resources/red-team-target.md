@@ -5,17 +5,34 @@ Manages target configuration through the Red Team management API. Create and upd
 ## Example usage
 
 ```hcl
+# Target: Register the endpoint contract; apply does not run an assessment.
 resource "prisma-airs_red_team_target" "chatbot" {
   name = "production-chatbot"
+
   rest {
-    api_endpoint    = "https://chatbot.example.com/chat"
-    request_headers = { "Content-Type" = "application/json" }
-    request_body    = { prompt = "{INPUT}", temperature = 0, stream = false }
-    response_body   = { output = "{RESPONSE}" }
-    response_key    = "output"
+    api_endpoint = "https://chatbot.example.com/chat"
+
+    request_headers = {
+      "Content-Type" = "application/json"
+    }
+
+    request_body = {
+      prompt      = "{INPUT}"
+      temperature = 0
+      stream      = false
+    }
+
+    response_body = {
+      output = "{RESPONSE}"
+    }
+
+    response_key = "output"
   }
+
   headers_auth {
-    headers = { Authorization = "Bearer ${var.app_token}" }
+    headers = {
+      Authorization = "Bearer ${var.app_token}"
+    }
   }
 }
 ```

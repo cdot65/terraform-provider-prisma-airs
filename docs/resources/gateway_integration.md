@@ -10,11 +10,12 @@ Manages `prisma-airs_gateway_integration` with provider v0.9.0 and published Go 
 ## Example
 
 ```hcl
+# Connection: Keep upstream credentials in the integration, outside routing.
 resource "prisma-airs_gateway_integration" "example" {
-  name = "Example - Gateway - Development"
+  name           = "Example - Gateway - Development"
   ai_provider_id = var.ai_provider_id
-  key = var.upstream_api_key
-  description = "Application integration"
+  key            = var.upstream_api_key
+  description    = "Application integration"
 }
 ```
 

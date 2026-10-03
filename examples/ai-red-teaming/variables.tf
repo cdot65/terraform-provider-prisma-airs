@@ -1,9 +1,4 @@
-# ---------------------------------------------------------------------------
-# Variables
-# ---------------------------------------------------------------------------
-# Sensitive values — populate via terraform.tfvars (see terraform.tfvars.example)
-# ---------------------------------------------------------------------------
-
+# Inputs: Supply environment-specific values; load sensitive values from your secret store.
 variable "litellm_api_key" {
   type        = string
   sensitive   = true

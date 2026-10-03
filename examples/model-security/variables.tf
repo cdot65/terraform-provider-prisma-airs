@@ -1,9 +1,4 @@
-# ---------------------------------------------------------------------------
-# Variables
-# ---------------------------------------------------------------------------
-# Populate via terraform.tfvars (see terraform.tfvars.example)
-# ---------------------------------------------------------------------------
-
+# Inputs: Prefix group names to distinguish this example in your tenant.
 variable "group_prefix" {
   type        = string
   default     = ""

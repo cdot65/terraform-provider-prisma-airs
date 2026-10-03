@@ -1,4 +1,4 @@
-workspace_id = "existing-workspace-uuid"
+# Inputs: Copy to terraform.tfvars and replace nonsecret values.
+workspace_id   = "existing-workspace-uuid"
 ai_provider_id = "provider-family-uuid"
-# Supply upstream_api_key through a secret manager; do not commit it.
-model = "existing-supported-model-name"
+model          = "existing-supported-model-name"

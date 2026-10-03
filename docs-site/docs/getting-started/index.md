@@ -28,6 +28,7 @@ Follow [installation](installation.md) to install provider v0.9.0 from the Terra
 Save as `main.tf`:
 
 ```hcl
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
@@ -37,8 +38,10 @@ terraform {
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}
 
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "first" {
   profile_name = "terraform-first-profile"
 
@@ -52,6 +55,7 @@ resource "prisma-airs_runtime_security_profile" "first" {
   }
 }
 
+# Outputs: Expose results for the next configuration or application step.
 output "profile_revision" {
   value = prisma-airs_runtime_security_profile.first.revision
 }

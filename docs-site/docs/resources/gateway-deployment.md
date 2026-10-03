@@ -5,9 +5,10 @@ Manages `prisma-airs_gateway_deployment` with provider v0.9.0 and published Go S
 ## Example
 
 ```hcl
+# Deployment: Register a hybrid gateway; infrastructure installation is external.
 resource "prisma-airs_gateway_deployment" "example" {
-  name = "Example - Gateway - Development"
-  type = "non_production"
+  name       = "Example - Gateway - Development"
+  type       = "non_production"
   is_default = false
 }
 ```

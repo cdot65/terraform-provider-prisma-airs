@@ -1,15 +1,4 @@
-# ---------------------------------------------------------------------------
-# Model Security
-# ---------------------------------------------------------------------------
-# Manages model security groups for monitoring AI models from various
-# sources. Demonstrates security group creation and reading model
-# security rules.
-#
-# Prerequisites:
-#   1. Copy tfvars:         cp terraform.tfvars.example terraform.tfvars
-#   2. Set provider credentials (env vars or inline)
-# ---------------------------------------------------------------------------
-
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
@@ -19,4 +8,5 @@ terraform {
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}

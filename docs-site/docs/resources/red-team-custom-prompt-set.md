@@ -5,6 +5,7 @@ Manages a custom prompt set for red team testing in Prisma AIRS Red Team API.
 ## Example Usage
 
 ```hcl
+# Prompts: Create a container; populate attack prompts separately.
 resource "prisma-airs_red_team_custom_prompt_set" "injection_tests" {
   name        = "prompt-injection-tests"
   description = "Custom prompt injection test cases"
