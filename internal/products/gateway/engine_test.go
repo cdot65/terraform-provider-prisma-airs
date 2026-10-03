@@ -675,3 +675,22 @@ func TestUnpagedDiscoveryWarnsAboutIncompleteInventory(t *testing.T) {
 		t.Fatal("unpaged discovery hid incomplete inventory")
 	}
 }
+
+func TestOmittedEmptyCollectionsPreserveShapeAndNonemptyClearsDrift(t *testing.T) {
+	r := &gatewayResource{definition: resourceDefinition(t, "integration")}
+	empty := types.DynamicValue(types.TupleValueMust([]attr.Type{}, []attr.Value{}))
+	nonempty := types.DynamicValue(types.TupleValueMust([]attr.Type{types.StringType}, []attr.Value{types.StringValue("reference")}))
+	for _, value := range []attr.Value{empty, nonempty} {
+		prior := modelFixture(t, r, map[string]attr.Value{"secret_mappings": value})
+		var d diag.Diagnostics
+		got := r.mapState(context.Background(), prior, document{}, nil, &d)
+		noErrors(t, d)
+		if value.Equal(empty) {
+			if !got.Attributes()["secret_mappings"].Equal(empty) {
+				t.Fatal("omitted empty collection changed HCL shape")
+			}
+		} else if !got.Attributes()["secret_mappings"].IsNull() {
+			t.Fatal("nonempty collection clear was hidden")
+		}
+	}
+}

@@ -272,3 +272,19 @@ func homogeneous(types []attr.Type) bool {
 	}
 	return true
 }
+
+// Empty collections and absent records represent the same remote collection.
+// Keep their concrete HCL shape, while an omitted nonempty value becomes drift.
+func emptyOptionalCollection(value attr.Value) bool {
+	native, err := nativeJSON(value)
+	if err != nil {
+		return false
+	}
+	switch v := native.(type) {
+	case []any:
+		return len(v) == 0
+	case map[string]any:
+		return len(v) == 0
+	}
+	return false
+}

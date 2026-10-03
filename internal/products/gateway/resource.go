@@ -265,7 +265,11 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 		}
 		if !present {
 			knownOmission := r.definition.name == "secret_reference" && k == "allowed_workspaces"
-			if old.IsUnknown() || (!f.required && !f.computed && !knownOmission) {
+			canonicalEmpty := emptyOptionalCollection(old)
+			if (k == "description" || k == "note") && old.Equal(types.StringValue("")) {
+				canonicalEmpty = true
+			}
+			if old.IsUnknown() || (!f.required && !f.computed && !knownOmission && !canonicalEmpty) {
 				v, e := nullNative(ctx, ts[k])
 				if e == nil {
 					values[k] = v
