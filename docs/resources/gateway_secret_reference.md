@@ -24,6 +24,8 @@ resource "prisma-airs_gateway_secret_reference" "example" {
 
 This manages a reference to a secret in an external manager. It does not create, read, or delete that external secret. `auth_config` is required, sensitive desired input and is preserved through masked reads; import cannot recover usable credentials. Manager changes replace the reference. The current detail route may omit `allowed_workspaces`; import cannot reconstruct omitted workspace access, so supply it explicitly. Sensitive input removal does not clear remote credentials.
 
+Refresh warns when the service omits a configured `allowed_workspaces` list. Terraform retains that desired list, but cannot verify out-of-band changes to it; verify workspace access in Gateway.
+
 ## Import
 
 ```bash

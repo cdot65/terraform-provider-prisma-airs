@@ -278,7 +278,11 @@ func TestTypedChecksFillUnknownChildrenAndKeepKnownLeaves(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	applied := honorPlanned(prior, remote).(types.List).Elements()[0].(types.Object).Attributes()
+	honored, err := honorPlanned(prior, remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	applied := honored.(types.List).Elements()[0].(types.Object).Attributes()
 	if applied["name"].(types.String).ValueString() != "server name" || applied["is_enabled"].(types.Bool).ValueBool() {
 		t.Fatal("unknown child not filled or known child changed")
 	}
@@ -340,11 +344,167 @@ func TestProviderUsageSettingsSeparatePolicyMetadataFromManagedLeaves(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	mapped := honorPlanned(planned, remote).(types.Object).Attributes()
+	honored, err := honorPlanned(planned, remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapped := honored.(types.Object).Attributes()
 	if mapped["periodic_reset"].(types.String).ValueString() != "monthly" || mapped["alert_threshold"].(types.Int64).ValueInt64() != 0 {
 		t.Fatal("default or explicit zero not mapped")
 	}
 	if _, ok := mapped["id"]; ok {
 		t.Fatal("server policy metadata became managed config")
+	}
+}
+
+func TestPartialDynamicPlanKeepsShapeAndKnownLeaves(t *testing.T) {
+	ctx := context.Background()
+	targetType := types.ObjectType{AttrTypes: map[string]attr.Type{"provider": types.StringType, "weight": types.Int64Type}}
+	target := types.ObjectValueMust(targetType.AttrTypes, map[string]attr.Value{"provider": types.StringUnknown(), "weight": types.Int64Value(1)})
+	mapValue := types.MapValueMust(types.StringType, map[string]attr.Value{"computed": types.StringUnknown(), "known": types.StringValue("keep")})
+	setType := types.ObjectType{AttrTypes: map[string]attr.Type{"id": types.StringType, "computed": types.StringType}}
+	set := types.SetValueMust(setType, []attr.Value{types.ObjectValueMust(setType.AttrTypes, map[string]attr.Value{"id": types.StringValue("a"), "computed": types.StringUnknown()})})
+	tuple := types.TupleValueMust([]attr.Type{targetType}, []attr.Value{target})
+	object := types.ObjectValueMust(map[string]attr.Type{"targets": tuple.Type(ctx), "mapping": mapValue.Type(ctx), "members": set.Type(ctx)}, map[string]attr.Value{"targets": tuple, "mapping": mapValue, "members": set})
+	plan := types.DynamicValue(object)
+	remote, err := readNative(ctx, map[string]any{"targets": []any{map[string]any{"provider": "@slug", "weight": json.Number("2"), "server_added": true}}, "mapping": map[string]any{"computed": "filled", "known": "normalized", "server_added": "extra"}, "members": []any{map[string]any{"id": "a", "computed": "filled", "server_added": true}}, "server_added": true}, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	applied, err := honorPlanned(plan, remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attrs := applied.(types.Dynamic).UnderlyingValue().(types.Object).Attributes()
+	if len(attrs) != 3 {
+		t.Fatal("remote-only root key became planned")
+	}
+	got := attrs["targets"].(types.Tuple).Elements()[0].(types.Object).Attributes()
+	if got["provider"].(types.String).ValueString() != "@slug" || got["weight"].(types.Int64).ValueInt64() != 1 || len(got) != 2 {
+		t.Fatal("partial tuple/object plan changed known leaves or shape")
+	}
+	mapping := attrs["mapping"].(types.Map).Elements()
+	if mapping["known"].(types.String).ValueString() != "keep" || mapping["computed"].(types.String).ValueString() != "filled" || len(mapping) != 2 {
+		t.Fatal("partial map plan changed")
+	}
+	if !remote.(types.Dynamic).UnderlyingValue().(types.Object).Attributes()["server_added"].(types.Bool).ValueBool() {
+		t.Fatal("read did not expose remote additions")
+	}
+}
+
+func TestCredentialValuesHeadersAndNonsecretTokens(t *testing.T) {
+	for _, value := range []any{map[string]any{"headers": []any{map[string]any{"name": "Authorization", "value": "test-placeholder"}}}, map[string]any{"neutral": "sk-abcdefghijklmnopqrstuvwxyz12345"}, map[string]any{"neutral": "AKIAABCDEFGHIJKLMNOP"}, map[string]any{"neutral": "-----BEGIN PRIVATE KEY-----\nplaceholder\n-----END PRIVATE KEY-----"}} {
+		if !routingCredentials(value) {
+			t.Fatal("recognizable credential or header accepted")
+		}
+	}
+	if routingCredentials(map[string]any{"override_params": map[string]any{"pad_token": "<pad>", "eos_token": "<eos>"}}) {
+		t.Fatal("nonsecret model tokens rejected")
+	}
+}
+
+func TestNullGuardrailActionsAndTimestampEquality(t *testing.T) {
+	r := &gatewayResource{definition: resourceDefinition(t, "guardrail")}
+	prior := modelFixture(t, r, map[string]attr.Value{})
+	var d diag.Diagnostics
+	actual := r.mapState(context.Background(), prior, document{"actions": nil}, nil, &d)
+	noErrors(t, d)
+	if !actual.Attributes()["actions"].IsNull() {
+		t.Fatal("null actions not retained as readable null")
+	}
+	old := types.StringValue("2027-01-01T01:00:00+01:00")
+	if equivalentTimestamp("2027-01-01T00:00:00.000Z", old) != old.ValueString() {
+		t.Fatal("equivalent timestamp created drift")
+	}
+	if equivalentTimestamp("2027-01-02T00:00:00Z", old) == old.ValueString() {
+		t.Fatal("real expiry drift hidden")
+	}
+}
+
+func TestNonemptyIntegrationSecretMappingsUseTypedSDKContracts(t *testing.T) {
+	for _, kind := range []string{"integration", "mcp_integration"} {
+		t.Run(kind, func(t *testing.T) {
+			r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
+				var body document
+				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+					t.Error(err)
+				}
+				mappings := body["secret_mappings"].([]any)
+				mapping := mappings[0].(map[string]any)
+				if mapping["target_field"] != "api_key" || mapping["secret_reference_id"] != "reference-uuid" || mapping["value_format"] != "string" {
+					t.Error("secret reference mapping changed at SDK seam")
+				}
+				if _, ok := mapping["value"]; ok {
+					t.Error("inline secret added to reference")
+				}
+				_, _ = w.Write([]byte(`{"id":"integration","slug":"integration"}`))
+			})
+			def := resourceDefinition(t, kind)
+			body := document{"name": "test", "secret_mappings": []any{map[string]any{"target_field": "api_key", "secret_reference_id": "reference-uuid", "secret_key": "credential", "value_format": "string"}}}
+			if kind == "integration" {
+				body["ai_provider_id"] = "family"
+			} else {
+				body["url"], body["auth_type"], body["transport"] = "https://example.test/mcp", "none", "http"
+			}
+			_, err := def.create(context.Background(), r.client, body)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestDefaultDeploymentRequiresExplicitTrueAndDoesNotRotate(t *testing.T) {
+	for _, desired := range []bool{false, true} {
+		t.Run(fmt.Sprint(desired), func(t *testing.T) {
+			r, s := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
+				if req.Method == "POST" {
+					var body document
+					if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+						t.Error(err)
+					}
+					if body["is_default"] != desired || body["organisation_id"] != "123" {
+						t.Error("explicit default or declared organisation not sent")
+					}
+					if _, ok := body["rotate_auth"]; ok {
+						t.Error("auth rotation sent automatically")
+					}
+					_, _ = w.Write([]byte(`{"id":"deployment"}`))
+					return
+				}
+				flag := 0
+				if desired {
+					flag = 1
+				}
+				_, _ = fmt.Fprintf(w, `{"id":"deployment","name":"test","type":"non_production","is_default":%d}`, flag)
+			})
+			r.definition = resourceDefinition(t, "deployment")
+			r.Schema(context.Background(), resource.SchemaRequest{}, &s)
+			planned := modelFixture(t, r, map[string]attr.Value{"name": types.StringValue("test"), "type": types.StringValue("non_production"), "is_default": types.BoolValue(desired)})
+			st := stateFixture(t, s, planned)
+			resp := resource.CreateResponse{State: tfsdk.State{Schema: s.Schema}}
+			r.Create(context.Background(), resource.CreateRequest{Plan: tfsdk.Plan{Schema: s.Schema, Raw: st.Raw}}, &resp)
+			noErrors(t, resp.Diagnostics)
+		})
+	}
+}
+
+func TestSecretWorkspaceDriftLimitationProducesActionableWarning(t *testing.T) {
+	r, s := configFixture(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"id":"reference","name":"test","manager_type":"aws_sm","secret_path":"path","allow_all_workspaces":false}`))
+	})
+	r.definition = resourceDefinition(t, "secret_reference")
+	r.Schema(context.Background(), resource.SchemaRequest{}, &s)
+	m := modelFixture(t, r, map[string]attr.Value{"id": types.StringValue("reference"), "allowed_workspaces": types.SetValueMust(types.StringType, []attr.Value{types.StringValue("workspace")})})
+	response := resource.ReadResponse{State: tfsdk.State{Schema: s.Schema}}
+	r.Read(context.Background(), resource.ReadRequest{State: stateFixture(t, s, m)}, &response)
+	noErrors(t, response.Diagnostics)
+	if response.Diagnostics.WarningsCount() != 1 {
+		t.Fatal("missing access policy was silently treated as verified")
+	}
+	var actual types.Object
+	noErrors(t, response.State.Get(context.Background(), &actual))
+	if !actual.Attributes()["allowed_workspaces"].Equal(m.Attributes()["allowed_workspaces"]) {
+		t.Fatal("unavailable workspace policy erased")
 	}
 }

@@ -8,17 +8,17 @@ The v0.9.0 candidate adds 15 Gateway resources and 13 metadata data sources usin
 - Live Gateway tests execute with SCM OAuth on an entitled tenant and existing workspaces. No workspace/IAM provisioning or inference traffic is used.
 - The complete final-source live suite passes all 15 resource types: creation, import, stable subsequent plan and independently verified destruction. Its source manifest matches every current Go file and the published SDK dependency. Mutable fields update at stable IDs; workspace bindings have immutable endpoints.
 - Nine core resource families recover from independent remote deletion or archival. Deployment destruction and refresh use archived status.
-- The complete authored example passes apply, empty second plan, provider-note edits without routing revisions, routing leaf edits with new revisions, and verified destroy. Config plan checks prove unchanged routing fields and resource ID remain known while the revision ID becomes computed; config leaf changes produce updates rather than replacement.
+- The complete authored example passes apply and explicitly asserted empty subsequent plans, provider-note edits without routing revisions, routing leaf edits with new revisions, and verified destroy. Config plan checks prove unchanged routing fields and resource ID remain known while the revision ID becomes computed; config leaf changes produce updates rather than replacement.
 - Both binding families preserve another workspace's access when their own binding is created and destroyed. Parent fixtures are independently confirmed absent after tests.
-- All 13 discovery routes execute live and find freshly created owned fixture IDs. HCL page 1 maps to API page 0. A subsequent read-only inventory using corrected API page indices finds zero active disposable fixtures in all 13 families and 14 retained archived deployments. Earlier audits using incorrect page indices are superseded; eight recorded graph fixtures from failed runs were deleted and independently verified absent.
-- Unit tests cover native null/empty/false/zero values, external config additions, authorization errors, unknown inputs, apply-time credential guards, sensitive desired settings, and retaining creation identity/one-time secrets when GET fails.
+- All 13 discovery routes execute live and find freshly created owned fixture IDs. HCL page 1 maps to API page 0. A subsequent read-only inventory using corrected API page indices finds zero active disposable fixtures in all 13 families and retained archived deployment records. Earlier audits using incorrect page indices are superseded; eight recorded graph fixtures from failed runs were deleted and independently verified absent.
+- Unit tests cover native null/empty/false/zero values, external config additions, authorization errors, unknown inputs, apply-time credential guards, sensitive desired settings, partial Dynamic/map/tuple/set plans with server-added fields, equivalent expiry timestamps, nonempty secret-reference mappings, explicit default-deployment requests, missing access-policy warnings, and retaining creation identity/one-time secrets when GET fails.
 - Documentation validation includes generated schema/Registry freshness, complete HCL examples, TypeScript, Docusaurus, browser navigation, and nine shared Harness pixel comparisons.
 
 Private live logs, source manifests and read-only audit evidence are kept outside the repository. Skipped offline acceptance tests are not counted as live evidence. The historical all-product shell E2E harness was not used; Gateway live acceptance exercised Terraform CLI and independent SDK reads.
 
-## Review gate
+## Independent review
 
-The first independent Claude Code review did not meet the required 9/10 gate. Corrections cover final-source test provenance, planned-state consistency, stable slugs, credential patterns, explicit binding merge requests and the complete example. Final-source live tests, cleanup audit and local/CI checks now pass. Independent re-review is the remaining release gate; scores will be recorded before publication.
+Claude Code review led to corrections in planned-value reconciliation, stable metadata, credential detection, workspace isolation, scoped imports, pagination and evidence provenance. Review outcomes and task scores are recorded in [implementation PR #63](https://github.com/cdot65/terraform-provider-prisma-airs/pull/63).
 
 ## Limits
 

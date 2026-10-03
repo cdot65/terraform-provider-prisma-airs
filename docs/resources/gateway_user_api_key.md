@@ -48,7 +48,7 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `created_at` | `string` | computed | — | Creation timestamp. |
 | `defaults` | `dynamic` | optional, computed | — | Native HCL key defaults; config_id, allow_config_override and metadata. |
 | `description` | `string` | optional, computed | — | Key description. |
-| `expires_at` | `string` | optional, computed | — | Expiry timestamp. |
+| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. |
 | `id` | `string` | computed | — | Stable resource identifier. |
 | `key` | `string` | computed | yes | One-time key material; export securely. Import cannot recover it. |
 | `last_updated_at` | `string` | computed | — | Last remote update timestamp. |

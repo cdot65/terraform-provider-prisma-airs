@@ -47,7 +47,7 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `created_at` | `string` | computed | — | Creation timestamp. |
-| `expires_at` | `string` | optional, computed | — | Expiry timestamp. |
+| `expires_at` | `string` | optional, computed | — | RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. |
 | `id` | `string` | computed | — | Stable resource identifier. |
 | `integration_id` | `string` | required | — | Bound organisation integration UUID. |
 | `last_updated_at` | `string` | computed | — | Last remote update timestamp. |

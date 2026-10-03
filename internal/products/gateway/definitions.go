@@ -110,7 +110,7 @@ func definitions() []definition {
 		result = append(result, d)
 	}
 	result = append(result, definition{name: "integration", description: "Manages an organisation-level Gateway AI-provider integration. Sensitive desired settings survive masked reads. Use a separate integration_workspace_binding before creating workspace providers.", pagination: true,
-		fields: common(map[string]field{"name": required("string", "Integration name."), "ai_provider_id": immutable("string", "AI provider family UUID from the Gateway catalog."), "key": secret("string", "Desired upstream provider credential; not recoverable on import."), "description": optional("string", "Integration description; an empty string clears it."), "configurations": secret("object", "Native HCL provider settings; masked reads cannot detect arbitrary credential/configuration drift."), "secret_mappings": optional("array", "Native HCL secret reference mappings: field and secret_reference_id."), "pricing_adjustments": optional("object", "Native HCL pricing adjustments.")}, false),
+		fields: common(map[string]field{"name": required("string", "Integration name."), "ai_provider_id": immutable("string", "AI provider family UUID from the Gateway catalog."), "key": secret("string", "Desired upstream provider credential; not recoverable on import."), "description": optional("string", "Integration description; an empty string clears it."), "configurations": secret("object", "Native HCL provider settings; masked reads cannot detect arbitrary credential/configuration drift."), "secret_mappings": optional("array", "Native HCL mappings: target_field, secret_reference_id and optional secret_key/value_format."), "pricing_adjustments": optional("object", "Native HCL pricing adjustments.")}, false),
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			b["create_default_provider"] = false
 			return writeSDK(ctx, b, c.sdk.Integrations.Create)
@@ -131,7 +131,7 @@ func definitions() []definition {
 			return listSDK(c.sdk.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "provider", description: "Manages a workspace provider backed by an organisation integration. Establish an integration_workspace_binding first. Import uses workspace_uuid/provider_uuid.", workspace: true, pagination: true, scopedImport: true,
-		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("string", "Expiry timestamp.")}, true),
+		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh.")}, true),
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			return writeSDK(ctx, b, c.sdk.Providers.Create)
 		},
@@ -192,7 +192,7 @@ func definitions() []definition {
 		},
 	})
 	for _, kind := range []gw.APIKeyKind{gw.APIKeyService, gw.APIKeyUser} {
-		fields := common(map[string]field{"name": required("string", "Key name."), "description": optional("string", "Key description."), "scopes": required("strings", "Gateway permissions granted to the key."), "expires_at": optional("string", "Expiry timestamp."), "alert_emails": optional("strings", "Usage alert recipients."), "defaults": optional("object", "Native HCL key defaults; config_id, allow_config_override and metadata."), "key": computed("string", "One-time key material; export securely. Import cannot recover it.")}, true)
+		fields := common(map[string]field{"name": required("string", "Key name."), "description": optional("string", "Key description."), "scopes": required("strings", "Gateway permissions granted to the key."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh."), "alert_emails": optional("strings", "Usage alert recipients."), "defaults": optional("object", "Native HCL key defaults; config_id, allow_config_override and metadata."), "key": computed("string", "One-time key material; export securely. Import cannot recover it.")}, true)
 		f := fields["key"]
 		f.sensitive = true
 		fields["key"] = f
@@ -305,6 +305,11 @@ func definitions() []definition {
 		},
 	})
 	for i := range result {
+		switch result[i].name {
+		case "config", "provider", "mcp_server":
+		default:
+			result[i].organisation = true
+		}
 		if result[i].name == "deployment" {
 			delete(result[i].fields, "organisation_id")
 			for _, k := range []string{"client_auth", "credentials"} {

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cdot65/prisma-airs-go/aisec"
 	gw "github.com/cdot65/prisma-airs-go/aisec/gateway"
@@ -169,12 +170,13 @@ func TestAccGatewayCoreLifecycle(t *testing.T) {
 	for _, kind := range []string{"config", "guardrail", "org_guardrail", "service_api_key", "user_api_key", "usage_limit", "rate_limit", "secret_reference", "deployment"} {
 		t.Run(kind, func(t *testing.T) {
 			name := "tf-gw-acc-" + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+			t.Setenv("PANW_AI_GW_TEST_EXPIRES_AT", time.Now().Add(48*time.Hour).Truncate(time.Second).In(time.FixedZone("test", 3600)).Format(time.RFC3339))
 			addr := "prisma-airs_gateway_" + kind + ".test"
 			var rec idRecorder
 			ignored := []string{}
 			switch kind {
 			case "service_api_key", "user_api_key":
-				ignored = []string{"key"}
+				ignored = []string{"key", "expires_at"}
 			case "guardrail", "org_guardrail":
 				ignored = []string{"check_parameters"}
 			case "secret_reference":
@@ -188,7 +190,7 @@ func TestAccGatewayCoreLifecycle(t *testing.T) {
 			}
 			resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(client, w), Steps: []resource.TestStep{
 				{Config: gatewayCoreDiscoveryConfig(kind, name, w), Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "name", name), resource.TestCheckResourceAttrSet(addr, "id"), rec.capture("id", addr), gatewayDiscoveryContainsOwned(kind, addr))},
-				{ResourceName: addr, ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: ignored},
+				{ResourceName: addr, ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: ignored, ImportStateCheck: gatewayImportedExpiry(kind)},
 				{Config: gatewayCoreConfig(kind, name, w, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: checks}, Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "name", name+"-updated"), func(st *terraform.State) error {
 					if st.RootModule().Resources[addr].Primary.ID != rec.value {
 						return fmt.Errorf("update replaced Gateway resource ID")
@@ -274,6 +276,7 @@ func gatewayDelete(ctx context.Context, c *gw.Client, kind, id string) error {
 	return fmt.Errorf("unsupported external-delete fixture")
 }
 func TestAccGatewayExternalDeletionAndArchive(t *testing.T) {
+	t.Setenv("PANW_AI_GW_TEST_EXPIRES_AT", time.Now().Add(48*time.Hour).Truncate(time.Second).Format(time.RFC3339))
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("TF_ACC not set")
 	}
@@ -418,7 +421,8 @@ actions = { deny = false, async = false, on_success = { feedback = { value = 5, 
 	case "service_api_key", "user_api_key":
 		extra = fmt.Sprintf(`workspace_id = %q
 scopes = ["completions.write"]
-defaults = {allow_config_override = false, metadata = {terraform_test = "owned"}}`, w)
+defaults = {allow_config_override = false, metadata = {terraform_test = "owned"}}
+expires_at = %q`, w, os.Getenv("PANW_AI_GW_TEST_EXPIRES_AT"))
 		if kind == "user_api_key" {
 			extra += fmt.Sprintf("\nuser_id = %q", os.Getenv("PANW_AI_GW_TEST_USER_ID"))
 		}
@@ -427,12 +431,14 @@ defaults = {allow_config_override = false, metadata = {terraform_test = "owned"}
 type = "tokens"
 credit_limit = 100000
 alert_threshold = %d
+periodic_reset = "monthly"
 conditions = [{key = "metadata.terraform_test", value = %q}]
 group_by = [{key = "metadata.terraform_test"}]`, w, threshold, strings.TrimSuffix(name, "-updated"))
 	case "rate_limit":
 		extra = fmt.Sprintf(`workspace_id = %q
 type = "requests"
 unit = "rpm"
+target = "llm"
 value = %d
 conditions = [{key = "metadata.terraform_test", value = %q}]
 group_by = [{key = "metadata.terraform_test"}]`, w, value, strings.TrimSuffix(name, "-updated"))
@@ -453,6 +459,7 @@ tags = {terraform_test = "owned"}`
 }
 
 func TestAccGatewayIntegrationGraphs(t *testing.T) {
+	t.Setenv("PANW_AI_GW_TEST_EXPIRES_AT", time.Now().Add(48*time.Hour).Truncate(time.Second).In(time.FixedZone("test", 3600)).Format(time.RFC3339))
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("TF_ACC not set")
 	}
@@ -464,7 +471,7 @@ func TestAccGatewayIntegrationGraphs(t *testing.T) {
 		t.Fatal("PANW_AI_GW_TEST_PROVIDER_ID required")
 	}
 	name := "tf-gw-acc-" + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	steps := []resource.TestStep{{Config: gatewayGraphConfig(name, w, family, false), Check: resource.ComposeAggregateTestCheckFunc(gatewayDiscoveryContainsOwned("integration", "prisma-airs_gateway_integration.test"), gatewayDiscoveryContainsOwned("provider", "prisma-airs_gateway_provider.test"), gatewayDiscoveryContainsOwned("mcp_integration", "prisma-airs_gateway_mcp_integration.test"), gatewayDiscoveryContainsOwned("mcp_server", "prisma-airs_gateway_mcp_server.test"))}, {Config: gatewayGraphConfig(name, w, family, false)}}
+	steps := []resource.TestStep{{Config: gatewayGraphConfig(name, w, family, false), Check: resource.ComposeAggregateTestCheckFunc(gatewayDiscoveryContainsOwned("integration", "prisma-airs_gateway_integration.test"), gatewayDiscoveryContainsOwned("provider", "prisma-airs_gateway_provider.test"), gatewayDiscoveryContainsOwned("mcp_integration", "prisma-airs_gateway_mcp_integration.test"), gatewayDiscoveryContainsOwned("mcp_server", "prisma-airs_gateway_mcp_server.test"))}, {Config: gatewayGraphConfig(name, w, family, false), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}}}
 	for _, kind := range []string{"integration", "integration_workspace_binding", "provider", "mcp_integration", "mcp_integration_workspace_binding", "mcp_server"} {
 		addr := "prisma-airs_gateway_" + kind + ".test"
 		ignore := []string{}
@@ -475,6 +482,10 @@ func TestAccGatewayIntegrationGraphs(t *testing.T) {
 			ignore = []string{"configurations"}
 		}
 		step := resource.TestStep{ResourceName: addr, ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: ignore}
+		if kind == "provider" {
+			step.ImportStateVerifyIgnore = append(step.ImportStateVerifyIgnore, "expires_at")
+			step.ImportStateCheck = gatewayImportedExpiry(kind)
+		}
 		if kind == "provider" || kind == "mcp_server" {
 			step.ImportStateIdFunc = func(st *terraform.State) (string, error) {
 				r := st.RootModule().Resources[addr]
@@ -509,7 +520,8 @@ resource "prisma-airs_gateway_provider" "test" {
  integration_id = prisma-airs_gateway_integration.test.id
  workspace_id = %[2]q
  note = %[4]q
- usage_limits = {type = "tokens", credit_limit = 100000, alert_threshold = 20}
+ usage_limits = {type = "tokens", credit_limit = 100000, alert_threshold = 20, periodic_reset_days = 7}
+ expires_at = %[5]q
  depends_on = [prisma-airs_gateway_integration_workspace_binding.test]
 }
 resource "prisma-airs_gateway_mcp_integration" "test" {
@@ -532,7 +544,7 @@ resource "prisma-airs_gateway_mcp_server" "test" {
  description = %[4]q
  depends_on = [prisma-airs_gateway_mcp_integration_workspace_binding.test]
 }
-`, name, w, family, desc) + fmt.Sprintf(`
+`, name, w, family, desc, os.Getenv("PANW_AI_GW_TEST_EXPIRES_AT")) + fmt.Sprintf(`
  data "prisma-airs_gateway_integrations" "owned" { depends_on = [prisma-airs_gateway_integration.test] }
  data "prisma-airs_gateway_providers" "owned" {
   workspace_id = %q
@@ -607,7 +619,7 @@ func TestAccGatewayPublishedExample(t *testing.T) {
 	var revision idRecorder
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(accGatewayClient(t), w), Steps: []resource.TestStep{
 		{Config: config, Check: revision.capture("version_id", addr)},
-		{Config: config}, // Bindings update parent metadata; refresh before the empty plan.
+		{Config: config, ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}},
 		{Config: config, PlanOnly: true},
 		{Config: providerUpdated, ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectResourceAction(addr, plancheck.ResourceActionNoop)}}, Check: func(st *terraform.State) error {
 			if st.RootModule().Resources[addr].Primary.Attributes["version_id"] != revision.value {
@@ -663,5 +675,28 @@ func gatewayDiscoveryContainsOwned(kind, addr string) resource.TestCheckFunc {
 			}
 		}
 		return fmt.Errorf("first Gateway discovery page did not include the owned %s", kind)
+	}
+}
+
+func gatewayImportedExpiry(kind string) resource.ImportStateCheckFunc {
+	return func(states []*terraform.InstanceState) error {
+		if kind != "service_api_key" && kind != "user_api_key" && kind != "provider" {
+			return nil
+		}
+		if len(states) != 1 {
+			return fmt.Errorf("expected one imported expiry record")
+		}
+		actual, err := time.Parse(time.RFC3339Nano, states[0].Attributes["expires_at"])
+		if err != nil {
+			return fmt.Errorf("imported expiry was not RFC 3339")
+		}
+		desired, err := time.Parse(time.RFC3339Nano, os.Getenv("PANW_AI_GW_TEST_EXPIRES_AT"))
+		if err != nil {
+			return err
+		}
+		if !actual.Equal(desired) {
+			return fmt.Errorf("import changed the expiry instant")
+		}
+		return nil
 	}
 }

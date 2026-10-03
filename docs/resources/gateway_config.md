@@ -23,6 +23,8 @@ resource "prisma-airs_gateway_config" "example" {
 
 The provider sends the complete desired document on update. A leaf edit remains an update at the same Terraform address and resource ID; `version_id` changes. Remote additions/removals in the document appear as drift. Imported configs containing recognized plaintext credentials are rejected before being stored.
 
+Credential detection includes named/header-style fields and recognizable key/token/PEM values. Model token settings such as `pad_token` and `eos_token` are allowed. Never place any secret in the visible routing document.
+
 Server normalization appears as readable drift on refresh. Apply preserves configured values; provide a document accepted by the service to keep subsequent plans empty.
 
 ## Import

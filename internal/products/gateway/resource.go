@@ -32,14 +32,14 @@ type field struct {
 	choices                                                    []string
 }
 type definition struct {
-	name, description                   string
-	fields                              map[string]field
-	create                              func(context.Context, *client, document) (document, error)
-	read                                func(context.Context, *client, string, string) (document, error)
-	update                              func(context.Context, *client, string, string, document) (document, error)
-	delete                              func(context.Context, *client, string, string) error
-	list                                func(context.Context, *client, string, int64, int64) ([]document, int64, error)
-	workspace, pagination, scopedImport bool
+	name, description                                 string
+	fields                                            map[string]field
+	create                                            func(context.Context, *client, document) (document, error)
+	read                                              func(context.Context, *client, string, string) (document, error)
+	update                                            func(context.Context, *client, string, string, document) (document, error)
+	delete                                            func(context.Context, *client, string, string) error
+	list                                              func(context.Context, *client, string, int64, int64) ([]document, int64, error)
+	workspace, pagination, scopedImport, organisation bool
 }
 
 type gatewayResource struct {
@@ -281,11 +281,14 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 				value = n.String() == "1"
 			}
 		}
+		if f.kind == "timestamp" {
+			value = equivalentTimestamp(value, old)
+		}
 		v, e := readNative(ctx, value, old)
 		if f.kind == "checks" {
 			v, e = readChecks(ctx, value, old.(types.List))
 		}
-		if f.kind == "actions" || (f.kind == "usage_settings" && value != nil) {
+		if (f.kind == "actions" || f.kind == "usage_settings") && value != nil {
 			v, e = readTypedObject(ctx, value, old.(types.Object))
 		}
 		if e != nil {
@@ -307,7 +310,12 @@ func (r *gatewayResource) mapAppliedState(ctx context.Context, plan types.Object
 	for k, f := range r.definition.fields {
 		v := plan.Attributes()[k]
 		if !f.computed && !v.IsNull() && !v.IsUnknown() {
-			values[k] = honorPlanned(v, values[k])
+			mapped, err := honorPlanned(v, values[k])
+			if err != nil {
+				diags.AddAttributeError(path.Root(k), "Cannot reconcile Gateway response", "The response cannot fill the planned HCL type safely. No response values are included.")
+				continue
+			}
+			values[k] = mapped
 		}
 	}
 	result, d := types.ObjectValue(result.AttributeTypes(ctx), values)
@@ -351,8 +359,10 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// SCM org writes use the numeric TSG, never the internal UUID from GET.
-	body["organisation_id"] = r.client.organisation
+	// Only SDK contracts that declare it receive the numeric TSG on writes.
+	if r.definition.organisation {
+		body["organisation_id"] = r.client.organisation
+	}
 	receipt, e := r.definition.create(ctx, r.client, body)
 	if e != nil {
 		resp.Diagnostics.AddError("Failed to create Gateway "+r.definition.name, gatewayError(e))
@@ -397,6 +407,13 @@ func (r *gatewayResource) Read(ctx context.Context, req resource.ReadRequest, re
 	if e != nil {
 		resp.Diagnostics.AddError("Failed to read Gateway "+r.definition.name, gatewayError(e))
 		return
+	}
+	if r.definition.name == "secret_reference" {
+		if value := model.Attributes()["allowed_workspaces"]; value != nil && !value.IsNull() && !value.IsUnknown() {
+			if _, present := remote["allowed_workspaces"]; !present {
+				resp.Diagnostics.AddAttributeWarning(path.Root("allowed_workspaces"), "Workspace access cannot be verified", "The Gateway detail response omits allowed_workspaces. The desired workspace list is retained, but out-of-band access changes cannot be detected; verify this access policy in Gateway.")
+			}
+		}
 	}
 	model = r.mapState(ctx, model, remote, nil, &resp.Diagnostics)
 	if !resp.Diagnostics.HasError() {
@@ -506,6 +523,13 @@ func (r *gatewayResource) ImportState(ctx context.Context, req resource.ImportSt
 		values["workspace_id"] = types.StringValue(w)
 	}
 	model := types.ObjectValueMust(ts, values)
+	if r.definition.name == "secret_reference" {
+		if value := model.Attributes()["allowed_workspaces"]; value != nil && !value.IsNull() && !value.IsUnknown() {
+			if _, present := remote["allowed_workspaces"]; !present {
+				resp.Diagnostics.AddAttributeWarning(path.Root("allowed_workspaces"), "Workspace access cannot be verified", "The Gateway detail response omits allowed_workspaces. The desired workspace list is retained, but out-of-band access changes cannot be detected; verify this access policy in Gateway.")
+			}
+		}
+	}
 	model = r.mapState(ctx, model, remote, nil, &resp.Diagnostics)
 	if !resp.Diagnostics.HasError() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
@@ -550,36 +574,18 @@ func (r *gatewayResource) validateImportScope(ctx context.Context, remote docume
 	return &inputShapeError{field: "workspace_id", detail: "does not contain the imported resource"}
 }
 
-// Optional+computed children can be unknown inside an otherwise known object.
-// Fill those from the response while retaining every known planned leaf.
-func honorPlanned(plan, remote attr.Value) attr.Value {
-	if plan.IsUnknown() {
-		return remote
+// Preserve an existing representation when the service returns the same instant
+// with a different offset or fractional-second format; real expiry drift remains.
+func equivalentTimestamp(value any, prior attr.Value) any {
+	raw, ok := value.(string)
+	old, known := prior.(types.String)
+	if !ok || !known || old.IsNull() || old.IsUnknown() {
+		return value
 	}
-	if _, err := nativeJSON(plan); err == nil {
-		return plan
+	a, errA := time.Parse(time.RFC3339Nano, raw)
+	b, errB := time.Parse(time.RFC3339Nano, old.ValueString())
+	if errA == nil && errB == nil && a.Equal(b) {
+		return old.ValueString()
 	}
-	switch p := plan.(type) {
-	case types.Object:
-		r, ok := remote.(types.Object)
-		if !ok || r.IsNull() || r.IsUnknown() {
-			return remote
-		}
-		values := r.Attributes()
-		for k, v := range p.Attributes() {
-			values[k] = honorPlanned(v, values[k])
-		}
-		return types.ObjectValueMust(r.AttributeTypes(context.Background()), values)
-	case types.List:
-		r, ok := remote.(types.List)
-		if !ok || len(p.Elements()) != len(r.Elements()) {
-			return remote
-		}
-		values := r.Elements()
-		for i, v := range p.Elements() {
-			values[i] = honorPlanned(v, values[i])
-		}
-		return types.ListValueMust(r.ElementType(context.Background()), values)
-	}
-	return remote
+	return value
 }

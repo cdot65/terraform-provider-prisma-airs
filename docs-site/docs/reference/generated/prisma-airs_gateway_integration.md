@@ -20,6 +20,6 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `name` | `string` | required | — | Integration name. |
 | `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
 | `pricing_adjustments` | `dynamic` | optional, computed | — | Native HCL pricing adjustments. |
-| `secret_mappings` | `dynamic` | optional, computed | — | Native HCL secret reference mappings: field and secret_reference_id. |
+| `secret_mappings` | `dynamic` | optional, computed | — | Native HCL mappings: target_field, secret_reference_id and optional secret_key/value_format. |
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |

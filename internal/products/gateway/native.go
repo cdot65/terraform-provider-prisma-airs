@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -137,10 +138,11 @@ func readNative(ctx context.Context, value any, prior attr.Value) (attr.Value, e
 		}
 		if p, ok := prior.(types.Map); ok {
 			v, d := types.MapValue(p.ElementType(ctx), values)
-			if d.HasError() {
-				return nil, fmt.Errorf("gateway map contains incompatible remote values")
+			if !d.HasError() {
+				return v, nil
 			}
-			return v, nil
+			// A dynamic map may acquire heterogeneous values remotely. Preserve those
+			// as an object so refresh exposes drift rather than rejecting the response.
 		}
 		v, d := types.ObjectValue(ts, values)
 		if d.HasError() {
@@ -174,16 +176,26 @@ func readNative(ctx context.Context, value any, prior attr.Value) (attr.Value, e
 		switch p := prior.(type) {
 		case types.List:
 			v, d := types.ListValue(p.ElementType(ctx), values)
-			if d.HasError() {
-				return nil, fmt.Errorf("cannot read Gateway list")
+			if !d.HasError() {
+				return v, nil
 			}
-			return v, nil
+			if homogeneous(ts) {
+				value, d := types.ListValue(ts[0], values)
+				if !d.HasError() {
+					return value, nil
+				}
+			}
 		case types.Set:
 			v, d := types.SetValue(p.ElementType(ctx), values)
-			if d.HasError() {
-				return nil, fmt.Errorf("cannot read Gateway set")
+			if !d.HasError() {
+				return v, nil
 			}
-			return v, nil
+			if homogeneous(ts) {
+				value, d := types.SetValue(ts[0], values)
+				if !d.HasError() {
+					return value, nil
+				}
+			}
 		}
 		v, d := types.TupleValue(ts, values)
 		if d.HasError() {
@@ -200,6 +212,9 @@ func readNative(ctx context.Context, value any, prior attr.Value) (attr.Value, e
 func routingCredentials(value any) bool {
 	switch x := value.(type) {
 	case map[string]any:
+		if name, ok := x["name"].(string); ok && x["value"] != nil && credentialField(strings.ReplaceAll(strings.ToLower(name), "-", "_")) {
+			return true
+		}
 		for k, v := range x {
 			key := strings.ReplaceAll(strings.ToLower(k), "-", "_")
 			if v != nil && credentialField(key) {
@@ -209,6 +224,8 @@ func routingCredentials(value any) bool {
 				return true
 			}
 		}
+	case string:
+		return recognizableCredential(x)
 	case []any:
 		for _, v := range x {
 			if routingCredentials(v) {
@@ -221,6 +238,10 @@ func routingCredentials(value any) bool {
 
 func credentialField(key string) bool {
 	// Identifiers point to separately managed credentials; they are safe to show.
+	switch key {
+	case "pad_token", "eos_token", "bos_token", "unk_token", "sep_token", "mask_token", "cls_token", "decoder_start_token":
+		return false
+	}
 	if key == "virtual_key" || key == "provider" || key == "secret_reference_id" || strings.HasSuffix(key, "_secret_reference_id") {
 		return false
 	}
@@ -231,4 +252,23 @@ func credentialField(key string) bool {
 		}
 	}
 	return strings.Contains(compact, "serviceaccount") || compact == "clientsecret"
+}
+
+var credentialValue = regexp.MustCompile(`^(sk-[A-Za-z0-9_-]{20,}|sk_(live|test)_[A-Za-z0-9]{16,}|AKIA[A-Z0-9]{16})$`)
+
+func recognizableCredential(value string) bool {
+	value = strings.TrimSpace(value)
+	return credentialValue.MatchString(value) || strings.HasPrefix(strings.ToLower(value), "bearer ") || (strings.HasPrefix(value, "-----BEGIN ") && strings.Contains(value, "PRIVATE KEY-----"))
+}
+
+func homogeneous(types []attr.Type) bool {
+	if len(types) == 0 {
+		return false
+	}
+	for _, typ := range types[1:] {
+		if !typ.Equal(types[0]) {
+			return false
+		}
+	}
+	return true
 }
