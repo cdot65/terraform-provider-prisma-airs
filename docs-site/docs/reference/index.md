@@ -44,6 +44,7 @@ See [provider configuration](provider-configuration.md), [environment variables]
 | `prisma-airs_gateway_deployment` | Resource | [Lifecycle](../resources/gateway-deployment.md) | [Attributes](generated/prisma-airs_gateway_deployment.md) |
 | `prisma-airs_gateway_integration_workspace_binding` | Resource | [Lifecycle](../resources/gateway-integration-workspace-binding.md) | [Attributes](generated/prisma-airs_gateway_integration_workspace_binding.md) |
 | `prisma-airs_gateway_mcp_integration_workspace_binding` | Resource | [Lifecycle](../resources/gateway-mcp-integration-workspace-binding.md) | [Attributes](generated/prisma-airs_gateway_mcp_integration_workspace_binding.md) |
+| `prisma-airs_gateway_workspace` | Resource | [Lifecycle](../resources/gateway-workspace.md) | [Attributes](generated/prisma-airs_gateway_workspace.md) |
 | `prisma-airs_gateway_configs` | Data source | [Lifecycle](../data-sources/gateway-configs.md) | [Attributes](generated/prisma-airs_gateway_configs.md) |
 | `prisma-airs_gateway_guardrails` | Data source | [Lifecycle](../data-sources/gateway-guardrails.md) | [Attributes](generated/prisma-airs_gateway_guardrails.md) |
 | `prisma-airs_gateway_org_guardrails` | Data source | [Lifecycle](../data-sources/gateway-org-guardrails.md) | [Attributes](generated/prisma-airs_gateway_org_guardrails.md) |
@@ -57,6 +58,8 @@ See [provider configuration](provider-configuration.md), [environment variables]
 | `prisma-airs_gateway_rate_limits` | Data source | [Lifecycle](../data-sources/gateway-rate-limits.md) | [Attributes](generated/prisma-airs_gateway_rate_limits.md) |
 | `prisma-airs_gateway_secret_references` | Data source | [Lifecycle](../data-sources/gateway-secret-references.md) | [Attributes](generated/prisma-airs_gateway_secret_references.md) |
 | `prisma-airs_gateway_deployments` | Data source | [Lifecycle](../data-sources/gateway-deployments.md) | [Attributes](generated/prisma-airs_gateway_deployments.md) |
+| `prisma-airs_gateway_workspace` | Data source | [Lifecycle](../data-sources/gateway-workspace.md) | [Attributes](generated/data-source-prisma-airs_gateway_workspace.md) |
+| `prisma-airs_gateway_workspaces` | Data source | [Lifecycle](../data-sources/gateway-workspaces.md) | [Attributes](generated/prisma-airs_gateway_workspaces.md) |
 
 ## AI Supply Chain Security
 

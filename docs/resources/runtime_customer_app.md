@@ -22,6 +22,7 @@ terraform import prisma-airs_runtime_customer_app.chatbot customer-support-chatb
 ### Manage the imported app
 
 ```hcl
+# Existing app: Import the externally created application before managing it.
 resource "prisma-airs_runtime_customer_app" "chatbot" {
   app_name       = "customer-support-chatbot"
   model_name     = "gpt-4"

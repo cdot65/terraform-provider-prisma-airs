@@ -1,15 +1,16 @@
 # AI Gateway provider
 
-Manages `prisma-airs_gateway_provider` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_provider` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Provider: Expose the integration after its workspace binding exists.
 resource "prisma-airs_gateway_provider" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
+  name           = "Example - Gateway - Development"
+  workspace_id   = var.workspace_id
   integration_id = var.integration_id
-  note = "Application provider"
+  note           = "Application provider"
 }
 ```
 

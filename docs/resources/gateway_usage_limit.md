@@ -5,19 +5,31 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_usage_limit Resource
 
-Manages `prisma-airs_gateway_usage_limit` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_usage_limit` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Usage limits: Set a budget; Terraform does not reset accumulated usage.
 resource "prisma-airs_gateway_usage_limit" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
-  type = "tokens"
-  credit_limit = 100000
+  name            = "Example - Gateway - Development"
+  workspace_id    = var.workspace_id
+  type            = "tokens"
+  credit_limit    = 100000
   alert_threshold = 0
-  conditions = [{key = "metadata.application", value = "example"}]
-  group_by = [{key = "metadata.application"}]
+
+  conditions = [
+    {
+      key   = "metadata.application"
+      value = "example"
+    }
+  ]
+
+  group_by = [
+    {
+      key = "metadata.application"
+    }
+  ]
 }
 ```
 
@@ -60,4 +72,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `type` | `string` | required | — | Usage measurement type. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

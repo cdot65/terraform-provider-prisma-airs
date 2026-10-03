@@ -22,7 +22,7 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `target` | `string` | computed | — | Server-reported guardrail target. |
 | `version_id` | `string` | computed | — | Guardrail revision UUID. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |
 
 ### Attributes.actions
 

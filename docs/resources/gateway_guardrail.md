@@ -5,20 +5,41 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_guardrail Resource
 
-Manages `prisma-airs_gateway_guardrail` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_guardrail` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Guardrail: Define request checks; attach the policy to a routing config.
 resource "prisma-airs_gateway_guardrail" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  checks = [{ id = "default.isAllLowerCase" }]
+
+  checks = [
+    {
+      id = "default.isAllLowerCase"
+    }
+  ]
+
   actions = {
-    deny = false
+    deny  = false
     async = false
-    on_success = { feedback = { value = 5, weight = 1, metadata = "" } }
-    on_fail = { feedback = { value = -5, weight = 1, metadata = "" } }
+
+    on_success = {
+      feedback = {
+        value    = 5
+        weight   = 1
+        metadata = ""
+      }
+    }
+
+    on_fail = {
+      feedback = {
+        value    = -5
+        weight   = 1
+        metadata = ""
+      }
+    }
   }
 }
 ```
@@ -65,7 +86,7 @@ Use `check_parameters` for native parameter objects keyed by an ID present in `c
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `target` | `string` | computed | — | Server-reported guardrail target. |
 | `version_id` | `string` | computed | — | Guardrail revision UUID. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |
 
 #### Attributes.actions
 

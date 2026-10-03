@@ -9,7 +9,7 @@ Returns one page in `result.vulnerabilities`. Explicit `in_chain = false` select
 ```hcl
 data "prisma-airs_supply_chain_skill_scanning_vulnerabilities" "example" {
   scan_uuid = var.skill_scan_uuid
-  in_chain = false
+  in_chain  = false
 }
 ```
 

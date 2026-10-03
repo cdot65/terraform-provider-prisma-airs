@@ -12,6 +12,7 @@ Manages the complete revision history of one named AI security profile in Prisma
 ### Basic — Prompt Injection Protection
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "basic" {
   profile_name = "basic-protection"
 
@@ -29,11 +30,12 @@ resource "prisma-airs_runtime_security_profile" "basic" {
 ### Full — Multiple Protections with Data Leak Detection
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "full" {
   profile_name = "full-protection"
 
   ai_security_profile {
-    model_type          = "default"
+    model_type           = "default"
     mask_data_in_storage = false
 
     latency {
@@ -57,7 +59,7 @@ resource "prisma-airs_runtime_security_profile" "full" {
     }
 
     app_protection {
-      block_url_category = ["malicious"]
+      block_url_category  = ["malicious"]
       url_detected_action = "block"
 
       default_url_category = ["malicious"]
@@ -82,14 +84,17 @@ resource "prisma-airs_runtime_security_profile" "full" {
         name   = "database-security-create"
         action = "block"
       }
+
       database_security {
         name   = "database-security-read"
         action = "allow"
       }
+
       database_security {
         name   = "database-security-update"
         action = "block"
       }
+
       database_security {
         name   = "database-security-delete"
         action = "block"
@@ -102,6 +107,7 @@ resource "prisma-airs_runtime_security_profile" "full" {
 ### Compound Toxic Content Action
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "toxic" {
   profile_name = "toxic-compound"
 
@@ -124,6 +130,7 @@ resource "prisma-airs_runtime_security_profile" "toxic" {
 ### With Topic-Based Detection
 
 ```hcl
+# Policy: Configure inspection; policy edits create new profile revisions.
 resource "prisma-airs_runtime_security_profile" "topics" {
   profile_name = "topic-detection"
 

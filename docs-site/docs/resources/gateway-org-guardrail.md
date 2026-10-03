@@ -1,18 +1,39 @@
 # AI Gateway org guardrail
 
-Manages `prisma-airs_gateway_org_guardrail` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_org_guardrail` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Organization policy: Shared scope requires deliberate enablement.
 resource "prisma-airs_gateway_org_guardrail" "example" {
   name = "Example - Gateway - Development"
-  checks = [{ id = "default.isAllLowerCase" }]
+
+  checks = [
+    {
+      id = "default.isAllLowerCase"
+    }
+  ]
+
   actions = {
-    deny = false
+    deny  = false
     async = false
-    on_success = { feedback = { value = 5, weight = 1, metadata = "" } }
-    on_fail = { feedback = { value = -5, weight = 1, metadata = "" } }
+
+    on_success = {
+      feedback = {
+        value    = 5
+        weight   = 1
+        metadata = ""
+      }
+    }
+
+    on_fail = {
+      feedback = {
+        value    = -5
+        weight   = 1
+        metadata = ""
+      }
+    }
   }
 }
 ```

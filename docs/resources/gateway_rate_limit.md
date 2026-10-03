@@ -5,19 +5,31 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_rate_limit Resource
 
-Manages `prisma-airs_gateway_rate_limit` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_rate_limit` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Request limits: Match and aggregate traffic using application metadata.
 resource "prisma-airs_gateway_rate_limit" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  type = "requests"
-  unit = "rpm"
-  value = 100
-  conditions = [{key = "metadata.application", value = "example"}]
-  group_by = [{key = "metadata.application"}]
+  type         = "requests"
+  unit         = "rpm"
+  value        = 100
+
+  conditions = [
+    {
+      key   = "metadata.application"
+      value = "example"
+    }
+  ]
+
+  group_by = [
+    {
+      key = "metadata.application"
+    }
+  ]
 }
 ```
 
@@ -60,4 +72,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `type` | `string` | required | — | Rate measurement type. |
 | `unit` | `string` | required | — | Measurement unit, such as rpm. |
 | `value` | `number` | required | — | Rate threshold; zero is explicit. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

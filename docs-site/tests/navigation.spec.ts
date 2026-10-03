@@ -5,8 +5,8 @@ const entries = catalog.flatMap(product => [...product.resources, ...product.dat
 const routes = [
   'overview/', 'getting-started/', ...['installation', 'configuration', 'quick-start', 'authentication'].map(name => `getting-started/${name}/`),
   ...entries.map(entry => `${entry.guide}/`), 'products/gateway/',
-  ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
-  'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'repository-configurations'].map(name => `examples/${name}/`),
+  ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'gateway-workflow', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
+  'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'gateway', 'repository-configurations'].map(name => `examples/${name}/`),
   'reference/', ...['provider-configuration', 'environment-variables', 'error-handling'].map(name => `reference/${name}/`),
   'reference/generated/provider/', ...entries.map(entry => `reference/generated/${entry.name}/`),
   ...['architecture', 'documentation', 'design-parity', 'sdk-upgrade-verification', 'product-refactor-verification'].map(name => `development/${name}/`),
@@ -48,7 +48,7 @@ test('HCL highlights, callouts, architecture diagram, and authentication guide r
   await page.goto('examples/native-targets/');
   await expect(page.locator('pre.language-hcl')).toContainText('response_stop_value');
   expect(await page.locator('pre.language-hcl .token').count()).toBeGreaterThan(10);
-  await expect(page.getByRole('button', {name: /Copy code to clipboard/})).toBeAttached();
+  await expect(page.locator('.theme-code-block').filter({has: page.locator('pre.language-hcl')}).getByRole('button', {name: /Copy code to clipboard/})).toBeAttached();
   await page.goto('resources/api-key/');
   await expect(page.locator('.theme-admonition').filter({hasText: 'only available after creation'})).toBeVisible();
   await page.goto('development/architecture/');
@@ -113,7 +113,7 @@ test('product navigation agrees with implemented coverage', async ({page}) => {
     }
   }
   await page.goto('products/gateway/');
-  await expect(page.locator('article')).toContainText('15 resources and 13 metadata data sources');
+  await expect(page.locator('article')).toContainText('16 resources and 15 metadata data sources');
 });
 
 
@@ -126,4 +126,16 @@ test('Skill Scanning resource and data source have distinct exact schemas', asyn
   await expect(page.locator('article')).not.toContainText('auth_code_version');
   await page.goto('guides/skill-scanning-workflow/');
   await expect(page.locator('article')).toContainText('original_state');
+});
+
+
+test('workspace resource and lookup expose distinct exact schemas', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_gateway_workspace/');
+  await expect(page.locator('article')).toContainText('scope_management');
+  await expect(page.locator('article')).toContainText('scope_ownership_token');
+  await page.goto('reference/generated/data-source-prisma-airs_gateway_workspace/');
+  await expect(page.locator('article')).toContainText('workspace_id');
+  await expect(page.locator('article')).not.toContainText('scope_management');
+  await page.goto('examples/gateway-workspaces/');
+  await expect(page.locator('article')).toContainText('scope_management');
 });

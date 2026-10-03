@@ -5,14 +5,15 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_mcp_server Resource
 
-Manages `prisma-airs_gateway_mcp_server` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_mcp_server` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# MCP server: Expose the integration after its workspace binding exists.
 resource "prisma-airs_gateway_mcp_server" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
+  name               = "Example - Gateway - Development"
+  workspace_id       = var.workspace_id
   mcp_integration_id = var.mcp_integration_id
 }
 ```
@@ -52,4 +53,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

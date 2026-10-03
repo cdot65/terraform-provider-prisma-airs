@@ -1,9 +1,4 @@
-# ---------------------------------------------------------------------------
-# Variables
-# ---------------------------------------------------------------------------
-# Populate via terraform.tfvars (see terraform.tfvars.example)
-# ---------------------------------------------------------------------------
-
+# Inputs: Prefix profile names to distinguish this example in your tenant.
 variable "profile_prefix" {
   type        = string
   default     = ""

@@ -10,10 +10,12 @@ Manages an API key for AI Runtime Security scanning in Prisma AIRS.
 ## Example Usage
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_runtime_deployment_profiles" "all" {
   limit = 10
 }
 
+# Scanning access: Issue a key using an authorized deployment profile.
 resource "prisma-airs_runtime_api_key" "scanner" {
   api_key_name           = "production-scanner"
   auth_code              = data.prisma-airs_runtime_deployment_profiles.all.items[0].auth_code

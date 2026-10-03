@@ -12,7 +12,7 @@ The [product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/re
 
 - **AI Runtime Security:** profiles, custom topics, API keys, customer apps, DLP profiles, and deployment profiles.
 - **AI Red Teaming:** targets and custom prompt sets.
-- **AI Gateway:** routing configs, guardrails, integrations, workspace bindings, MCP servers, keys, limits, secret references, deployments, and metadata discovery.
+- **AI Gateway:** managed workspaces and dedicated IAM scopes, routing configs, guardrails, integrations, workspace bindings, MCP servers, keys, limits, secret references, deployments, and metadata discovery.
 - **AI Supply Chain Security:** Model Security groups/rules, Skill Scanning tenant configuration, policy rules, trusted skills, and scan discovery.
 
 ## Key Features
@@ -27,7 +27,7 @@ The [product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/re
 
 Terraform → provider → prisma-airs-go SDK → AIRS service APIs. See the [architecture guide](https://cdot65.github.io/terraform-provider-prisma-airs/development/architecture/) for the product modules.
 
-These guides describe the current provider, including Skill Scanning support built on Go SDK v0.7.0. See [Getting started](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/) and [Migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) for the installation and state transition.
+These guides describe the current provider, including Skill Scanning support built on Go SDK v0.8.1. See [Getting started](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/) and [Migration](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) for the installation and state transition.
 
 ## Quick Links
 
@@ -39,15 +39,17 @@ These guides describe the current provider, including Skill Scanning support bui
 ## Example Usage
 
 ```hcl
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.9.0"
+      version = "~> 0.10.0"
     }
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}
 ```
 
@@ -58,14 +60,17 @@ Configure `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_I
 OAuth credentials (`client_id`, sensitive `client_secret`, and `tsg_id`) and `token_endpoint` are shared. Endpoint overrides live in optional product blocks; omit them for environment/SDK defaults.
 
 ```hcl
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {
   runtime {
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aisec"
   }
+
   red_team {
     data_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/data-plane"
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/ai-red-teaming/mgmt-plane"
   }
+
   supply_chain {
     data_endpoint = "https://api.sase.paloaltonetworks.com/aims/data"
     mgmt_endpoint = "https://api.sase.paloaltonetworks.com/aims/mgmt"

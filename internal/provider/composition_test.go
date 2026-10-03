@@ -108,7 +108,7 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 			sources[entry.Name] = true
 		}
 	}
-	if len(wantLabels) != 0 || len(resources) != 25 || len(sources) != 25 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
+	if len(wantLabels) != 0 || len(resources) != 26 || len(sources) != 27 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
 		t.Fatal("catalog has missing or unclassified types")
 	}
 	if len(response.Provider.Block.Attributes) != 4 || len(response.Provider.Block.BlockTypes) != 4 {
@@ -120,8 +120,8 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 		}
 	}
 	for _, block := range response.Provider.Block.BlockTypes {
-		if block.TypeName == "gateway" && len(block.Block.Attributes) != 2 {
-			t.Error("Gateway requires data and admin endpoint settings")
+		if block.TypeName == "gateway" && len(block.Block.Attributes) != 3 {
+			t.Error("Gateway requires data, admin and IAM endpoint settings")
 		}
 	}
 }

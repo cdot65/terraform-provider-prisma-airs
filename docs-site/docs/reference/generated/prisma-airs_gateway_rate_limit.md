@@ -23,4 +23,4 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `type` | `string` | required | — | Rate measurement type. |
 | `unit` | `string` | required | — | Measurement unit, such as rpm. |
 | `value` | `number` | required | — | Rate threshold; zero is explicit. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

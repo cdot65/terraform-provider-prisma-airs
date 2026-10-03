@@ -1,17 +1,23 @@
 # AI Gateway secret reference
 
-Manages `prisma-airs_gateway_secret_reference` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_secret_reference` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Secrets: Reference an external secret and restrict workspace access.
 resource "prisma-airs_gateway_secret_reference" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   manager_type = "aws_sm"
-  auth_config = { aws_auth_type = "serviceRole", aws_region = "us-east-1" }
-  secret_path = "application/upstream-api-key"
+
+  auth_config = {
+    aws_auth_type = "serviceRole"
+    aws_region    = "us-east-1"
+  }
+
+  secret_path          = "application/upstream-api-key"
   allow_all_workspaces = false
-  allowed_workspaces = [var.workspace_id]
+  allowed_workspaces   = [var.workspace_id]
 }
 ```
 

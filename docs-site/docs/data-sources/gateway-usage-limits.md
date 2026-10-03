@@ -5,9 +5,10 @@ Reads `prisma-airs_gateway_usage_limits` metadata without modifying remote objec
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_usage_limits" "example" {
   workspace_id = var.workspace_id
-  page_size = 100
+  page_size    = 100
   current_page = 1
 }
 ```

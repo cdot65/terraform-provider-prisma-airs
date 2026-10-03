@@ -1,13 +1,14 @@
 # AI Gateway mcp server
 
-Manages `prisma-airs_gateway_mcp_server` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_mcp_server` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# MCP server: Expose the integration after its workspace binding exists.
 resource "prisma-airs_gateway_mcp_server" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
+  name               = "Example - Gateway - Development"
+  workspace_id       = var.workspace_id
   mcp_integration_id = var.mcp_integration_id
 }
 ```

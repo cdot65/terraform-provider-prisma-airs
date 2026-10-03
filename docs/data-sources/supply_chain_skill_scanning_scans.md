@@ -11,8 +11,8 @@ Returns one page in `result.scans`. Filters include repeated statuses/artifact t
 
 ```hcl
 data "prisma-airs_supply_chain_skill_scanning_scans" "example" {
-  limit = 10
-  statuses = ["COMPLETED", "FAILED"]
+  limit          = 10
+  statuses       = ["COMPLETED", "FAILED"]
   artifact_types = ["SKILL"]
 }
 ```

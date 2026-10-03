@@ -5,16 +5,17 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_user_api_key Resource
 
-Manages `prisma-airs_gateway_user_api_key` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_user_api_key` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Developer access: Issue a key for an existing authorized workspace user.
 resource "prisma-airs_gateway_user_api_key" "example" {
-  name = "Example - Gateway - Development"
+  name         = "Example - Gateway - Development"
   workspace_id = var.workspace_id
-  user_id = var.user_id
-  scopes = ["completions.write"]
+  user_id      = var.user_id
+  scopes       = ["completions.write"]
 }
 ```
 
@@ -60,4 +61,4 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `user_id` | `string` | required | — | User UUID owning this user key; required by SCM. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

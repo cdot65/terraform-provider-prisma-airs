@@ -24,4 +24,4 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `user_id` | `string` | required | — | User UUID owning this user key; required by SCM. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

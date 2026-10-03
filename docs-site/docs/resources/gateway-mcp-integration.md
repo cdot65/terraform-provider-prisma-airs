@@ -1,15 +1,16 @@
 # AI Gateway mcp integration
 
-Manages `prisma-airs_gateway_mcp_integration` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_mcp_integration` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# MCP connection: Register an external tool service; provision it separately.
 resource "prisma-airs_gateway_mcp_integration" "example" {
-  name = "Example - Gateway - Development"
-  url = "https://mcp.deepwiki.com/mcp"
-  auth_type = "none"
-  transport = "http"
+  name           = "Example - Gateway - Development"
+  url            = "https://mcp.deepwiki.com/mcp"
+  auth_type      = "none"
+  transport      = "http"
   configurations = {}
 }
 ```

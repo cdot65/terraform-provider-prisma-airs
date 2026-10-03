@@ -10,8 +10,9 @@ Reads `prisma-airs_gateway_secret_references` metadata without modifying remote 
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_secret_references" "example" {
-  page_size = 100
+  page_size    = 100
   current_page = 1
 }
 ```

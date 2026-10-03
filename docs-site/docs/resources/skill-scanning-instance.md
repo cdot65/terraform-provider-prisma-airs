@@ -8,19 +8,19 @@ Manages a tenant's Skill Scanning instance through create, read, update, and del
 
 ```hcl
 resource "prisma-airs_supply_chain_skill_scanning_instance" "tenant" {
-  tenant_id          = var.skill_tenant_id
-  support_account_id = var.support_account_id
-  created_by         = "terraform@example.com"
+  tenant_id            = var.skill_tenant_id
+  support_account_id   = var.support_account_id
+  created_by           = "terraform@example.com"
   support_account_name = "Example"
   registration_details = {
-    region         = "us"
-    license_name   = var.skill_license_name
-    entitlements   = var.skill_entitlements
-    tsg_instances  = var.skill_deployment_profiles
+    region        = "us"
+    license_name  = var.skill_license_name
+    entitlements  = var.skill_entitlements
+    tsg_instances = var.skill_deployment_profiles
   }
-  iam_controlled     = false
-  auth_code          = var.skill_auth_code
-  auth_code_version  = 1
+  iam_controlled    = false
+  auth_code         = var.skill_auth_code
+  auth_code_version = 1
 }
 ```
 

@@ -4,7 +4,7 @@ title: Skill Scanning workflow
 
 # Manage Skill Scanning configuration
 
-Skill Scanning is part of AI Supply Chain Security. The provider consumes Go SDK v0.7.0's preview contracts. It manages persistent tenant configuration and reads existing scan results; upload reservation, archive transfer, analysis submission, polling, and CSV export remain SDK/CLI operations.
+Skill Scanning is part of AI Supply Chain Security. The provider consumes Go SDK v0.8.1's preview contracts. It manages persistent tenant configuration and reads existing scan results; upload reservation, archive transfer, analysis submission, polling, and CSV export remain SDK/CLI operations.
 
 1. Configure shared OAuth credentials and both Skill Scanning base URLs.
 2. Discover catalog rules and effective policy through the rules and rule-instances data sources.

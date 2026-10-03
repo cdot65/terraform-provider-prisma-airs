@@ -10,6 +10,7 @@ Manages a model security group in Prisma AIRS Model Security API.
 ## Example Usage
 
 ```hcl
+# Model group: Organize models; onboarding and scans are separate operations.
 resource "prisma-airs_supply_chain_security_group" "ml_models" {
   name        = "production-ml-models"
   description = "Security group for production ML models"

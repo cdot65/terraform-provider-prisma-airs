@@ -4,7 +4,7 @@ title: Skill Scanning verification
 
 # Skill Scanning verification
 
-The implementation uses published Go SDK v0.7.0. Terraform-facing names are Skill Scanning under AI Supply Chain Security; SDK wire contracts and package identifiers retain their upstream names.
+The implementation uses published Go SDK v0.8.1. Terraform-facing names are Skill Scanning under AI Supply Chain Security; SDK wire contracts and package identifiers retain their upstream names.
 
 ## Verification scope
 
@@ -16,7 +16,7 @@ Individual scans have no delete operation. The provider reads existing scans; it
 
 ## Recorded checks
 
-`make check` passes formatting, vet, lint, and all-package race tests. All twenty-two existing resource schemas and sixteen existing data-source schemas are unchanged; the candidate registers twenty-five resources and twenty-five data sources. Exact generation produces fifty-one Docusaurus schema pages and sixty Registry pages. A regression test and browser navigation verify separate instance resource/data-source schemas.
+`make check` passes formatting, vet, lint, and all-package race tests. Existing Skill Scanning schemas retain their types and behavior; Skill Scanning itself adds three resources and nine sources. Combined with Gateway workspaces, the current candidate registers twenty-six resources and twenty-seven data sources; generated reference counts are derived from that catalog. A regression test and browser navigation verify separate instance resource/data-source schemas.
 
 `make docs-check` passes Markdown checks, complete HCL validation, exact schema freshness, TypeScript, production build, ten navigation/browser checks, and all nine Harness pixel comparisons.
 

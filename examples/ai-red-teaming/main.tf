@@ -1,25 +1,12 @@
-# ---------------------------------------------------------------------------
-# AI Red Teaming
-# ---------------------------------------------------------------------------
-# Manages red team targets and custom prompt sets for adversarial testing
-# of AI applications. Demonstrates multiple connection types:
-#   - REST targets via PUBLIC endpoints (LiteLLM, Talkdesk)
-#   - BEDROCK targets for AWS-hosted models (Claude)
-#   - APPLICATION and MODEL target types
-#
-# Prerequisites:
-#   1. Copy tfvars:         cp terraform.tfvars.example terraform.tfvars
-#   2. Fill in API keys and credentials
-#   3. Set provider credentials (env vars or inline)
-# ---------------------------------------------------------------------------
-
+# Setup: Declare the provider required by this configuration.
 terraform {
   required_providers {
     prisma-airs = {
-      source = "cdot65/prisma-airs"
+      source  = "cdot65/prisma-airs"
       version = "~> 0.8.0"
     }
   }
 }
 
+# Authentication: Use the selected tenant credentials for this provider configuration.
 provider "prisma-airs" {}

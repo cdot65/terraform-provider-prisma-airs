@@ -81,6 +81,11 @@
         "name": "admin_endpoint",
         "environment": "PANW_AI_GW_ADMIN_ENDPOINT",
         "description": "Gateway admin-plane management endpoint override."
+      },
+      {
+        "name": "iam_endpoint",
+        "environment": "PANW_IAM_ENDPOINT",
+        "description": "SCM IAM endpoint override for workspace scope orchestration."
       }
     ],
     "resources": [
@@ -143,6 +148,10 @@
       {
         "name": "prisma-airs_gateway_mcp_integration_workspace_binding",
         "guide": "resources/gateway-mcp-integration-workspace-binding"
+      },
+      {
+        "name": "prisma-airs_gateway_workspace",
+        "guide": "resources/gateway-workspace"
       }
     ],
     "data_sources": [
@@ -197,6 +206,14 @@
       {
         "name": "prisma-airs_gateway_deployments",
         "guide": "data-sources/gateway-deployments"
+      },
+      {
+        "name": "prisma-airs_gateway_workspace",
+        "guide": "data-sources/gateway-workspace"
+      },
+      {
+        "name": "prisma-airs_gateway_workspaces",
+        "guide": "data-sources/gateway-workspaces"
       }
     ]
   },

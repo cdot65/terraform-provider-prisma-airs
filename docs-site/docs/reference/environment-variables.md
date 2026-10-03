@@ -13,6 +13,7 @@ The provider reads these environment variables when their corresponding attribut
 | `PANW_MODEL_SEC_MGMT_ENDPOINT` | `supply_chain.mgmt_endpoint` | Supply Chain Security model management API override |
 | `PANW_AI_GW_DATA_ENDPOINT` | `gateway.data_endpoint` | Gateway data-plane management override |
 | `PANW_AI_GW_ADMIN_ENDPOINT` | `gateway.admin_endpoint` | Gateway admin-plane management override |
+| `PANW_IAM_ENDPOINT` | `gateway.iam_endpoint` | SCM IAM override for workspace scope orchestration |
 | `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team.data_endpoint` | Red Team data API override |
 | `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team.mgmt_endpoint` | Red Team management API override |
 

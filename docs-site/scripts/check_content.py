@@ -8,7 +8,7 @@ import tempfile
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
-COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/model-security.md', 'examples/gateway.md', 'examples/skill-scanning.md']
+COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/model-security.md', 'examples/gateway.md', 'examples/gateway-workspaces.md', 'examples/skill-scanning.md']
 
 
 def main():
@@ -33,8 +33,16 @@ def main():
             if relative in COMPLETE and len(blocks) != 1:
                 errors.append(f'{relative}: expected one complete HCL configuration')
             for index, block in enumerate(blocks):
+                # Concept comments precede roots and intentionally partial examples.
+                code = re.sub(r'^\s*#[^\n]*\n', '', block + '\n', flags=re.MULTILINE).lstrip()
+                # The CLI configuration uses its own grammar, not Terraform root syntax.
+                if not code.startswith('provider_installation'):
+                    formatted = subprocess.run(['terraform', 'fmt', '-'], input=block + '\n',
+                                               capture_output=True, text=True, check=True)
+                    if formatted.stdout != block + '\n':
+                        errors.append(f'{relative}#{index}: HCL formatting differs; run terraform fmt on the snippet')
                 # CLI configuration and explicitly partial nested blocks are not Terraform roots.
-                if block.lstrip().startswith('provider_installation') or (relative == 'guides/managing-security-profiles.md' and block.lstrip().startswith('app_protection')):
+                if code.startswith('provider_installation') or (relative == 'guides/managing-security-profiles.md' and code.startswith('app_protection')):
                     skipped.append(f'{relative}#{index}')
                     continue
                 text = block

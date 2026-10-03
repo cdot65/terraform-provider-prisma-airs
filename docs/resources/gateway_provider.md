@@ -5,16 +5,17 @@ subcategory: "AI Gateway"
 
 # prisma-airs_gateway_provider Resource
 
-Manages `prisma-airs_gateway_provider` with provider v0.9.0 and published Go SDK v0.6.1.
+Manages `prisma-airs_gateway_provider` with provider v0.10.0 and published Go SDK v0.8.1.
 
 ## Example
 
 ```hcl
+# Provider: Expose the integration after its workspace binding exists.
 resource "prisma-airs_gateway_provider" "example" {
-  name = "Example - Gateway - Development"
-  workspace_id = var.workspace_id
+  name           = "Example - Gateway - Development"
+  workspace_id   = var.workspace_id
   integration_id = var.integration_id
-  note = "Application provider"
+  note           = "Application provider"
 }
 ```
 
@@ -59,7 +60,7 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `slug` | `string` | computed | — | Server-assigned resource slug. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `usage_limits` | `single(object)` | optional, computed | — | Provider usage limit settings, represented as native HCL attributes. |
-| `workspace_id` | `string` | required | — | Existing Gateway workspace UUID. Workspace and IAM provisioning are external. |
+| `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |
 
 #### Attributes.usage_limits
 

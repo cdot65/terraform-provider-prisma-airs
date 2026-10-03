@@ -5,6 +5,7 @@ Reads `prisma-airs_gateway_deployments` metadata without modifying remote object
 ## Example
 
 ```hcl
+# Discovery: Read existing metadata without changing remote configuration.
 data "prisma-airs_gateway_deployments" "example" {
 }
 ```

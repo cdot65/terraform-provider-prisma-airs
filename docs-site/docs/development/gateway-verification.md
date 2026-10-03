@@ -1,5 +1,7 @@
 # Gateway implementation verification
 
+This is the historical v0.9.0 verification record. Current workspace/IAM adoption is documented in [workspace verification](workspace-adoption-verification.md).
+
 The v0.9.0 candidate adds 15 Gateway resources and 13 metadata data sources using published Go SDK v0.6.1. Existing products retain their v0.8.0 schemas and Terraform names. The product catalog owns registrations, endpoint metadata, navigation and generated Registry pages.
 
 ## Validation evidence

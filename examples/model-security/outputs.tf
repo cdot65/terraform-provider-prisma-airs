@@ -1,15 +1,14 @@
-# ---------------------------------------------------------------------------
-# Outputs
-# ---------------------------------------------------------------------------
-
+# Outputs: Expose results for the next configuration or application step.
 output "security_groups" {
   description = "Model security groups"
+
   value = {
     hugging_face = {
       id    = prisma-airs_supply_chain_security_group.hugging_face.uuid
       name  = prisma-airs_supply_chain_security_group.hugging_face.name
       state = prisma-airs_supply_chain_security_group.hugging_face.state
     }
+
     custom_models = {
       id    = prisma-airs_supply_chain_security_group.custom_models.uuid
       name  = prisma-airs_supply_chain_security_group.custom_models.name

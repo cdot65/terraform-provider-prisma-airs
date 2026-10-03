@@ -25,6 +25,7 @@ Nesting: `single`.
 | --- | --- | --- | --- | --- |
 | `admin_endpoint` | `string` | optional | — | Gateway admin-plane management endpoint override. Can also be set via PANW_AI_GW_ADMIN_ENDPOINT. |
 | `data_endpoint` | `string` | optional | — | Gateway data-plane management endpoint override. Can also be set via PANW_AI_GW_DATA_ENDPOINT. |
+| `iam_endpoint` | `string` | optional | — | SCM IAM endpoint override for workspace scope orchestration. Can also be set via PANW_IAM_ENDPOINT. |
 
 ## red_team
 

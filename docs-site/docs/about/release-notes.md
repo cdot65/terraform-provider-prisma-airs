@@ -1,13 +1,22 @@
 # Release Notes
 
-## Unreleased — Skill Scanning
+## v0.10.0 — Gateway workspaces and Skill Scanning
 
-- Adopt published Go SDK v0.7.0, adding three Skill Scanning resources and nine data sources under AI Supply Chain Security.
+### Skill Scanning
+
+- Adopt published Go SDK v0.8.1, adding three Skill Scanning resources and nine data sources under AI Supply Chain Security.
 - Manage tenant instance configuration, individual policy-rule state, and trusted fingerprints through native HCL.
 - Keep rule identities stable, restore captured policy baselines on destroy, replace immutable trust overrides, and independently confirm deletion.
 - Add explicit Skill Scanning bases under `supply_chain`; invalid settings affect only Skill Scanning usage.
 - Use a true write-only authorization-code input with a nonsecret change version (Terraform 1.11+); redact upstream error bodies and retain identities for recovery.
 - Read scans, findings, chains, and nullable statistics as native Terraform objects. Scan execution/uploads/CSV remain SDK/CLI operations.
+
+### Gateway workspaces
+
+- Coordinate dedicated IAM scope creation, workspace creation and slug binding. Destroy archives the workspace before deleting and confirming the owned scope.
+- Add explicit managed/external scope modes, metadata-only workspace discovery, import/adoption, partial-failure checkpoints and read-only archive replacement planning.
+- Expose native defaults and policy fields; clear removed managed settings and retain unconfigured settings. Support one usage policy per workspace, matching live service behavior.
+- Add Gateway IAM endpoint configuration; keep role grants, membership and operational inference outside this release.
 
 ## v0.9.0 — AI Gateway management (2026-10-03)
 
