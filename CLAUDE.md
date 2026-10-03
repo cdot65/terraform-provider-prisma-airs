@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Organized around AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security. Gateway is not yet implemented; Supply Chain Security currently covers Model Security groups and rules.
+Terraform provider for Palo Alto Networks Prisma AIRS. Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK. Organized around AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security. Gateway manages configuration objects; Supply Chain Security currently covers Model Security groups and rules.
 
 ## Commands
 
@@ -39,8 +39,9 @@ Note: `GOPRIVATE=github.com/cdot65/*` is set in the Makefile. For manual go comm
 main.go                         # provider server entry point
 internal/provider/              # shared configuration, catalog composition, acceptance tests
 internal/product/               # product definition and opaque client slots
-internal/products/catalog.go    # product inventory, including unimplemented Gateway
+internal/products/catalog.go    # product inventory, including Gateway
 internal/products/runtime/      # Runtime Security lifecycle, data sources, SDK adapter
+internal/products/gateway/     # Gateway management, bindings and metadata discovery
 internal/products/redteam/      # Red Teaming lifecycle and native target inputs
 internal/products/supplychain/  # Supply Chain Security groups/rules, SDK adapter
 internal/tfutil/                # shared SDK error/deletion handling

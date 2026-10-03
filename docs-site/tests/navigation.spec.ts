@@ -113,5 +113,5 @@ test('product navigation agrees with implemented coverage', async ({page}) => {
     }
   }
   await page.goto('products/gateway/');
-  await expect(page.locator('article')).toContainText('not yet implemented');
+  await expect(page.locator('article')).toContainText('15 resources and 13 metadata data sources');
 });

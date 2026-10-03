@@ -8,7 +8,7 @@ import tempfile
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
-COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/model-security.md']
+COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/model-security.md', 'examples/gateway.md']
 
 
 def main():

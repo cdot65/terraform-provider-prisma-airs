@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/cdot65/prisma-airs-provider/internal/product"
+	"github.com/cdot65/prisma-airs-provider/internal/products/gateway"
 	"github.com/cdot65/prisma-airs-provider/internal/products/redteam"
 	"github.com/cdot65/prisma-airs-provider/internal/products/runtime"
 	"github.com/cdot65/prisma-airs-provider/internal/products/supplychain"
@@ -13,7 +14,7 @@ import (
 func All() []product.Definition {
 	return []product.Definition{
 		runtime.Definition(), redteam.Definition(),
-		{ID: "gateway", Label: "AI Gateway", Implemented: false},
+		gateway.Definition(),
 		supplychain.Definition(),
 	}
 }

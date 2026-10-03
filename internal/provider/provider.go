@@ -25,6 +25,7 @@ type PrismaAIRSProviderModel struct {
 	Runtime       types.Object `tfsdk:"runtime"`
 	RedTeam       types.Object `tfsdk:"red_team"`
 	SupplyChain   types.Object `tfsdk:"supply_chain"`
+	Gateway       types.Object `tfsdk:"gateway"`
 }
 
 func (p *PrismaAIRSProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -34,7 +35,7 @@ func (p *PrismaAIRSProvider) Metadata(_ context.Context, _ provider.MetadataRequ
 
 func (p *PrismaAIRSProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Terraform provider for Prisma AIRS: AI Runtime Security, AI Red Teaming, and AI Supply Chain Security. AI Gateway functionality is not yet implemented.",
+		Description: "Terraform provider for Prisma AIRS: AI Runtime Security, AI Red Teaming, AI Gateway, and AI Supply Chain Security.",
 		Attributes: map[string]schema.Attribute{
 			"client_id":      schema.StringAttribute{Description: "Shared OAuth2 client ID. Can also be set via PANW_MGMT_CLIENT_ID.", Optional: true},
 			"client_secret":  schema.StringAttribute{Description: "Shared OAuth2 client secret. Can also be set via PANW_MGMT_CLIENT_SECRET.", Optional: true, Sensitive: true},
@@ -71,7 +72,7 @@ func (p *PrismaAIRSProvider) Configure(ctx context.Context, req provider.Configu
 	// Client construction is local and lazy: API authorization is checked only
 	// when a resource uses its product. Missing credentials retain that behavior.
 	if credentials.Complete() {
-		settings := map[string]types.Object{"runtime": config.Runtime, "red_team": config.RedTeam, "supply_chain": config.SupplyChain}
+		settings := map[string]types.Object{"runtime": config.Runtime, "red_team": config.RedTeam, "supply_chain": config.SupplyChain, "gateway": config.Gateway}
 		for _, definition := range products.All() {
 			if !definition.Implemented {
 				continue

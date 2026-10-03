@@ -1,5 +1,15 @@
 # Release Notes
 
+## v0.9.0 — AI Gateway management (2026-10-03)
+
+- Add 15 Gateway resources and 13 safe metadata data sources, with organization/workspace ownership and explicit service/user key routes.
+- Introduce optional `gateway` data/admin endpoint settings using shared OAuth defaults.
+- Use native HCL routing/configuration objects; reject embedded routing credentials, preserve whole documents and field changes, and track version IDs separately from resource IDs.
+- Manage individual integration workspace bindings without replacing other workspace access.
+- Preserve sensitive desired inputs and one-time outputs; verify deletion and deployment archival. Workspaces, IAM, scans, inference, counter resets and automatic credential rotation remain external.
+- Publish exact Registry schemas, workflow and complete examples from the product catalog.
+
+
 ## v0.8.0 — Product modules and configuration (2026-10-02)
 
 - **Breaking:** identify Runtime Security and Supply Chain Security resources and data sources with product prefixes. Red Teaming names remain unchanged. Follow the [state migration guide](../guides/migration.md) before upgrading.

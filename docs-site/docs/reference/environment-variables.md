@@ -11,6 +11,8 @@ The provider reads these environment variables when their corresponding attribut
 | `PANW_MGMT_TOKEN_ENDPOINT` | `token_endpoint` | Common OAuth token endpoint override |
 | `PANW_MODEL_SEC_DATA_ENDPOINT` | `supply_chain.data_endpoint` | Supply Chain Security model data API override |
 | `PANW_MODEL_SEC_MGMT_ENDPOINT` | `supply_chain.mgmt_endpoint` | Supply Chain Security model management API override |
+| `PANW_AI_GW_DATA_ENDPOINT` | `gateway.data_endpoint` | Gateway data-plane management override |
+| `PANW_AI_GW_ADMIN_ENDPOINT` | `gateway.admin_endpoint` | Gateway admin-plane management override |
 | `PANW_RED_TEAM_DATA_ENDPOINT` | `red_team.data_endpoint` | Red Team data API override |
 | `PANW_RED_TEAM_MGMT_ENDPOINT` | `red_team.mgmt_endpoint` | Red Team management API override |
 

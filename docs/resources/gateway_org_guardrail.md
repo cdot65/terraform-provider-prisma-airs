@@ -1,0 +1,111 @@
+---
+page_title: "prisma-airs_gateway_org_guardrail (Resource)"
+subcategory: "AI Gateway"
+---
+
+# prisma-airs_gateway_org_guardrail Resource
+
+Manages `prisma-airs_gateway_org_guardrail` with provider v0.9.0 and published Go SDK v0.6.1.
+
+## Example
+
+```hcl
+resource "prisma-airs_gateway_org_guardrail" "example" {
+  name = "Example - Gateway - Development"
+  checks = [{ id = "default.isAllLowerCase" }]
+  actions = {
+    deny = false
+    async = false
+    on_success = { feedback = { value = 5, weight = 1, metadata = "" } }
+    on_fail = { feedback = { value = -5, weight = 1, metadata = "" } }
+  }
+}
+```
+
+## Ownership and lifecycle
+
+This uses the admin-plane organization route. OAuth TSG defaults select the organization; no workspace argument is accepted. Supply complete native checks and actions.
+
+## Import
+
+```bash
+terraform import prisma-airs_gateway_org_guardrail.example <uuid>
+```
+
+Import reads the active remote object. Archived objects are rejected. Sensitive desired inputs and one-time outputs are not recovered from masked reads; supply desired inputs and preserve previously exported secrets externally.
+
+## Optional values
+
+Omitting an optional setting leaves the remote value or service default in place; removing it from HCL does not clear it. Use an explicit empty string for descriptions/notes documented as clearable. Collection, object and timestamp removal does not send a remote reset; retain an explicit supported value or replace the owned resource deliberately. Sensitive settings remain desired inputs through masked reads.
+
+## Complete schema
+
+See the [exact schema reference](https://cdot65.github.io/terraform-provider-prisma-airs/reference/generated/prisma-airs_gateway_org_guardrail/) for every argument, computed value and sensitivity flag, and the [Gateway workflow](https://cdot65.github.io/terraform-provider-prisma-airs/guides/gateway-workflow/) for dependency ordering.
+
+## Sensitive check parameters
+
+Use `check_parameters` for native parameter objects keyed by an ID present in `checks`. The map is sensitive desired input, is retained through masked reads, and cannot be recovered by import. Parameter removal does not guarantee that the service erases an existing credential; set an explicit supported value or replace the guardrail. Check identities and flags remain visible in plans.
+
+## Schema
+
+### Attributes
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `actions` | `single(object)` | required | — | Native HCL action object: deny, async, on_success.feedback and on_fail.feedback. |
+| `check_parameters` | `dynamic` | optional | yes | Native HCL desired parameter objects keyed by check ID; sensitive and retained through masked reads. |
+| `checks` | `list(object)` | required | — | Native HCL check objects with id and optional name and is_enabled. |
+| `created_at` | `string` | computed | — | Creation timestamp. |
+| `id` | `string` | computed | — | Stable resource identifier. |
+| `last_updated_at` | `string` | computed | — | Last remote update timestamp. |
+| `name` | `string` | required | — | Guardrail name. |
+| `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
+| `slug` | `string` | computed | — | Server-assigned resource slug. |
+| `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
+| `target` | `string` | computed | — | Server-reported guardrail target. |
+| `version_id` | `string` | computed | — | Guardrail revision UUID. |
+
+#### Attributes.actions
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `async` | `bool` | required | — | Evaluate asynchronously. |
+| `deny` | `bool` | required | — | Deny on failure. |
+| `on_fail` | `single(object)` | required | — |  |
+| `on_success` | `single(object)` | required | — |  |
+
+##### Attributes.actions.on_fail
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `feedback` | `single(object)` | required | — |  |
+
+###### Attributes.actions.on_fail.feedback
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `metadata` | `string` | required | — | Feedback metadata; an empty string is explicit. |
+| `value` | `number` | required | — | Feedback value. |
+| `weight` | `number` | required | — | Feedback weight. |
+
+##### Attributes.actions.on_success
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `feedback` | `single(object)` | required | — |  |
+
+###### Attributes.actions.on_success.feedback
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `metadata` | `string` | required | — | Feedback metadata; an empty string is explicit. |
+| `value` | `number` | required | — | Feedback value. |
+| `weight` | `number` | required | — | Feedback weight. |
+
+#### Attributes.checks
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `id` | `string` | required | — | Check identifier. |
+| `is_enabled` | `bool` | optional, computed | — | Whether the check is enabled; false is explicit. |
+| `name` | `string` | optional, computed | — | Optional check name. |
