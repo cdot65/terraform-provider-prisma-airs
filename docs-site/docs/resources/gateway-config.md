@@ -24,6 +24,8 @@ Server normalization appears as readable drift on refresh. Apply preserves confi
 
 Legitimate provider settings that resemble credential fields belong in the sensitive integration `configurations` object. Routing validation recognizes common GitHub, Google, Slack and GitLab credential prefixes as well as API-key, bearer and private-key patterns. Model `start_token` and `stop_token` fields remain visible nonsecret settings.
 
+Refresh and import also reject recognized credentials in remote routing documents. Remove the embedded credential remotely and replace it with a reference. If you intend to stop managing that existing config, `terraform state rm prisma-airs_gateway_config.example` relinquishes Terraform ownership while leaving the remote object intact.
+
 ## Import
 
 ```bash

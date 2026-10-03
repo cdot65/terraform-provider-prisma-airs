@@ -573,3 +573,105 @@ func TestAdditionalCredentialPrefixes(t *testing.T) {
 		t.Fatal("nonsecret model token rejected")
 	}
 }
+
+func TestPartialWorkspaceListingsNeverProveBindingAbsence(t *testing.T) {
+	for _, mcp := range []bool{false, true} {
+		for _, metadata := range []string{`"total":2`, `"has_more":true`} {
+			writes := 0
+			r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
+				if req.Method != "GET" {
+					writes++
+					t.Error("partial inventory caused a write")
+					return
+				}
+				if !strings.Contains(req.URL.Path, "/workspaces") {
+					_, _ = w.Write([]byte(`{"id":"parent"}`))
+					return
+				}
+				key := "data"
+				if mcp {
+					key = "workspaces"
+				}
+				_, _ = fmt.Fprintf(w, `{%q:[{"id":"other","enabled":true}],%s}`, key, metadata)
+			})
+			def := bindingDefinition(mcp)
+			_, err := def.read(context.Background(), r.client, "parent/owned", "")
+			if err == nil || aisec.IsNotFound(err) {
+				t.Fatal("partial workspace page treated as authoritative absence", err)
+			}
+			_, err = def.create(context.Background(), r.client, document{"integration_id": "parent", "workspace_id": "owned"})
+			if err == nil || writes != 0 {
+				t.Fatal("partial inventory permitted create")
+			}
+		}
+	}
+}
+
+func TestRefreshShowsRemoteOptionalClearsButRetainsKnownOmission(t *testing.T) {
+	for _, kind := range []string{"integration", "mcp_integration", "provider", "secret_reference", "deployment"} {
+		r := &gatewayResource{definition: resourceDefinition(t, kind)}
+		field := "description"
+		if kind == "provider" {
+			field = "note"
+		}
+		if kind == "deployment" {
+			field = "tags"
+		}
+		if kind == "secret_reference" {
+			field = "secret_key"
+		}
+		value := attr.Value(types.StringValue("old"))
+		if field == "tags" {
+			value = types.DynamicValue(types.ObjectValueMust(map[string]attr.Type{"old": types.BoolType}, map[string]attr.Value{"old": types.BoolValue(true)}))
+		}
+		prior := modelFixture(t, r, map[string]attr.Value{field: value})
+		var d diag.Diagnostics
+		got := r.mapState(context.Background(), prior, document{}, nil, &d)
+		noErrors(t, d)
+		if !got.Attributes()[field].IsNull() {
+			t.Fatalf("%s.%s remote clear hidden", kind, field)
+		}
+	}
+	r := &gatewayResource{definition: resourceDefinition(t, "secret_reference")}
+	desired := types.SetValueMust(types.StringType, []attr.Value{types.StringValue("workspace")})
+	prior := modelFixture(t, r, map[string]attr.Value{"allowed_workspaces": desired})
+	var d diag.Diagnostics
+	got := r.mapState(context.Background(), prior, document{}, nil, &d)
+	noErrors(t, d)
+	if !got.Attributes()["allowed_workspaces"].Equal(desired) {
+		t.Fatal("known access-list omission lost desired policy")
+	}
+}
+
+func TestUnpagedDiscoveryWarnsAboutIncompleteInventory(t *testing.T) {
+	d := gatewayDataSource{definition: resourceDefinition(t, "config")}
+	d.definition.list = func(context.Context, *client, string, int64, int64) ([]document, int64, error) {
+		return []document{{"id": "owned"}}, 2, nil
+	}
+	var s datasource.SchemaResponse
+	d.Schema(context.Background(), datasource.SchemaRequest{}, &s)
+	ts := s.Schema.Type().(types.ObjectType).AttrTypes
+	values := map[string]attr.Value{}
+	for k, typ := range ts {
+		v, err := nullNative(context.Background(), typ)
+		if err != nil {
+			t.Fatal(err)
+		}
+		values[k] = v
+	}
+	values["workspace_id"] = types.StringValue("workspace")
+	st := tfsdk.State{Schema: s.Schema}
+	noErrors(t, st.Set(context.Background(), types.ObjectValueMust(ts, values)))
+	resp := datasource.ReadResponse{State: tfsdk.State{Schema: s.Schema}}
+	d.Read(context.Background(), datasource.ReadRequest{Config: tfsdk.Config{Schema: s.Schema, Raw: st.Raw}}, &resp)
+	noErrors(t, resp.Diagnostics)
+	found := false
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Summary() == "Gateway listing is incomplete" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("unpaged discovery hid incomplete inventory")
+	}
+}

@@ -95,6 +95,9 @@ func (d *gatewayDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		resp.Diagnostics.AddError("Failed to list Gateway "+plural(d.definition.name), gatewayError(e))
 		return
 	}
+	if !d.definition.pagination && total > int64(len(items)) {
+		resp.Diagnostics.AddWarning("Gateway listing is incomplete", "The service reports more records than this page contains. The current SDK exposes no paging for this route; do not use these results to establish absence or an exhaustive inventory.")
+	}
 	native := make([]attr.Value, len(items))
 	ts := summaryTypes()
 	for i, item := range items {

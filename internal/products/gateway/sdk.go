@@ -125,3 +125,25 @@ func (e *inputShapeError) Error() string {
 	}
 	return "Gateway attribute " + field + " " + e.detail + ". No input values are included."
 }
+
+// Absence is authoritative only after a complete workspace listing. The current
+// SDK exposes no paging knobs here, so retain state if metadata reports truncation.
+func bindingItems[R any](response *R, err error) ([]document, bool, error) {
+	items, total, err := listSDK(response, err)
+	if err != nil {
+		return nil, false, err
+	}
+	envelope, err := decodeDocument(response)
+	if err != nil {
+		return nil, false, err
+	}
+	complete := total <= int64(len(items))
+	if value, present := envelope["has_more"]; present && value != nil {
+		more, ok := value.(bool)
+		if !ok {
+			return nil, false, fmt.Errorf("cannot verify workspace list paging metadata")
+		}
+		complete = complete && !more
+	}
+	return items, complete, nil
+}

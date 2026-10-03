@@ -264,7 +264,8 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 			value, present = receipt[k]
 		}
 		if !present {
-			if old.IsUnknown() {
+			knownOmission := r.definition.name == "secret_reference" && k == "allowed_workspaces"
+			if old.IsUnknown() || (!f.required && !f.computed && !knownOmission) {
 				v, e := nullNative(ctx, ts[k])
 				if e == nil {
 					values[k] = v
@@ -313,7 +314,7 @@ func (r *gatewayResource) mapAppliedState(ctx context.Context, plan types.Object
 		if !f.computed && !v.IsNull() && !v.IsUnknown() {
 			mapped, err := honorPlanned(v, values[k])
 			if err != nil {
-				diags.AddAttributeError(path.Root(k), "Cannot reconcile Gateway response", "The response cannot fill the planned HCL type safely. No response values are included.")
+				diags.AddAttributeError(path.Root(k), "Cannot reconcile Gateway response", "The remote write succeeded but its response cannot fill the planned HCL type safely, possibly because a configured set member was normalized. Match the service canonical form in configuration. Verify the object before retrying; if it is correct and Terraform marked it tainted, use terraform untaint to avoid unintended replacement and credential reissue. No response values are included.")
 				continue
 			}
 			values[k] = mapped
@@ -321,7 +322,7 @@ func (r *gatewayResource) mapAppliedState(ctx context.Context, plan types.Object
 	}
 	for k, v := range values {
 		if _, err := nativeJSON(v); err != nil {
-			diags.AddAttributeError(path.Root(k), "Gateway response left an unknown value", "The detail response and write receipt did not resolve this planned input. Inspect the owned remote object before retrying; no response values are included.")
+			diags.AddAttributeError(path.Root(k), "Gateway response left an unknown value", "The remote write succeeded, but the detail response and receipt did not resolve this input. Verify the owned object before retrying. If it is correct and Terraform marked it tainted, use terraform untaint to avoid unintended replacement and credential reissue. No response values are included.")
 		}
 	}
 	result, d := types.ObjectValue(result.AttributeTypes(ctx), values)
@@ -408,7 +409,7 @@ func (r *gatewayResource) Create(ctx context.Context, req resource.CreateRequest
 	_, workspace := resourceIDs(model)
 	remote, e := r.definition.read(ctx, r.client, id, workspace)
 	if e != nil {
-		resp.Diagnostics.AddError("Failed to refresh created Gateway "+r.definition.name, gatewayError(e))
+		resp.Diagnostics.AddError("Failed to refresh created Gateway "+r.definition.name, gatewayError(e)+" The object exists and its identity and available one-time outputs were saved. Verify it remotely; if correct and marked tainted, use terraform untaint before applying again. Replacement deletes keys or archives deployments and issues new credentials.")
 		return
 	}
 	final := r.mapAppliedState(ctx, model, remote, receipt, &resp.Diagnostics)

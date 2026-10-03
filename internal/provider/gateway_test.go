@@ -494,7 +494,31 @@ func TestAccGatewayIntegrationGraphs(t *testing.T) {
 		}
 		steps = append(steps, step)
 	}
-	steps = append(steps, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true)}, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}})
+	identities := map[string]string{}
+	capture := func(st *terraform.State) error {
+		for _, kind := range []string{"integration", "provider", "mcp_integration", "mcp_server", "integration_workspace_binding", "mcp_integration_workspace_binding"} {
+			addr := "prisma-airs_gateway_" + kind + ".test"
+			identities[addr] = st.RootModule().Resources[addr].Primary.ID
+		}
+		return nil
+	}
+	steps[0].Check = resource.ComposeAggregateTestCheckFunc(steps[0].Check, capture)
+	updateChecks := []plancheck.PlanCheck{}
+	for _, kind := range []string{"integration", "provider", "mcp_integration", "mcp_server"} {
+		updateChecks = append(updateChecks, plancheck.ExpectResourceAction("prisma-airs_gateway_"+kind+".test", plancheck.ResourceActionUpdate))
+	}
+	for _, kind := range []string{"integration_workspace_binding", "mcp_integration_workspace_binding"} {
+		updateChecks = append(updateChecks, plancheck.ExpectResourceAction("prisma-airs_gateway_"+kind+".test", plancheck.ResourceActionNoop))
+	}
+	stableIDs := func(st *terraform.State) error {
+		for addr, id := range identities {
+			if st.RootModule().Resources[addr].Primary.ID != id {
+				return fmt.Errorf("graph update replaced %s", addr)
+			}
+		}
+		return nil
+	}
+	steps = append(steps, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: updateChecks}, Check: stableIDs}, resource.TestStep{Config: gatewayGraphConfig(name, w, family, true), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}})
 	resource.Test(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, CheckDestroy: gatewayDestroy(client, w), Steps: steps})
 }
 func gatewayGraphConfig(name, w, family string, updated bool) string {

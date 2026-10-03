@@ -335,6 +335,7 @@ func bindingDefinition(mcp bool) definition {
 			return nil, fmt.Errorf("invalid binding identifier")
 		}
 		var items []document
+		var complete bool
 		var e error
 		if mcp {
 			if _, err := c.sdk.MCPIntegrations.Get(ctx, parts[0]); err != nil {
@@ -346,25 +347,9 @@ func bindingDefinition(mcp bool) definition {
 			}
 		}
 		if mcp {
-			r, err := c.sdk.MCPIntegrations.ListWorkspaces(ctx, parts[0], s.MCPIntegrationsListWorkspacesOptions{})
-			if err != nil {
-				return nil, err
-			}
-			var d document
-			d, e = decodeDocument(r)
-			if e == nil {
-				for _, k := range []string{"workspaces", "data"} {
-					if values, ok := d[k].([]any); ok {
-						for _, v := range values {
-							if item, ok := v.(map[string]any); ok {
-								items = append(items, item)
-							}
-						}
-					}
-				}
-			}
+			items, complete, e = bindingItems(c.sdk.MCPIntegrations.ListWorkspaces(ctx, parts[0], s.MCPIntegrationsListWorkspacesOptions{}))
 		} else {
-			items, _, e = listSDK(c.sdk.Integrations.ListWorkspaces(ctx, parts[0]))
+			items, complete, e = bindingItems(c.sdk.Integrations.ListWorkspaces(ctx, parts[0]))
 		}
 		if e != nil {
 			return nil, e
@@ -373,6 +358,9 @@ func bindingDefinition(mcp bool) definition {
 			if item["id"] == parts[1] && item["enabled"] == true {
 				return document{"id": id, "integration_id": parts[0], "workspace_id": parts[1]}, nil
 			}
+		}
+		if !complete {
+			return nil, fmt.Errorf("binding presence cannot be verified on a partial workspace list")
 		}
 		return nil, aisec.NewHTTPError("binding absent", aisec.ClientSideError, 404)
 	}

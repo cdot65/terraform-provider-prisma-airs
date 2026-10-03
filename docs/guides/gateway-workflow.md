@@ -12,7 +12,7 @@ Use the shared SCM OAuth credentials and TSG defaults. The optional `gateway` bl
 
 ## Establish dependencies
 
-Create an organization integration, then its workspace-binding resource, then a workspace provider or MCP server. Declare `depends_on` on the binding. Bindings manage only their own integration/workspace pair; they never replace every workspace mapping or create default providers. Import existing enabled pairs before managing them.
+Create an organization integration, then its workspace-binding resource, then a workspace provider or MCP server. Declare `depends_on` on the binding. Bindings manage only their own integration/workspace pair; they never replace every workspace mapping or create default providers. Import existing enabled pairs before managing them. If workspace-list metadata reports truncation and the pair is not visible, Terraform returns a verification error and retains state rather than declaring the binding absent.
 
 See the [complete Gateway example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/). Use `airs cli aigateway workspaces list` and `airs cli aigateway integrations providers` for discovery of externally managed workspaces and provider-family identifiers.
 
@@ -23,6 +23,14 @@ Write complete native HCL routing objects. Config updates retain the resource ID
 ## Preserve secrets
 
 Guardrail parameter maps, integration/MCP configuration, manager auth and deployment inputs are sensitive desired settings; masked reads cannot detect arbitrary drift inside those values. Removing a sensitive input does not erase remote credentials. Supply an explicit new value or deliberately replace the object. API keys and deployment creation outputs are one-time material: preserve them in a secret store, protect state, and never expect import to recover them. Key or deployment auth rotation is not automatic.
+
+## Recover a failed follow-up read
+
+A successful create saves the resource ID and available one-time outputs before its detail read. If that read fails, Terraform may mark the object tainted. Verify the object remotely first. If it is correct, run `terraform untaint <resource-address>` before applying again; otherwise a replacement can delete an API key or archive a deployment and issue new credentials. Fix noncanonical configuration values reported by reconciliation errors before retrying. Review the plan after recovery.
+
+## Discover metadata
+
+Data sources return a page of safe metadata. Config and deployment routes expose no paging in the current SDK. An incomplete-list warning appears when their reported total exceeds the returned records; never use a page to prove absence. Other list sources accept one-based HCL pages, mapped to the API's zero-based index.
 
 ## Destroy owned objects
 
