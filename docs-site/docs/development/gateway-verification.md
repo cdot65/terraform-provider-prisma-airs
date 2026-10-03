@@ -6,7 +6,7 @@ The v0.9.0 candidate adds 15 Gateway resources and 13 metadata data sources usin
 
 - `make check`: formatting, vet, lint and race-enabled tests pass.
 - Live Gateway tests execute with SCM OAuth on an entitled tenant and existing workspaces. No workspace/IAM provisioning or inference traffic is used.
-- The complete final-source live suite passes all 15 resource types: creation, import, stable subsequent plan and independently verified destruction. Its source manifest matches every current Go file and the published SDK dependency. Mutable fields update at stable IDs; workspace bindings have immutable endpoints.
+- The complete final-source live suite passes all 15 resource types: creation, import, stable subsequent plan and independently verified destruction. Its source manifest matches all production Go sources, the live acceptance tests and the published SDK dependency. Mutable fields update at stable IDs; workspace bindings have immutable endpoints.
 - Nine core resource families recover from independent remote deletion or archival. Deployment destruction and refresh use archived status.
 - The complete authored example passes apply and explicitly asserted empty subsequent plans, provider-note edits without routing revisions, routing leaf edits with new revisions, and verified destroy. Config plan checks prove unchanged routing fields and resource ID remain known while the revision ID becomes computed; config leaf changes produce updates rather than replacement.
 - Both binding families preserve another workspace's access when their own binding is created and destroyed. Parent fixtures are independently confirmed absent after tests.
