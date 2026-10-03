@@ -355,8 +355,13 @@ func bindingDefinition(mcp bool) definition {
 			return nil, e
 		}
 		for _, item := range items {
-			if item["id"] == parts[1] && item["enabled"] == true {
-				return document{"id": id, "integration_id": parts[0], "workspace_id": parts[1]}, nil
+			if item["id"] == parts[1] {
+				if item["enabled"] == true {
+					return document{"id": id, "integration_id": parts[0], "workspace_id": parts[1]}, nil
+				}
+				if item["enabled"] == false {
+					return nil, aisec.NewHTTPError("owned binding disabled", aisec.ClientSideError, 404)
+				}
 			}
 		}
 		if !complete {
@@ -406,6 +411,14 @@ func bindingDefinition(mcp bool) definition {
 		update: func(ctx context.Context, c *client, id, _ string, _ document) (document, error) {
 			return read(ctx, c, id, "")
 		},
-		delete: func(ctx context.Context, c *client, id, _ string) error { return set(ctx, c, id, false) },
+		delete: func(ctx context.Context, c *client, id, _ string) error {
+			if _, err := read(ctx, c, id, ""); err != nil {
+				if aisec.IsNotFound(err) {
+					return nil
+				}
+				return err
+			}
+			return set(ctx, c, id, false)
+		},
 	}
 }

@@ -22,7 +22,7 @@ Guardrail parameter maps, integration/MCP configuration, manager auth and deploy
 
 ## Recover a failed follow-up read
 
-A successful create saves the resource ID and available one-time outputs before its detail read. If that read fails, Terraform may mark the object tainted. Verify the object remotely first. If it is correct, run `terraform untaint <resource-address>` before applying again; otherwise a replacement can delete an API key or archive a deployment and issue new credentials. Fix noncanonical configuration values reported by reconciliation errors before retrying. Review the plan after recovery.
+A successful create saves the resource ID and available one-time outputs before its detail read. If that read fails, Terraform may mark the object tainted. Verify the object remotely first. If it is correct, run `terraform untaint <resource-address>` before applying again; otherwise a replacement can delete an API key or archive a deployment and issue new credentials. Fix noncanonical configuration values reported by reconciliation errors before retrying. The recovery checkpoint prioritizes identity and one-time outputs; a plan after untaint may re-send configured optional values that the create receipt did not echo. Review that plan before applying. A successful update followed by a failed read is already applied remotely; its computed fields reconcile on the next refresh.
 
 ## Discover metadata
 

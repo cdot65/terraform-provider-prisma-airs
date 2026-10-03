@@ -266,7 +266,7 @@ func (r *gatewayResource) mapState(ctx context.Context, prior types.Object, remo
 		if !present {
 			knownOmission := r.definition.name == "secret_reference" && k == "allowed_workspaces"
 			canonicalEmpty := emptyOptionalCollection(old)
-			if (k == "description" || k == "note") && old.Equal(types.StringValue("")) {
+			if f.kind == "string" && !f.required && !f.computed && old.Equal(types.StringValue("")) {
 				canonicalEmpty = true
 			}
 			if old.IsUnknown() || (!f.required && !f.computed && !knownOmission && !canonicalEmpty) {
@@ -472,7 +472,7 @@ func (r *gatewayResource) Update(ctx context.Context, req resource.UpdateRequest
 	// An update never rewrites the resource identifier to a version identifier.
 	remote, e := r.definition.read(ctx, r.client, id, w)
 	if e != nil {
-		resp.Diagnostics.AddError("Failed to refresh updated Gateway "+r.definition.name, gatewayError(e))
+		resp.Diagnostics.AddError("Failed to refresh updated Gateway "+r.definition.name, gatewayError(e)+" The update was applied remotely. The next refresh or plan will reconcile computed fields, including revision IDs; verify the object before retrying.")
 		return
 	}
 	model = r.mapAppliedState(ctx, model, remote, receipt, &resp.Diagnostics)

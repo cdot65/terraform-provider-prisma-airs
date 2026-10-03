@@ -576,33 +576,77 @@ func TestAdditionalCredentialPrefixes(t *testing.T) {
 
 func TestPartialWorkspaceListingsNeverProveBindingAbsence(t *testing.T) {
 	for _, mcp := range []bool{false, true} {
-		for _, metadata := range []string{`"total":2`, `"has_more":true`} {
-			writes := 0
-			r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
-				if req.Method != "GET" {
-					writes++
-					t.Error("partial inventory caused a write")
-					return
+		// Integrations declare workspaces; MCP declares data and accepts legacy workspaces.
+		for _, key := range []string{"workspaces", "data"} {
+			for _, metadata := range []string{`"total":2`, `"has_more":true`} {
+				writes := 0
+				r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
+					if req.Method != "GET" {
+						writes++
+						t.Error("partial inventory caused a write")
+						return
+					}
+					if !strings.Contains(req.URL.Path, "/workspaces") {
+						_, _ = w.Write([]byte(`{"id":"parent"}`))
+						return
+					}
+					_, _ = fmt.Fprintf(w, `{%q:[{"id":"other","enabled":true}],%s}`, key, metadata)
+				})
+				def := bindingDefinition(mcp)
+				_, err := def.read(context.Background(), r.client, "parent/owned", "")
+				if err == nil || aisec.IsNotFound(err) {
+					t.Fatal("partial workspace page treated as authoritative absence", err)
 				}
-				if !strings.Contains(req.URL.Path, "/workspaces") {
-					_, _ = w.Write([]byte(`{"id":"parent"}`))
-					return
+				_, err = def.create(context.Background(), r.client, document{"integration_id": "parent", "workspace_id": "owned"})
+				if err == nil || writes != 0 {
+					t.Fatal("partial inventory permitted create")
 				}
-				key := "data"
-				if mcp {
-					key = "workspaces"
+				err = def.delete(context.Background(), r.client, "parent/owned", "")
+				if err == nil || writes != 0 {
+					t.Fatal("partial inventory permitted destroy write")
 				}
-				_, _ = fmt.Fprintf(w, `{%q:[{"id":"other","enabled":true}],%s}`, key, metadata)
-			})
-			def := bindingDefinition(mcp)
-			_, err := def.read(context.Background(), r.client, "parent/owned", "")
-			if err == nil || aisec.IsNotFound(err) {
-				t.Fatal("partial workspace page treated as authoritative absence", err)
 			}
-			_, err = def.create(context.Background(), r.client, document{"integration_id": "parent", "workspace_id": "owned"})
-			if err == nil || writes != 0 {
-				t.Fatal("partial inventory permitted create")
+		}
+	}
+}
+
+func TestDisabledOwnedPairConfirmsAbsenceOnPartialPage(t *testing.T) {
+	for _, mcp := range []bool{false, true} {
+		r, _ := configFixture(t, func(w http.ResponseWriter, req *http.Request) {
+			if req.Method != "GET" {
+				t.Error("already disabled binding caused a write")
+				return
 			}
+			if !strings.Contains(req.URL.Path, "/workspaces") {
+				_, _ = w.Write([]byte(`{"id":"parent"}`))
+				return
+			}
+			key := "workspaces"
+			if mcp {
+				key = "data"
+			}
+			_, _ = fmt.Fprintf(w, `{%q:[{"id":"owned","enabled":false}],"total":2,"has_more":true}`, key)
+		})
+		def := bindingDefinition(mcp)
+		_, err := def.read(context.Background(), r.client, "parent/owned", "")
+		if !aisec.IsNotFound(err) {
+			t.Fatal("disabled owned pair not confirmed", err)
+		}
+		if err = def.delete(context.Background(), r.client, "parent/owned", ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestOmittedEmptyOptionalStringsRemainCanonical(t *testing.T) {
+	for kind, field := range map[string]string{"secret_reference": "secret_key", "usage_limit": "periodic_reset"} {
+		r := &gatewayResource{definition: resourceDefinition(t, kind)}
+		old := modelFixture(t, r, map[string]attr.Value{field: types.StringValue("")})
+		var d diag.Diagnostics
+		got := r.mapState(context.Background(), old, document{}, nil, &d)
+		noErrors(t, d)
+		if !got.Attributes()[field].Equal(types.StringValue("")) {
+			t.Fatal("empty optional string produced repeat drift")
 		}
 	}
 }
