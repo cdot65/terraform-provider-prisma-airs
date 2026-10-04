@@ -17,11 +17,30 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `id` | `string` | computed | — | Terraform resource ID (same as uuid). |
 | `name` | `string` | required | — | Target name. |
 | `network_broker_channel_uuid` | `string` | optional | — | Preexisting Network Broker channel UUID. This resource never creates channels. |
-| `response_mode` | `string` | computed | — | REST or STREAMING, inferred from the selected connection block. |
+| `response_mode` | `string` | computed | — | REST or STREAMING for endpoint connections; null for adapter-controlled transport. |
 | `status` | `string` | computed | — | Target status. |
 | `target_type` | `string` | optional, computed | — | Target category. |
+| `unavailable_fields` | `list(string)` | computed | — | Payload/header paths explicitly redacted by the API. Writes require original values at these paths; no-op adoption does not. |
 | `updated_at` | `string` | computed | — | Update timestamp. |
 | `uuid` | `string` | computed | — | Target UUID. |
+
+## adapter
+
+Nesting: `single`.
+
+### adapter
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `uuid` | `string` | optional | — | Existing or Terraform-managed adapter UUID. |
+| `variable_overrides` | `map(object)` | optional | yes | Complete target override key set. New overrides require values; redacted imported overrides cannot be written until supplied. |
+
+#### adapter.variable_overrides
+
+| Attribute | Type | Presence | Sensitive | Description |
+| --- | --- | --- | --- | --- |
+| `type` | `string` | required | — | VAR or SECRET. |
+| `value` | `string` | optional | yes | Override value. Unavailable imported SECRET values remain null for read-only adoption. |
 
 ## basic_auth
 
@@ -48,9 +67,9 @@ Nesting: `single`.
 | `api_endpoint` | `string` | optional | — | Optional provider endpoint override. |
 | `model_id` | `string` | optional | — | AWS Bedrock model_id. |
 | `region` | `string` | optional | — | AWS Bedrock region. |
-| `request_body` | `dynamic` | optional | — | Native HCL request object containing {INPUT}; required for text targets. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret provider request headers. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. |
+| `request_body` | `dynamic` | optional | yes | Native HCL request object containing {INPUT}; required for text targets. |
+| `request_headers` | `map(string)` | optional | yes | Desired provider request headers. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. |
 | `response_key` | `string` | optional | — | Desired response path. Native provider read-back may omit this value; unavailable on import. |
 | `session_token` | `string` | optional | yes | Optional AWS session token. |
 
@@ -63,9 +82,9 @@ Nesting: `single`.
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `api_endpoint` | `string` | optional | — | Target API URL; management does not execute inference. |
-| `request_body` | `dynamic` | optional | — | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret request headers. Put credentials in an authentication block. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
+| `request_body` | `dynamic` | optional | yes | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
+| `request_headers` | `map(string)` | optional | yes | Desired request headers. Put credentials in an authentication block. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
 | `response_key` | `string` | optional | — | Path to the model response. |
 
 ## databricks
@@ -80,12 +99,12 @@ Nesting: `single`.
 | `api_endpoint` | `string` | optional | — | Optional provider endpoint override. |
 | `client_id` | `string` | optional | yes | Use access_token, or client_id and secret for OAuth; never combine them. |
 | `model_name` | `string` | optional | — | Serving model name. |
-| `request_body` | `dynamic` | optional | — | Native HCL request object containing {INPUT}; required for text targets. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret provider request headers. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. |
+| `request_body` | `dynamic` | optional | yes | Native HCL request object containing {INPUT}; required for text targets. |
+| `request_headers` | `map(string)` | optional | yes | Desired provider request headers. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. |
 | `response_key` | `string` | optional | — | Desired response path. Native provider read-back may omit this value; unavailable on import. |
-| `response_stop_key` | `string` | optional | — | Databricks streaming completion field. |
-| `response_stop_value` | `string` | optional | — | Databricks streaming completion value. |
+| `response_stop_key` | `string` | optional | — | Databricks streaming completion field. Imported empty values permit read-only adoption; writes require a nonempty value. |
+| `response_stop_value` | `string` | optional | — | Databricks streaming completion value. Imported empty values permit read-only adoption; writes require a nonempty value. |
 | `secret` | `string` | optional | yes | Use access_token, or client_id and secret for OAuth; never combine them. |
 | `workspace_url` | `string` | optional | — | Databricks workspace URL. |
 
@@ -110,9 +129,9 @@ Nesting: `single`.
 | `api_endpoint` | `string` | optional | — | Optional provider endpoint override. |
 | `api_key` | `string` | optional | yes | Provider credential. Unavailable on import; supply the desired value. |
 | `model_name` | `string` | optional | — | Provider model name. |
-| `request_body` | `dynamic` | optional | — | Native HCL request object containing {INPUT}; required for text targets. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret provider request headers. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. |
+| `request_body` | `dynamic` | optional | yes | Native HCL request object containing {INPUT}; required for text targets. |
+| `request_headers` | `map(string)` | optional | yes | Desired provider request headers. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. |
 | `response_key` | `string` | optional | — | Desired response path. Native provider read-back may omit this value; unavailable on import. |
 
 ## oauth2_auth
@@ -141,9 +160,9 @@ Nesting: `single`.
 | `api_endpoint` | `string` | optional | — | Optional provider endpoint override. |
 | `api_key` | `string` | optional | yes | Provider credential. Unavailable on import; supply the desired value. |
 | `model_name` | `string` | optional | — | Provider model name. |
-| `request_body` | `dynamic` | optional | — | Native HCL request object containing {INPUT}; required for text targets. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret provider request headers. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. |
+| `request_body` | `dynamic` | optional | yes | Native HCL request object containing {INPUT}; required for text targets. |
+| `request_headers` | `map(string)` | optional | yes | Desired provider request headers. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. |
 | `response_key` | `string` | optional | — | Desired response path. Native provider read-back may omit this value; unavailable on import. |
 
 ## rest
@@ -155,9 +174,9 @@ Nesting: `single`.
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `api_endpoint` | `string` | optional | — | Target API URL; management does not execute inference. |
-| `request_body` | `dynamic` | optional | — | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret request headers. Put credentials in an authentication block. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
+| `request_body` | `dynamic` | optional | yes | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
+| `request_headers` | `map(string)` | optional | yes | Desired request headers. Put credentials in an authentication block. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
 | `response_key` | `string` | optional | — | Path to the model response. |
 
 ## streaming
@@ -169,9 +188,9 @@ Nesting: `single`.
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
 | `api_endpoint` | `string` | optional | — | Target API URL; management does not execute inference. |
-| `request_body` | `dynamic` | optional | — | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
-| `request_headers` | `map(string)` | optional | — | Nonsecret request headers. Put credentials in an authentication block. |
-| `response_body` | `dynamic` | optional | — | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
+| `request_body` | `dynamic` | optional | yes | Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal. |
+| `request_headers` | `map(string)` | optional | yes | Desired request headers. Put credentials in an authentication block. |
+| `response_body` | `dynamic` | optional | yes | Desired native HCL response object. Read-back cannot reliably detect changes inside this payload. |
 | `response_key` | `string` | optional | — | Path to the model response. |
-| `response_stop_key` | `string` | optional | — | Streaming completion field. |
-| `response_stop_value` | `string` | optional | — | Streaming completion value. |
+| `response_stop_key` | `string` | optional | — | Streaming completion field. Imported empty values permit read-only adoption; writes require a nonempty value. |
+| `response_stop_value` | `string` | optional | — | Streaming completion value. Imported empty values permit read-only adoption; writes require a nonempty value. |

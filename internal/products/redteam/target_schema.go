@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var targetFamilies = []string{"openai", "hugging_face", "databricks", "bedrock", "custom", "rest", "streaming"}
+var targetFamilies = []string{"openai", "hugging_face", "databricks", "bedrock", "custom", "rest", "streaming", "adapter"}
 var targetAuthBlocks = []string{"headers_auth", "basic_auth", "oauth2_auth"}
 
 func targetString(sensitive bool, description string) schema.StringAttribute {
@@ -26,6 +26,12 @@ func targetBlocks() map[string]schema.Block {
 	for _, name := range targetFamilies {
 		attrs := map[string]schema.Attribute{}
 		switch name {
+		case "adapter":
+			attrs["uuid"] = targetString(false, "Existing or Terraform-managed adapter UUID.")
+			attrs["variable_overrides"] = schema.MapNestedAttribute{Optional: true, Sensitive: true, Description: "Complete target override key set. New overrides require values; redacted imported overrides cannot be written until supplied.", NestedObject: schema.NestedAttributeObject{Attributes: map[string]schema.Attribute{
+				"type":  schema.StringAttribute{Required: true, Validators: []validator.String{stringvalidator.OneOf("VAR", "SECRET")}, Description: "VAR or SECRET."},
+				"value": schema.StringAttribute{Optional: true, Sensitive: true, Description: "Override value. Unavailable imported SECRET values remain null for read-only adoption."},
+			}}}
 		case "openai", "hugging_face":
 			attrs["api_key"] = targetString(true, "Provider credential. Unavailable on import; supply the desired value.")
 			attrs["model_name"] = targetString(false, "Provider model name.")
@@ -35,8 +41,8 @@ func targetBlocks() map[string]schema.Block {
 			}
 			attrs["session_token"] = targetString(true, "Optional AWS session token.")
 		case "databricks":
-			attrs["response_stop_key"] = targetString(false, "Databricks streaming completion field.")
-			attrs["response_stop_value"] = targetString(false, "Databricks streaming completion value.")
+			attrs["response_stop_key"] = schema.StringAttribute{Optional: true, Description: "Databricks streaming completion field. Imported empty values permit read-only adoption; writes require a nonempty value."}
+			attrs["response_stop_value"] = schema.StringAttribute{Optional: true, Description: "Databricks streaming completion value. Imported empty values permit read-only adoption; writes require a nonempty value."}
 			attrs["workspace_url"] = targetString(false, "Databricks workspace URL.")
 			attrs["model_name"] = targetString(false, "Serving model name.")
 			for _, field := range []string{"access_token", "client_id", "secret"} {
@@ -44,21 +50,21 @@ func targetBlocks() map[string]schema.Block {
 			}
 		default:
 			attrs["api_endpoint"] = targetString(false, "Target API URL; management does not execute inference.")
-			attrs["request_headers"] = schema.MapAttribute{Optional: true, ElementType: types.StringType, Description: "Nonsecret request headers. Put credentials in an authentication block."}
-			attrs["request_body"] = schema.DynamicAttribute{Optional: true, Description: "Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal."}
-			attrs["response_body"] = schema.DynamicAttribute{Optional: true, Description: "Desired native HCL response object. Read-back cannot reliably detect changes inside this payload."}
+			attrs["request_headers"] = schema.MapAttribute{Optional: true, Sensitive: true, ElementType: types.StringType, Description: "Desired request headers. Put credentials in an authentication block."}
+			attrs["request_body"] = schema.DynamicAttribute{Optional: true, Sensitive: true, Description: "Desired native HCL request object. Nested lists and nulls are supported; JSON serialization is internal."}
+			attrs["response_body"] = schema.DynamicAttribute{Optional: true, Sensitive: true, Description: "Desired native HCL response object. Read-back cannot reliably detect changes inside this payload."}
 			attrs["response_key"] = targetString(false, "Path to the model response.")
 			if name == "streaming" {
-				attrs["response_stop_key"] = targetString(false, "Streaming completion field.")
-				attrs["response_stop_value"] = targetString(false, "Streaming completion value.")
+				attrs["response_stop_key"] = schema.StringAttribute{Optional: true, Description: "Streaming completion field. Imported empty values permit read-only adoption; writes require a nonempty value."}
+				attrs["response_stop_value"] = schema.StringAttribute{Optional: true, Description: "Streaming completion value. Imported empty values permit read-only adoption; writes require a nonempty value."}
 			}
 		}
 		if name == "openai" || name == "hugging_face" || name == "databricks" || name == "bedrock" {
 			attrs["api_endpoint"] = targetString(false, "Optional provider endpoint override.")
-			attrs["request_body"] = schema.DynamicAttribute{Optional: true, Description: "Native HCL request object containing {INPUT}; required for text targets."}
-			attrs["response_body"] = schema.DynamicAttribute{Optional: true, Description: "Desired native HCL response object."}
+			attrs["request_body"] = schema.DynamicAttribute{Optional: true, Sensitive: true, Description: "Native HCL request object containing {INPUT}; required for text targets."}
+			attrs["response_body"] = schema.DynamicAttribute{Optional: true, Sensitive: true, Description: "Desired native HCL response object."}
 			attrs["response_key"] = targetString(false, "Desired response path. Native provider read-back may omit this value; unavailable on import.")
-			attrs["request_headers"] = schema.MapAttribute{Optional: true, ElementType: types.StringType, Description: "Nonsecret provider request headers."}
+			attrs["request_headers"] = schema.MapAttribute{Optional: true, Sensitive: true, ElementType: types.StringType, Description: "Desired provider request headers."}
 		}
 
 		blocks[name] = schema.SingleNestedBlock{Attributes: attrs, Description: "Native " + strings.ToUpper(name) + " connection. Exactly one connection block is required."}

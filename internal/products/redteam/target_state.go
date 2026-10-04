@@ -29,10 +29,10 @@ func emptyTargetAttributes(name string) map[string]attr.Value {
 	return values
 }
 
-// Reconcile observable fixed fields only. Desired credentials and arbitrary
-// payloads retain their exact values and concrete HCL types. Imports leave
-// those inputs null rather than treating a mask as a usable credential.
+// Reconcile fixed fields and recover usable payloads on import. Configured
+// payloads retain their concrete HCL types, and masks never become credentials.
 func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact, state *RedTeamTargetResourceModel, diags *diag.Diagnostics) {
+	state.UnavailableFields = types.ListValueMust(types.StringType, []attr.Value{})
 	state.ID = types.StringValue(target.UUID)
 	state.UUID = state.ID
 	state.Name = types.StringValue(target.Name)
@@ -44,6 +44,7 @@ func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact,
 	if value, ok := target.APIEndpointType.Get(); ok {
 		state.APIEndpointType = types.StringValue(string(value))
 	}
+	state.ResponseMode = types.StringNull()
 	if value, ok := target.ResponseMode.Get(); ok {
 		state.ResponseMode = types.StringValue(string(value))
 	}
@@ -62,6 +63,9 @@ func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact,
 	}
 	state.ConnectionType = types.StringValue(string(connection))
 	family := strings.ToLower(string(connection))
+	if connection == rtschema.TargetConnectionTypeCustomTargetAdapter {
+		family = "adapter"
+	}
 	selected, _, _ := selectedTargetBlock(state, targetFamilies)
 	mode, _ := target.ResponseMode.Get()
 	if family == "custom" {
@@ -73,7 +77,7 @@ func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact,
 	}
 	block, supported := state.blocks()[family]
 	if !supported {
-		diags.AddError("Unsupported target connection type", "This provider supports only openai, hugging_face, databricks, bedrock, custom, rest and streaming.")
+		diags.AddError("Unsupported target connection type", "This provider supports openai, hugging_face, databricks, bedrock, custom, rest, streaming and adapter.")
 		return
 	}
 	for _, name := range targetFamilies {
@@ -84,6 +88,21 @@ func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact,
 	attrs := emptyTargetAttributes(family)
 	if !block.IsNull() && !block.IsUnknown() {
 		attrs = block.Attributes()
+	}
+	if family == "adapter" {
+		if uuid, ok := target.AdapterUUID.Get(); ok {
+			attrs["uuid"] = types.StringValue(uuid)
+		}
+		if overrides, ok := target.AdapterVariableOverrides.Get(); ok && (len(overrides) != 0 || !attrs["variable_overrides"].IsNull()) {
+			synthetic := &rtschema.CustomTargetAdapter{Variables: &overrides}
+			prior := adapterModel{Variables: attrs["variable_overrides"].(types.Map)}
+			mapAdapterVariables(ctx, synthetic, &prior, diags)
+			attrs["variable_overrides"] = prior.Variables
+		}
+		var d diag.Diagnostics
+		*block, d = types.ObjectValue(targetObjectTypes(family), attrs)
+		diags.Append(d...)
+		return
 	}
 	var remote map[string]json.RawMessage
 	if value, ok := target.ConnectionParams.Get(); ok {
@@ -106,10 +125,19 @@ func mapTargetDetailsToState(ctx context.Context, target *rtschema.TargetRedact,
 	}
 	fixed := []string{"model_name", "workspace_url", "region", "model_id", "api_endpoint", "response_key", "response_stop_key", "response_stop_value"}
 	readTargetStrings(attrs, remote, fixed, nil)
+	readTargetObservable(ctx, attrs, remote, map[string]string{"request_body": "request_json", "response_body": "response_json", "request_headers": "request_headers"}, diags)
 	var d diag.Diagnostics
 	*block, d = types.ObjectValue(targetObjectTypes(family), attrs)
 	diags.Append(d...)
 	mapTargetAuthToState(ctx, target, state, diags)
+	var authRemote map[string]json.RawMessage
+	if raw, ok := target.AuthConfig.Get(); ok {
+		if json.Unmarshal(raw, &authRemote) != nil {
+			diags.AddError("Invalid target authentication", "The service returned invalid authentication settings.")
+		}
+	}
+	authName, _, _ := selectedTargetBlock(state, targetAuthBlocks)
+	state.UnavailableFields = targetUnavailableFields(ctx, family, remote, authName, authRemote, diags)
 }
 
 func readTargetStrings(attrs map[string]attr.Value, remote map[string]json.RawMessage, fixed []string, mapping map[string]string) {
@@ -134,7 +162,7 @@ func readTargetStrings(attrs map[string]attr.Value, remote map[string]json.RawMe
 	}
 }
 
-func mapTargetAuthToState(_ context.Context, target *rtschema.TargetRedact, state *RedTeamTargetResourceModel, diags *diag.Diagnostics) {
+func mapTargetAuthToState(ctx context.Context, target *rtschema.TargetRedact, state *RedTeamTargetResourceModel, diags *diag.Diagnostics) {
 	kind, _ := target.AuthType.Get()
 	name := map[string]string{"HEADERS": "headers_auth", "BASIC_AUTH": "basic_auth", "OAUTH2": "oauth2_auth"}[string(kind)]
 	for _, other := range targetAuthBlocks {
@@ -159,6 +187,7 @@ func mapTargetAuthToState(_ context.Context, target *rtschema.TargetRedact, stat
 	}
 	readTargetStrings(attrs, remote, []string{"token_url", "response_key", "location"}, map[string]string{"token_url": "oauth2_token_url", "response_key": "oauth2_token_response_key", "location": "basic_auth_location"})
 	if name == "oauth2_auth" {
+		readTargetObservable(ctx, attrs, remote, map[string]string{"inject_header": "oauth2_inject_header", "headers": "oauth2_headers", "body": "oauth2_body_params"}, diags)
 		if raw, ok := remote["oauth2_expiry_minutes"]; ok {
 			var value *int64
 			if json.Unmarshal(raw, &value) == nil {

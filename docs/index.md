@@ -11,7 +11,7 @@ Terraform provider for Palo Alto Networks **Prisma AIRS** — manage AI security
 The [product catalog](https://cdot65.github.io/terraform-provider-prisma-airs/reference/) derives available resources and data sources from the provider registrations:
 
 - **AI Runtime Security:** profiles, custom topics, API keys, customer apps, DLP profiles, and deployment profiles.
-- **AI Red Teaming:** targets and custom prompt sets.
+- **AI Red Teaming:** targets and custom prompt sets; the development candidate also adds adapter ownership and discovery.
 - **AI Gateway:** managed workspaces and dedicated IAM scopes, routing configs, guardrails, integrations, workspace bindings, MCP servers, keys, limits, secret references, deployments, and metadata discovery.
 - **AI Supply Chain Security:** Model Security groups/rules, Skill Scanning tenant configuration, policy rules, trusted skills, and scan discovery.
 

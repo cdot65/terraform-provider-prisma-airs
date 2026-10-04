@@ -89,13 +89,16 @@ func readNative(ctx context.Context, value any, prior attr.Value) (attr.Value, e
 		if err != nil {
 			return nil, err
 		}
+		if _, nestedDynamic := v.(types.Dynamic); nestedDynamic {
+			return v, nil
+		}
 		return types.DynamicValue(v), nil
 	}
 	if value == nil {
 		if prior != nil {
 			return nullNative(ctx, prior.Type(ctx))
 		}
-		return types.StringNull(), nil
+		return types.DynamicNull(), nil
 	}
 	switch x := value.(type) {
 	case string:

@@ -50,16 +50,18 @@ type RedTeamTargetResourceModel struct {
 	Custom                   types.Object `tfsdk:"custom"`
 	Rest                     types.Object `tfsdk:"rest"`
 	Streaming                types.Object `tfsdk:"streaming"`
+	Adapter                  types.Object `tfsdk:"adapter"`
 	HeadersAuth              types.Object `tfsdk:"headers_auth"`
 	BasicAuth                types.Object `tfsdk:"basic_auth"`
 	OAuth2Auth               types.Object `tfsdk:"oauth2_auth"`
+	UnavailableFields        types.List   `tfsdk:"unavailable_fields"`
 	Status                   types.String `tfsdk:"status"`
 	CreatedAt                types.String `tfsdk:"created_at"`
 	UpdatedAt                types.String `tfsdk:"updated_at"`
 }
 
 func (m *RedTeamTargetResourceModel) blocks() map[string]*types.Object {
-	return map[string]*types.Object{"openai": &m.OpenAI, "hugging_face": &m.HuggingFace, "databricks": &m.Databricks, "bedrock": &m.Bedrock, "custom": &m.Custom, "rest": &m.Rest, "streaming": &m.Streaming, "headers_auth": &m.HeadersAuth, "basic_auth": &m.BasicAuth, "oauth2_auth": &m.OAuth2Auth}
+	return map[string]*types.Object{"openai": &m.OpenAI, "hugging_face": &m.HuggingFace, "databricks": &m.Databricks, "bedrock": &m.Bedrock, "custom": &m.Custom, "rest": &m.Rest, "streaming": &m.Streaming, "adapter": &m.Adapter, "headers_auth": &m.HeadersAuth, "basic_auth": &m.BasicAuth, "oauth2_auth": &m.OAuth2Auth}
 }
 func (r *redTeamTargetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_red_team_target"
@@ -72,9 +74,10 @@ func (r *redTeamTargetResource) Schema(_ context.Context, _ resource.SchemaReque
 		"description":                 schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""), Description: "Target description."},
 		"target_type":                 schema.StringAttribute{Optional: true, Computed: true, Description: "Target category.", Validators: []validator.String{stringvalidator.OneOf("APPLICATION", "AGENT", "MODEL")}},
 		"connection_type":             schema.StringAttribute{Computed: true, Description: "Provider inferred from the selected connection block."},
-		"response_mode":               schema.StringAttribute{Computed: true, Description: "REST or STREAMING, inferred from the selected connection block."},
+		"response_mode":               schema.StringAttribute{Computed: true, Description: "REST or STREAMING for endpoint connections; null for adapter-controlled transport."},
 		"api_endpoint_type":           schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("PUBLIC"), Description: "Endpoint accessibility.", Validators: []validator.String{stringvalidator.OneOf("PUBLIC", "PRIVATE", "NETWORK_BROKER")}},
 		"network_broker_channel_uuid": targetString(false, "Preexisting Network Broker channel UUID. This resource never creates channels."),
+		"unavailable_fields":          schema.ListAttribute{Computed: true, ElementType: types.StringType, Description: "Payload/header paths explicitly redacted by the API. Writes require original values at these paths; no-op adoption does not."},
 		"status":                      schema.StringAttribute{Computed: true, Description: "Target status."},
 		"created_at":                  schema.StringAttribute{Computed: true, Description: "Creation timestamp.", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 		"updated_at":                  schema.StringAttribute{Computed: true, Description: "Update timestamp."},
@@ -97,9 +100,15 @@ func (r *redTeamTargetResource) ModifyPlan(ctx context.Context, req resource.Mod
 	family, block, unknownFamily := selectedTargetBlock(&plan, targetFamilies)
 	if !unknownFamily && family != "" && family != "multiple" {
 		connection := strings.ToUpper(family)
+		if family == "adapter" {
+			connection = "CUSTOM_TARGET_ADAPTER"
+		}
 		mode := "REST"
 		targetType := "MODEL"
-		if family == "custom" || family == "rest" || family == "streaming" {
+		if family == "adapter" {
+			targetType = "APPLICATION"
+		}
+		if endpointTargetFamily(family) {
 			connection = "CUSTOM"
 			targetType = "APPLICATION"
 		}
@@ -107,14 +116,18 @@ func (r *redTeamTargetResource) ModifyPlan(ctx context.Context, req resource.Mod
 			mode = "STREAMING"
 		}
 		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("connection_type"), types.StringValue(connection))...)
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("response_mode"), types.StringValue(mode))...)
+		plannedMode := types.StringValue(mode)
+		if family == "adapter" {
+			plannedMode = types.StringNull()
+		}
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("response_mode"), plannedMode)...)
 		if plan.TargetType.IsUnknown() {
 			plan.TargetType = types.StringValue(targetType)
 			resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("target_type"), plan.TargetType)...)
 		}
-		priorNative := priorFamily != "custom" && priorFamily != "rest" && priorFamily != "streaming"
-		native := family != "custom" && family != "rest" && family != "streaming"
-		if priorFamily != family && (priorNative || native) {
+		priorNative := nativeTargetFamily(priorFamily)
+		native := nativeTargetFamily(family)
+		if priorFamily != family && (priorNative || native || priorFamily == "adapter" || family == "adapter") {
 			resp.RequiresReplace = append(resp.RequiresReplace, path.Root(family))
 		}
 		if priorFamily == family && !priorBlock.IsNull() && !priorBlock.IsUnknown() && !block.IsNull() && !block.IsUnknown() {
@@ -213,6 +226,10 @@ func (r *redTeamTargetResource) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	validateTargetUnavailable(&state, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	create := targetRequest(&plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -299,7 +316,7 @@ func (r *redTeamTargetResource) ImportState(ctx context.Context, req resource.Im
 		}
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	resp.Diagnostics.AddWarning("Imported target secrets unavailable", "Supply desired credentials and payloads in the native connection and authentication blocks before managing those settings. Masked API values are never imported as usable secrets.")
+	resp.Diagnostics.AddWarning("Imported target secrets unavailable", "Observable payloads are recovered. Missing or masked credentials remain null and can be kept for a read-only no-op plan. Supply complete original inputs before any create or update.")
 }
 func safeTargetError(err error) string {
 	// Target service errors can echo request credentials. Return only typed error

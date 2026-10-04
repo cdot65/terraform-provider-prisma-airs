@@ -6,7 +6,7 @@ const routes = [
   'overview/', 'getting-started/', ...['installation', 'configuration', 'quick-start', 'authentication'].map(name => `getting-started/${name}/`),
   ...entries.map(entry => `${entry.guide}/`), 'products/gateway/',
   ...['authentication', 'managing-security-profiles', 'model-security-workflow', 'red-team-testing', 'gateway-workflow', 'migration', 'import-and-state', 'troubleshooting'].map(name => `guides/${name}/`),
-  'examples/', ...['runtime-policy', 'native-targets', 'model-security', 'gateway', 'repository-configurations', 'gateway-workspaces', 'skill-scanning', 'skill-onboarding'].map(name => `examples/${name}/`),
+  'examples/', ...['runtime-policy', 'native-targets', 'red-team-adapters', 'model-security', 'gateway', 'repository-configurations', 'gateway-workspaces', 'skill-scanning', 'skill-onboarding'].map(name => `examples/${name}/`),
   'reference/', ...['provider-configuration', 'environment-variables', 'error-handling'].map(name => `reference/${name}/`),
   'reference/generated/provider/', ...entries.map(entry => `reference/generated/${entry.name}/`),
   ...['architecture', 'documentation', 'design-parity', 'sdk-upgrade-verification', 'product-refactor-verification'].map(name => `development/${name}/`),
@@ -153,4 +153,17 @@ test('catalog lookup and GPT/Claude lesson expose slug discovery without UUID in
   await expect(page.locator('article')).toContainText('"active" = 79');
   await expect(page.locator('article')).toContainText('gpt-4.1-2025-04-14');
   await expect(page.locator('article')).toContainText('successful Claude inference remains unverified');
+});
+
+test('adapter ownership, lookup, and execution guide have distinct lifecycle contracts', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_red_team_adapter/');
+  await expect(page.locator('article')).toContainText('Exact resource attributes');
+  await expect(page.locator('article')).toContainText('validation_prompt');
+  await page.goto('reference/generated/data-source-prisma-airs_red_team_adapter/');
+  await expect(page.locator('article')).toContainText('Exact data source attributes');
+  await expect(page.locator('article')).not.toContainText('validation_prompt');
+  await page.goto('examples/red-team-adapters/');
+  await expect(page.locator('article')).toContainText('draft path creates just the adapter');
+  await expect(page.locator('article')).toContainText('Use provider v0.12.0 or later');
+  await expect(page.locator('pre.language-hcl')).toContainText('var.activate ? 1 : 0');
 });

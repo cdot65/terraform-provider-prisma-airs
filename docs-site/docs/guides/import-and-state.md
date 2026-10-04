@@ -11,6 +11,7 @@ Import establishes Terraform ownership of existing AIRS infrastructure. Write th
 | Model Security group | Group UUID |
 | Red Team target | UUID or matching `family/uuid` hint |
 | Custom prompt set | Prompt-set UUID |
+| Red Team adapter | Adapter UUID; script and complete variable inventory |
 
 ```bash
 terraform import prisma-airs_runtime_security_profile.production production-profile
@@ -33,7 +34,11 @@ Destroy deletes every revision under the currently managed name, including revis
 
 ## Secrets and unavailable values
 
-An imported API key has a null key secret because the one-time secret cannot be retrieved. Imported targets have null values for unrecoverable credentials, payloads, request headers, and omitted native response keys. Configure desired values before editing connection settings.
+An imported API key has a null key secret because the one-time secret cannot be retrieved. Imported targets recover usable observable payloads, request headers, OAuth injection templates, and fixed settings. Unavailable credentials and masked inputs remain null: matching configuration permits read/refresh and no-op plans, while writes require complete inputs. `unavailable_fields` records explicit redactions that must be restored before updating. Omitted native response keys remain null until supplied.
+
+[Adapter import](../resources/red-team-adapter.md) recovers scripts, channels, and the complete variable key/type inventory. Keep every SECRET key with a null value to retain its stored value during an adapter update. Omitted keys are deleted. Imported ACTIVE adapters record execution enabled; subsequent writes with that setting execute the script. Import itself never executes it.
+
+Native Gateway routing objects support bare HCL nulls after import. Existing state created by older releases may retain typed nulls; back up state and reimport affected routing configurations to normalize their types without API writes, then verify an ordinary plan.
 
 `api_key`, `auth_code`, deployment-profile `profile_id` and `details`, and target authentication values are sensitive. Sensitivity hides ordinary terminal output but retains secrets in Terraform state and saved plans. Use an access-controlled backend and sensitive output declarations.
 
