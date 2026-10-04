@@ -4,7 +4,7 @@ Create two upstream connections in an existing Gateway workspace without supplyi
 
 ## Before you start
 
-This example uses the new `prisma-airs_gateway_ai_providers` data source, which is **pending release** and unavailable in Registry provider 0.10.0. Build the catalog-capable source branch and configure a [development override](../getting-started/installation.md#use-the-updated-provider-from-source). The version constraint below reserves this configuration for a later release; development overrides bypass Registry version selection. Until the feature is published, skip `terraform init` and use that local build.
+This example uses the new `prisma-airs_gateway_ai_providers` data source, which is **pending release** and unavailable in Registry provider 0.10.0. Install Go 1.25.6+ and `make`, build the catalog-capable source branch, and configure a [development override](../getting-started/installation.md#use-the-updated-provider-from-source). The version constraint below reserves this configuration for a later release; development overrides bypass Registry version selection. Until the feature is published, skip `terraform init` and use that local build.
 
 Load the three [management environment variables](../getting-started/authentication.md). You also need an existing Gateway workspace, a Gateway inference deployment, and OpenAI and Anthropic **API** credentials with access to the selected models. A ChatGPT subscription is separate from OpenAI API access; this example routes GPT chat completions through the OpenAI API.
 
