@@ -38,6 +38,11 @@ variable "auth_code" {
   sensitive = true
   ephemeral = true
   default   = null
+
+  validation {
+    condition     = var.auth_code == null || var.auth_code_version != null
+    error_message = "Set auth_code_version when supplying an authorization code."
+  }
 }
 
 variable "auth_code_version" {
