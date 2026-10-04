@@ -4,7 +4,7 @@ Save an adapter draft, activate it deliberately, and register an adapter-backed 
 
 ## Before you start
 
-Load the [management environment variables](../getting-started/authentication.md). You need an existing online Network Broker channel with text adapter support. Terraform manages the adapter and target; broker installation and upgrades remain prerequisites. This feature is under development and is not in provider v0.11.0 yet.
+Load the [management environment variables](../getting-started/authentication.md). You need an existing online Network Broker channel with text adapter support. Terraform manages the adapter and target; broker installation and upgrades remain prerequisites. Use provider v0.12.0 or later for adapter ownership and discovery.
 
 Save this as `adapter.py`:
 
