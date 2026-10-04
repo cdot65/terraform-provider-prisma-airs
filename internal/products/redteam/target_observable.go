@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -17,33 +18,32 @@ func targetContainsMask(value attr.Value) bool {
 	if value == nil || value.IsNull() || value.IsUnknown() {
 		return false
 	}
+	// Use the write serializer so every supported HCL collection is inspected.
+	decoded, err := targetJSONValue(value)
+	return err == nil && len(targetMaskedPaths(decoded, "")) != 0
+}
+
+// JSON Pointer suffixes retain masked leaf identities, including escaped keys.
+func targetMaskedPaths(value any, pointer string) []string {
+	var paths []string
 	switch v := value.(type) {
-	case types.String:
-		text := strings.TrimSpace(v.ValueString())
+	case string:
+		text := strings.TrimSpace(v)
 		upper := strings.ToUpper(text)
-		return (strings.Contains(text, "***")) || upper == "MASKED-BY-SERVICE" || upper == "<REDACTED>" || upper == "[REDACTED]"
-	case types.Dynamic:
-		return targetContainsMask(v.UnderlyingValue())
-	case types.Object:
-		for _, item := range v.Attributes() {
-			if targetContainsMask(item) {
-				return true
-			}
+		if strings.Contains(text, "***") || upper == "MASKED-BY-SERVICE" || upper == "<REDACTED>" || upper == "[REDACTED]" {
+			paths = append(paths, pointer)
 		}
-	case types.Map:
-		for _, item := range v.Elements() {
-			if targetContainsMask(item) {
-				return true
-			}
+	case map[string]any:
+		for key, item := range v {
+			escaped := strings.ReplaceAll(strings.ReplaceAll(key, "~", "~0"), "/", "~1")
+			paths = append(paths, targetMaskedPaths(item, pointer+"/"+escaped)...)
 		}
-	case types.Tuple:
-		for _, item := range v.Elements() {
-			if targetContainsMask(item) {
-				return true
-			}
+	case []any:
+		for i, item := range v {
+			paths = append(paths, targetMaskedPaths(item, pointer+"/"+strconv.Itoa(i))...)
 		}
 	}
-	return false
+	return paths
 }
 
 // Recover usable payloads on import. Configured payloads retain their concrete
@@ -146,8 +146,8 @@ func targetUnavailableFields(ctx context.Context, family string, params map[stri
 			if decoder.Decode(&value) != nil {
 				continue
 			}
-			if targetContainsMask(targetReadValue(ctx, value, diags)) {
-				paths = append(paths, prefix+"."+field)
+			for _, pointer := range targetMaskedPaths(value, "") {
+				paths = append(paths, prefix+"."+field+pointer)
 			}
 		}
 	}
@@ -164,17 +164,53 @@ func targetUnavailableFields(ctx context.Context, family string, params map[stri
 
 func validateTargetUnavailable(state, plan *RedTeamTargetResourceModel, diags *diag.Diagnostics) {
 	for _, item := range state.UnavailableFields.Elements() {
-		parts := strings.SplitN(item.(types.String).ValueString(), ".", 2)
+		recorded := item.(types.String).ValueString()
+		field, pointer, hasPointer := strings.Cut(recorded, "/")
+		parts := strings.SplitN(field, ".", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		block, exists := plan.blocks()[parts[0]]
-		if !exists || block.IsNull() || block.IsUnknown() {
-			continue
+		blockName := parts[0]
+		family, _, _ := selectedTargetBlock(plan, targetFamilies)
+		if endpointTargetFamily(blockName) && endpointTargetFamily(family) {
+			// REST, custom, and streaming share CUSTOM ownership in the API.
+			blockName = family
 		}
-		value, exists := block.Attributes()[parts[1]]
-		if !exists || value.IsNull() || value.IsUnknown() || targetContainsMask(value) {
-			diags.AddError("Unavailable imported target input", parts[0]+"."+parts[1]+" was redacted by the service. Supply its original complete value before updating this target.")
+		block, exists := plan.blocks()[blockName]
+		complete := false
+		if exists && !block.IsNull() && !block.IsUnknown() {
+			if value, exists := block.Attributes()[parts[1]]; exists {
+				decoded, err := targetJSONValue(value)
+				if err == nil {
+					if hasPointer {
+						decoded = targetPointerValue(decoded, strings.Split(pointer, "/"))
+					}
+					text, ok := decoded.(string)
+					complete = ok && strings.TrimSpace(text) != "" && len(targetMaskedPaths(text, "")) == 0
+				}
+			}
+		}
+		if !complete {
+			diags.AddError("Unavailable imported target input", recorded+" was redacted by the service. Supply its original complete value before updating this target.")
 		}
 	}
+}
+
+func targetPointerValue(value any, segments []string) any {
+	for _, segment := range segments {
+		switch v := value.(type) {
+		case map[string]any:
+			key := strings.ReplaceAll(strings.ReplaceAll(segment, "~1", "/"), "~0", "~")
+			value = v[key]
+		case []any:
+			i, err := strconv.Atoi(segment)
+			if err != nil || i < 0 || i >= len(v) {
+				return nil
+			}
+			value = v[i]
+		default:
+			return nil
+		}
+	}
+	return value
 }

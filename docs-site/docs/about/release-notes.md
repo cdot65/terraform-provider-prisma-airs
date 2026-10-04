@@ -6,7 +6,7 @@
 - Save adapter drafts without execution by default; activate explicitly through an existing Network Broker. Preserve stored adapter secrets using null values while retaining the complete key inventory.
 - Recover observable target payloads and OAuth templates on import. Permit safe no-op adoption without unavailable credentials and reject incomplete or masked writes.
 - Preserve observed empty toxic-content/category actions and streaming stop strings during adoption. Fix Gateway native-null import and repeated refresh without suppressing real drift.
-- Add getting-started examples and real sanitized disposable-run evidence. Release and production publication remain pending the independent review gate.
+- Add getting-started examples and real sanitized disposable-run evidence. Release and production publication remain pending the independent Codex review gate.
 
 ## v0.11.0 — Gateway provider-family discovery
 

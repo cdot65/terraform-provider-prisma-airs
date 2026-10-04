@@ -12,6 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+func endpointTargetFamily(family string) bool {
+	return family == "custom" || family == "rest" || family == "streaming"
+}
+
+func nativeTargetFamily(family string) bool {
+	return !endpointTargetFamily(family) && family != "adapter"
+}
+
 func selectedTargetBlock(model *RedTeamTargetResourceModel, names []string) (string, types.Object, bool) {
 	var selected string
 	var value types.Object
@@ -39,10 +47,10 @@ func validateTargetConfig(model *RedTeamTargetResourceModel, diags *diag.Diagnos
 	if auth == "multiple" {
 		diags.AddError("Choose one authentication method", "Configure at most one of headers_auth, basic_auth or oauth2_auth.")
 	}
-	if family != "" && family != "multiple" && !unknown && !authUnknown && auth != "" && family != "custom" && family != "rest" && family != "streaming" {
+	if family != "" && family != "multiple" && !unknown && !authUnknown && auth != "" && !endpointTargetFamily(family) {
 		diags.AddError("Unsupported target authentication", "Native provider blocks contain their own credentials. Authentication blocks apply only to custom, rest and streaming connections.")
 	}
-	if family != "" && family != "multiple" && family != "custom" && family != "rest" && family != "streaming" && family != "adapter" && !model.TargetType.IsNull() && !model.TargetType.IsUnknown() && model.TargetType.ValueString() != "MODEL" {
+	if family != "" && family != "multiple" && nativeTargetFamily(family) && !model.TargetType.IsNull() && !model.TargetType.IsUnknown() && model.TargetType.ValueString() != "MODEL" {
 		diags.AddError("Unsupported provider target category", "Provider connection blocks require target_type = MODEL. Omit target_type to infer it.")
 	}
 	endpoint := model.APIEndpointType
@@ -229,7 +237,7 @@ func targetRequest(model *RedTeamTargetResourceModel, diags *diag.Diagnostics) r
 			params["auth_type"] = "OAUTH"
 		}
 	}
-	if family != "rest" && family != "custom" && family != "streaming" && family != "adapter" {
+	if nativeTargetFamily(family) {
 		provider := map[string]any{}
 		for _, key := range []string{"api_key", "model_name", "auth_type", "access_token", "client_id", "secret", "workspace_url", "access_id", "access_secret", "session_token", "region", "model_id"} {
 			if value, exists := params[key]; exists {

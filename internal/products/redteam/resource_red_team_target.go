@@ -108,7 +108,7 @@ func (r *redTeamTargetResource) ModifyPlan(ctx context.Context, req resource.Mod
 		if family == "adapter" {
 			targetType = "APPLICATION"
 		}
-		if family == "custom" || family == "rest" || family == "streaming" {
+		if endpointTargetFamily(family) {
 			connection = "CUSTOM"
 			targetType = "APPLICATION"
 		}
@@ -125,8 +125,8 @@ func (r *redTeamTargetResource) ModifyPlan(ctx context.Context, req resource.Mod
 			plan.TargetType = types.StringValue(targetType)
 			resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("target_type"), plan.TargetType)...)
 		}
-		priorNative := priorFamily != "custom" && priorFamily != "rest" && priorFamily != "streaming" && priorFamily != "adapter"
-		native := family != "custom" && family != "rest" && family != "streaming" && family != "adapter"
+		priorNative := nativeTargetFamily(priorFamily)
+		native := nativeTargetFamily(family)
 		if priorFamily != family && (priorNative || native || priorFamily == "adapter" || family == "adapter") {
 			resp.RequiresReplace = append(resp.RequiresReplace, path.Root(family))
 		}

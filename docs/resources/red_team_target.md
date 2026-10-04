@@ -56,7 +56,7 @@ Configure exactly one block. Payloads are native HCL objects or maps, with neste
 | `streaming` | `api_endpoint` | STREAMING |
 | `adapter` | `uuid`; optional `variable_overrides` | null (adapter-controlled) |
 
-All endpoint blocks accept `request_body`, `response_body`, `response_key`, and optional nonsecret `request_headers`. Native provider blocks accept optional `api_endpoint` overrides. All endpoint blocks require request/response payloads for writes; every block except OpenAI requires `response_key`. Streaming and Databricks require `response_stop_key` and `response_stop_value`.
+All endpoint blocks accept `request_body`, `response_body`, `response_key`, and optional sensitive `request_headers`. Native provider blocks accept optional `api_endpoint` overrides. All endpoint blocks require request/response payloads for writes; every block except OpenAI requires `response_key`. Streaming and Databricks require `response_stop_key` and `response_stop_value`.
 
 `target_type` defaults to `MODEL` for native providers and `APPLICATION` for custom transports. Native providers require `MODEL`. `api_endpoint_type` defaults to `PUBLIC`; `NETWORK_BROKER` requires a preexisting `network_broker_channel_uuid`. This resource never creates or removes channels.
 
@@ -78,7 +78,7 @@ Desired payloads, request headers, and credentials retain their configured value
 terraform import prisma-airs_red_team_target.chatbot rest/<uuid>
 ```
 
-Plain UUID import chooses `custom` for a CUSTOM/REST target. The optional `<family>/<uuid>` hint distinguishes `rest` from `custom` and must match the observed family. Imports recover usable request/response payloads, request headers, fixed fields, and OAuth injection templates returned by the service. Missing or masked inputs stay null. Match observable settings to get a read-only no-op plan even without original credentials. Create/update requires complete inputs; `unavailable_fields` identifies explicitly redacted payload/header paths that must be supplied before updating. Never copy a mask into configuration. Omitted native response keys remain null until supplied.
+Plain UUID import chooses `custom` for a CUSTOM/REST target. The optional `<family>/<uuid>` hint distinguishes `rest` from `custom` and must match the observed family. Imports recover usable request/response payloads, request headers, fixed fields, and OAuth injection templates returned by the service. Missing or masked inputs stay null. Match observable settings to get a read-only no-op plan even without original credentials. Create/update requires complete inputs; `unavailable_fields` identifies each redacted leaf, such as `rest.request_headers/Authorization`. Supply each original nonempty value before updating, including when changing between `rest`, `custom`, and `streaming`. Nested keys use JSON Pointer escaping (`~0` for `~`, `~1` for `/`); arrays use zero-based indices. Empty or partial replacement objects cannot clear this guard. Never copy a mask into configuration. Omitted native response keys remain null until supplied.
 
 Outputs include `id`, `uuid`, `connection_type`, `response_mode`, `status`, `created_at`, and `updated_at`. Name and description are configurable; an omitted description becomes an empty string.
 
