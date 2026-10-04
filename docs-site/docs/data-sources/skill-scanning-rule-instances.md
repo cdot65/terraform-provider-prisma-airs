@@ -7,8 +7,8 @@ title: Skill Scanning Effective rule settings
 Returns the complete bounded policy inventory in `result.rule_instances`. `rule_uuid` identifies a catalog rule; `uuid` identifies its effective instance. These are distinct identifiers.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_rule_instances" "example" {
-
 }
 ```
 

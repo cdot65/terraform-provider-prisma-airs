@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Returns a page in `result.attack_chains`. Adding `chain_uuid` reads a single chain detail including its steps. Do not specify pagination for a detail request. Results may contain sensitive graph descriptions and paths.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_attack_chains" "example" {
   scan_uuid = var.skill_scan_uuid
 }

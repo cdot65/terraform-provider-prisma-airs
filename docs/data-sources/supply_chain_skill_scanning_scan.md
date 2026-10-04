@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Provide exactly one of `scan_uuid` or a lowercase SHA-256 `fingerprint`. The latter calls lookup. `result` contains scan status, summaries, policy outcomes, and optional metadata as a sensitive native object. No job is started or polled.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_scan" "example" {
   scan_uuid = var.skill_scan_uuid
 }
