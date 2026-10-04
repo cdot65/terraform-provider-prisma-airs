@@ -29,6 +29,62 @@ These are **provider-family IDs**, not existing connection IDs. Use [Gateway int
 
 See the complete [OpenAI and Claude Opus example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/) for connections, workspace bindings, and routing. Model access and API credentials remain upstream prerequisites; discovering the provider family does not discover or enable a model.
 
+## Run discovery before configuring models
+
+You can read the catalog without an upstream API key. Save this complete configuration in a separate directory and use the development override described above:
+
+```hcl
+# Setup: Use the catalog-capable development provider until its release.
+terraform {
+  required_version = ">= 1.11.0, < 2.0.0"
+
+  required_providers {
+    prisma-airs = {
+      source  = "cdot65/prisma-airs"
+      version = "> 0.10.0, < 1.0.0"
+    }
+  }
+}
+
+# Authentication: Discovery needs management credentials, not upstream API keys.
+provider "prisma-airs" {}
+
+# Discovery: Read catalog entries without owning upstream connections.
+data "prisma-airs_gateway_ai_providers" "catalog" {}
+
+# Lookup: Select the UUIDs by the exact catalog slugs used for integration creation.
+output "provider_family_ids" {
+  value = {
+    open-ai   = data.prisma-airs_gateway_ai_providers.catalog.ids_by_slug["open-ai"]
+    anthropic = data.prisma-airs_gateway_ai_providers.catalog.ids_by_slug["anthropic"]
+  }
+}
+
+output "catalog_counts" {
+  value = {
+    returned = length(data.prisma-airs_gateway_ai_providers.catalog.items)
+    active   = length(data.prisma-airs_gateway_ai_providers.catalog.ids_by_slug)
+  }
+}
+```
+
+Run `terraform apply`, then `terraform output -no-color`. An actual run on 2026-10-04 returned the following; provider UUID values are sanitized, while Terraform's output structure and counts are retained:
+
+```text
+catalog_counts = {
+  "active" = 79
+  "returned" = 81
+}
+provider_family_ids = {
+  "anthropic" = "<anthropic-provider-family-uuid>"
+  "open-ai" = "<openai-provider-family-uuid>"
+}
+```
+
+The apply reported `Resources: 0 added, 0 changed, 0 destroyed.` Its subsequent unchanged plan exited 0, and cleanup left no state entries. These results come from a live catalog read, not mock data. Your catalog counts and UUIDs can differ.
+
+See the [recorded CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog.txt) and [source/build receipt](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog-receipt.json). Run `terraform destroy` to remove the read-only state outputs when finished; no catalog entry is deleted.
+
 ## Schema
 
 ### Attributes

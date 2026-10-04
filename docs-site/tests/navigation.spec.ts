@@ -150,4 +150,7 @@ test('catalog lookup and GPT/Claude lesson expose slug discovery without UUID in
   await expect(page.locator('pre.language-hcl')).toContainText('claude-opus-4-6');
   await expect(page.locator('pre.language-hcl')).toContainText('gpt-4.1');
   await expect(page.locator('pre.language-hcl')).not.toContainText('variable "ai_provider_id"');
+  await expect(page.locator('article')).toContainText('"active" = 79');
+  await expect(page.locator('article')).toContainText('gpt-4.1-2025-04-14');
+  await expect(page.locator('article')).toContainText('successful Claude inference remains unverified');
 });

@@ -10,6 +10,23 @@ Load the three [management environment variables](../getting-started/authenticat
 
 The sample model IDs are `gpt-4.1` and `claude-opus-4-6`. They are explicit API IDs, not provider slugs or a promise of the latest model. Check [OpenAI models](https://developers.openai.com/api/docs/models/gpt-4.1) and [Claude model IDs](https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions), then select models available to your account and enabled in Gateway. The provider catalog does not enable models or verify upstream billing/access.
 
+## Preview real provider discovery
+
+Before supplying model-service credentials, run the [read-only catalog configuration](../data-sources/gateway-ai-providers.md#run-discovery-before-configuring-models). It uses only management authentication. This is the actual Terraform output recorded on 2026-10-04, with UUID values sanitized:
+
+```text
+catalog_counts = {
+  "active" = 79
+  "returned" = 81
+}
+provider_family_ids = {
+  "anthropic" = "<anthropic-provider-family-uuid>"
+  "open-ai" = "<openai-provider-family-uuid>"
+}
+```
+
+Terraform reported `Resources: 0 added, 0 changed, 0 destroyed.` The [full CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog.txt) records the unchanged plan and cleanup. These values came from the live catalog, not mocked tests; counts and UUIDs can differ in your environment.
+
 ## Configure both connections
 
 Save the following complete configuration as `main.tf` in a new directory. Set `workspace_id` and an unused `name_prefix` in a nonsecret `terraform.tfvars` file. Override `models` only when your environment uses different model IDs. There is no provider UUID input.
@@ -177,6 +194,22 @@ Once a catalog-capable version is published, pin that exact version and run `ter
 ## Call GPT and Claude
 
 Use the [public catalog example](https://github.com/cdot65/prisma-airs-terraform-examples/tree/feat/gateway-catalog-examples/examples/ai-gateway/provider-catalog) for copyable request commands for each route, expected outcomes, and cleanup. The inference endpoint and Gateway application keys are separate from management credentials. Enable/register the selected models in Gateway if needed before sending traffic.
+
+## A real inference response
+
+A supplemental run discovered existing connections with `airs cli aigateway`, then used Terraform to create temporary configs and service application keys. A standard OpenAI integration returned this actual response excerpt:
+
+```json
+{
+  "model": "gpt-4.1-2025-04-14",
+  "choices": [{"message": {"content": "Hello!", "role": "assistant"}}],
+  "usage": {"completion_tokens": 2, "prompt_tokens": 13, "total_tokens": 15}
+}
+```
+
+See the [full recorded response and exact Terraform source](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-existing-models.md). This excerpt is real output, not a mock or a full response schema. The run reused an existing connection; it did not apply the ten-resource project above that creates new upstream integrations.
+
+Claude Opus requests through all three existing Vertex connections returned HTTP 401 authentication errors. The existing Bedrock connection returned HTTP 403 with an invalid security token. No direct Anthropic integration was configured, so successful Claude inference remains unverified. The recorded evidence includes the actual errors and cleanup; supply valid upstream credentials before expecting the direct Anthropic route to work. All temporary configs and keys were destroyed.
 
 ## Change and clean up
 
