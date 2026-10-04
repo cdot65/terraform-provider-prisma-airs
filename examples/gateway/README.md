@@ -4,11 +4,11 @@ Create an upstream integration, bind it to an existing workspace, expose a provi
 
 ## Before you start
 
-This example pins provider v0.10.0. You need an existing Gateway workspace, a provider-family UUID, and a model enabled for that connection.
+This example pins provider v0.11.0. You need an existing Gateway workspace and a model enabled for the selected connection. Terraform discovers the provider-family UUID from the catalog.
 
 Load `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from your secret store into the environment. See the [authentication guide](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/).
 
-Copy `terraform.tfvars.example` to `terraform.tfvars` and set `workspace_id`, `ai_provider_id`, and `model`. Load the real upstream credential through `TF_VAR_upstream_api_key`. Choose unused resource names in `main.tf`.
+Copy `terraform.tfvars.example` to `terraform.tfvars` and set `workspace_id`, `provider_slug`, and `model`. Use `open-ai` with `gpt-4.1` or `anthropic` with `claude-opus-4-6`. Load the real upstream credential through `TF_VAR_upstream_api_key`. Choose unused resource names in `main.tf`.
 
 ## Apply and inspect
 
@@ -40,3 +40,5 @@ Destroy removes the config, provider, and integration and disables their workspa
 ## Continue with the platform example
 
 Use the [expanded public Gateway project](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway) for AIRS guardrails, application credentials, four routing patterns, limits, and optional platform features. Its guide includes explicit inference requests and recorded live results.
+
+For the complete two-service project and actual recorded results, use the [OpenAI GPT and Claude Opus example](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway/provider-catalog).

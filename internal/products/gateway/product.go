@@ -28,5 +28,6 @@ func Definition() product.Definition {
 	}
 	d.Resources = append(d.Resources, product.Resource{New: func() resource.Resource { return &workspaceResource{} }, Guide: "resources/gateway-workspace"})
 	d.DataSources = append(d.DataSources, product.DataSource{New: func() datasource.DataSource { return &workspaceDataSource{} }, Guide: "data-sources/gateway-workspace"}, product.DataSource{New: func() datasource.DataSource { return &workspaceDataSource{list: true} }, Guide: "data-sources/gateway-workspaces"})
+	d.DataSources = append(d.DataSources, product.DataSource{New: func() datasource.DataSource { return &catalogDataSource{} }, Guide: "data-sources/gateway-ai-providers"})
 	return d
 }

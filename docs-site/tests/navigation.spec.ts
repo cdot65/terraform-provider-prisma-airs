@@ -113,7 +113,7 @@ test('product navigation agrees with implemented coverage', async ({page}) => {
     }
   }
   await page.goto('products/gateway/');
-  await expect(page.locator('article')).toContainText('16 resources and 15 metadata data sources');
+  await expect(page.locator('article')).toContainText('16 resources and 16 data sources');
 });
 
 
@@ -138,4 +138,19 @@ test('workspace resource and lookup expose distinct exact schemas', async ({page
   await expect(page.locator('article')).not.toContainText('scope_management');
   await page.goto('examples/gateway-workspaces/');
   await expect(page.locator('article')).toContainText('scope_management');
+});
+
+
+test('catalog lookup and GPT/Claude lesson expose slug discovery without UUID inputs', async ({page}) => {
+  await page.goto('reference/generated/prisma-airs_gateway_ai_providers/');
+  await expect(page.locator('article')).toContainText('ids_by_slug');
+  await page.goto('examples/gateway/');
+  await expect(page.locator('article')).toContainText('0.11.0');
+  await expect(page.locator('pre.language-hcl')).toContainText('prisma-airs_gateway_ai_providers');
+  await expect(page.locator('pre.language-hcl')).toContainText('claude-opus-4-6');
+  await expect(page.locator('pre.language-hcl')).toContainText('gpt-4.1');
+  await expect(page.locator('pre.language-hcl')).not.toContainText('variable "ai_provider_id"');
+  await expect(page.locator('article')).toContainText('"active" = 79');
+  await expect(page.locator('article')).toContainText('gpt-4.1-2025-04-14');
+  await expect(page.locator('article')).toContainText('successful Claude inference remains unverified');
 });

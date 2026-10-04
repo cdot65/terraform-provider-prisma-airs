@@ -14,7 +14,7 @@ Use the shared SCM OAuth credentials and TSG defaults. The optional `gateway` bl
 
 Create an organization integration, then its workspace-binding resource, then a workspace provider or MCP server. Declare `depends_on` on the binding. Bindings manage only their own integration/workspace pair; they never replace every workspace mapping or create default providers. Import existing enabled pairs before managing them. If workspace-list metadata reports truncation and the pair is not visible, Terraform returns a verification error and retains state rather than declaring the binding absent.
 
-See the [complete Gateway example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/). Use `airs cli aigateway workspaces list` and `airs cli aigateway integrations providers` for workspace and provider-family discovery.
+See the [complete Gateway example](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/). Use `airs cli aigateway workspaces list` to locate your existing workspace. Resolve upstream provider-family IDs with the [AI provider catalog data source](https://cdot65.github.io/terraform-provider-prisma-airs/data-sources/gateway-ai-providers/), using `open-ai` for OpenAI and `anthropic` for Anthropic. Catalog discovery requires provider 0.11.0 or later.
 
 ## Review routing changes
 

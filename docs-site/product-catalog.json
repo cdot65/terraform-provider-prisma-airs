@@ -214,6 +214,10 @@
       {
         "name": "prisma-airs_gateway_workspaces",
         "guide": "data-sources/gateway-workspaces"
+      },
+      {
+        "name": "prisma-airs_gateway_ai_providers",
+        "guide": "data-sources/gateway-ai-providers"
       }
     ]
   },

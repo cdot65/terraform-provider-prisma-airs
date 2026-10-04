@@ -1,4 +1,4 @@
 # Inputs: Copy to terraform.tfvars and replace nonsecret values.
-workspace_id   = "existing-workspace-uuid"
-ai_provider_id = "provider-family-uuid"
-model          = "existing-supported-model-name"
+workspace_id  = "existing-workspace-uuid"
+provider_slug = "open-ai"
+model         = "gpt-4.1"
