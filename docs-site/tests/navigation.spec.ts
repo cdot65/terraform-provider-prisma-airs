@@ -164,6 +164,6 @@ test('adapter ownership, lookup, and execution guide have distinct lifecycle con
   await expect(page.locator('article')).not.toContainText('validation_prompt');
   await page.goto('examples/red-team-adapters/');
   await expect(page.locator('article')).toContainText('draft path creates just the adapter');
-  await expect(page.locator('article')).toContainText('not in provider v0.11.0 yet');
+  await expect(page.locator('article')).toContainText('Use provider v0.12.0 or later');
   await expect(page.locator('pre.language-hcl')).toContainText('var.activate ? 1 : 0');
 });
