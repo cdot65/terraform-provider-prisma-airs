@@ -27,3 +27,11 @@ Claude Code review led to corrections in planned-value reconciliation, stable me
 Routing documents use native HCL and reject recognized embedded credential fields; never place any secret in those visible documents. Sensitive desired inputs cannot recover masked remote configuration drift or imported secrets. Removing such inputs does not guarantee remote erasure; set a supported explicit value or deliberately replace the resource.
 
 Workspaces/IAM, runtime execution, infrastructure provisioning, connectivity probes, counter resets and automatic credential rotation remain external. Inline provider rate-limit settings are excluded after repeatable upstream 503 responses on create; standalone rate policies are tested. Integration model selection, MCP capabilities/access and guardrail MCP mapping synchronization are separate management extensions requiring ownership design and tests. Other product API gaps remain follow-up work. See the [Gateway workflow](../guides/gateway-workflow.md) for the precise shipped surface and [migration](../guides/migration.md) when upgrading older product names.
+
+## Upstream provider catalog discovery (development)
+
+On 2026-10-04, the catalog-capable development provider read the authorized test tenant's catalog through Terraform: 81 entries, 79 active slug-to-UUID pairs, and distinct matches for `open-ai` and `anthropic`. This was a data-source apply with zero managed-resource/API writes. Provider 0.10.0 does not include the new data source; these results must not be described as released-provider evidence.
+
+The complete [GPT and Claude Opus configuration](../examples/gateway.md) passes offline schema validation. Its public lesson has three mocked Terraform tests for correct service UUID/model selection and missing credential/model rejection. Provider tests also exercise refresh after deactivation, ambiguous/empty identities, malformed/failed responses, empty catalogs, and metadata-only state. Real OpenAI and Anthropic model calls were not made; available test credentials belong to a different OpenAI-compatible service.
+
+The [catalog guide](../data-sources/gateway-ai-providers.md) explains the computed lookup, exact slugs, read-only ownership, and the distinction between provider-family, integration, and workspace-provider IDs. Both source and Registry documentation label the feature pending release.

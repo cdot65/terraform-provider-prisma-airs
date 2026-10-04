@@ -60,6 +60,7 @@ See [provider configuration](provider-configuration.md), [environment variables]
 | `prisma-airs_gateway_deployments` | Data source | [Lifecycle](../data-sources/gateway-deployments.md) | [Attributes](generated/prisma-airs_gateway_deployments.md) |
 | `prisma-airs_gateway_workspace` | Data source | [Lifecycle](../data-sources/gateway-workspace.md) | [Attributes](generated/data-source-prisma-airs_gateway_workspace.md) |
 | `prisma-airs_gateway_workspaces` | Data source | [Lifecycle](../data-sources/gateway-workspaces.md) | [Attributes](generated/prisma-airs_gateway_workspaces.md) |
+| `prisma-airs_gateway_ai_providers` | Data source | [Lifecycle](../data-sources/gateway-ai-providers.md) | [Attributes](generated/prisma-airs_gateway_ai_providers.md) |
 
 ## AI Supply Chain Security
 
