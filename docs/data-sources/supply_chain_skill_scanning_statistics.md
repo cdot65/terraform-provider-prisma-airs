@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Returns `result.scans` and `result.rules`. Periods are `1_HOUR`, `3_HOURS`, `24_HOURS`, `7_DAYS`, `30_DAYS`, and `ALL_TIME`; omission uses the API default. Null means unavailable, not zero. Unique skills count fingerprints; vulnerabilities and rule violations count per scan.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_statistics" "example" {
   time_period = "7_DAYS"
 }

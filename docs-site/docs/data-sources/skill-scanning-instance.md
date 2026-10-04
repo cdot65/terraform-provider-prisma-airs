@@ -7,6 +7,7 @@ title: Skill Scanning Tenant ID
 Read tenant details, including deployment profiles. The native `result` is sensitive because profiles can contain authorization codes.
 
 ```hcl
+# Discovery: Read sensitive registration metadata without changing onboarding.
 data "prisma-airs_supply_chain_skill_scanning_instance" "example" {
   tenant_id = var.skill_tenant_id
 }

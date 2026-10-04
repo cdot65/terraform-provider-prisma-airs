@@ -7,8 +7,8 @@ title: Skill Scanning Catalog rules
 Returns the complete bounded catalog in `result.rules`. Defaults are catalog settings, not effective tenant policy. Pagination continues until an empty page because observed totals can mean page length.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_rules" "example" {
-
 }
 ```
 

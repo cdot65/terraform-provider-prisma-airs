@@ -4,7 +4,7 @@ Create an upstream integration, bind it to an existing workspace, expose a provi
 
 ## Before you start
 
-Use provider v0.9.0 or later. You need an existing Gateway workspace, a provider-family UUID, and a model enabled for that connection.
+This example pins provider v0.10.0. You need an existing Gateway workspace, a provider-family UUID, and a model enabled for that connection.
 
 Load `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from your secret store into the environment. See the [authentication guide](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/).
 

@@ -7,6 +7,7 @@ title: Skill Scanning Trusted skills
 Returns one page in `result.skill_overrides`; use `limit`/`skip`. Typed filters narrow by skill name, fingerprint, and trusting identity. `q` is a broad search requiring at least three characters. This result is sensitive.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_overrides" "example" {
   limit = 50
 }

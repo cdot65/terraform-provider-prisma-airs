@@ -11,22 +11,43 @@ subcategory: "AI Gateway"
 
 ```hcl
 # Workspace: Own a dedicated scope and pass the workspace UUID to child resources.
+variable "workspace_metadata" {
+  description = "Tenant-approved metadata including every required workspace property."
+  type        = map(string)
+}
+
 resource "prisma-airs_gateway_workspace" "applications" {
   name             = "Application gateway"
   scope_name       = "tf_gateway_apps_prod"
   scope_management = "managed"
 
   defaults = {
-    metadata = { owner = "terraform" }
+    metadata = var.workspace_metadata
   }
-  usage_limits = [{ type = "tokens", credit_limit = 100000 }]
-  rate_limits  = [{ type = "requests", unit = "rpm", value = 60 }]
+  usage_limits = [
+    {
+      type         = "tokens"
+      credit_limit = 100000
+    }
+  ]
+  rate_limits = [
+    {
+      type  = "requests"
+      unit  = "rpm"
+      value = 60
+    }
+  ]
 }
 
 resource "prisma-airs_gateway_config" "applications" {
   name         = "Application routing"
   workspace_id = prisma-airs_gateway_workspace.applications.id
-  config       = { provider = "openai", retry = { attempts = 1 } }
+  config = {
+    provider = "openai"
+    retry = {
+      attempts = 1
+    }
+  }
 }
 ```
 

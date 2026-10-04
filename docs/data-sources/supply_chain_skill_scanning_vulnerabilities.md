@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Returns one page in `result.vulnerabilities`. Explicit `in_chain = false` selects findings outside attack chains. Optional `type` filters vulnerability type. Findings can contain source code and secrets; the entire result is sensitive.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_vulnerabilities" "example" {
   scan_uuid = var.skill_scan_uuid
   in_chain  = false

@@ -7,6 +7,7 @@ title: Skill Scanning Rule
 Manages the state of one catalog rule in the tenant's singleton Skill Scanning policy. Use the **catalog rule UUID**, not the effective rule-instance UUID. Terraform updates keep a stable identity and expose the changed `state` without replacing the object.
 
 ```hcl
+# Policy: Adopt one shared rule; destroy restores its captured baseline.
 resource "prisma-airs_supply_chain_skill_scanning_rule" "secrets" {
   rule_uuid = var.skill_rule_uuid
   state     = "BLOCKING"

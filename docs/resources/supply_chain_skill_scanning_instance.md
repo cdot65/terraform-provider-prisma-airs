@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Manages a tenant's Skill Scanning instance through create, read, update, and delete. Existing instances must be imported; creation checks for an existing instance before writing. This is tenant onboarding, not an individual skill scan.
 
 ```hcl
+# Registration: Supply the entire onboarding payload; import existing tenant instances first.
 resource "prisma-airs_supply_chain_skill_scanning_instance" "tenant" {
   tenant_id            = var.skill_tenant_id
   support_account_id   = var.support_account_id

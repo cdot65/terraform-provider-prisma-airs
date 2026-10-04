@@ -10,6 +10,7 @@ subcategory: "AI Supply Chain Security"
 Returns one page in `result.scans`. Filters include repeated statuses/artifact types, search, fingerprint, creation-time order, and RFC3339 time bounds. Parent/batch scans and their children must not be double-counted. This result is sensitive.
 
 ```hcl
+# Discovery: Read existing results without starting scans or changing policy.
 data "prisma-airs_supply_chain_skill_scanning_scans" "example" {
   limit          = 10
   statuses       = ["COMPLETED", "FAILED"]

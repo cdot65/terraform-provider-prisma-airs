@@ -23,7 +23,7 @@ Manages red team targets and custom prompt sets for adversarial testing of AI ap
 
 ## Before you start
 
-Use provider v0.8.0 or later and endpoints you control. The endpoints in `targets.tf` illustrate different request formats; replace them and keep only the targets and variables for services you intend to configure **before the first apply**. Removing a target from existing state proposes its destruction.
+This example pins provider v0.10.0; use endpoints you control. The endpoints in `targets.tf` illustrate different request formats; replace them and keep only the targets and variables for services you intend to configure **before the first apply**. Removing a target from existing state proposes its destruction.
 
 Load `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from your secret store into the environment. See the [authentication guide](https://cdot65.github.io/terraform-provider-prisma-airs/getting-started/authentication/).
 

@@ -7,6 +7,7 @@ title: Skill Scanning Trusted Skill Override
 Trusts an exact skill fingerprint with the API's `ALLOW` decision. Create records the returned override UUID; reads search a complete, bounded inventory; destroy removes the override and independently confirms its absence.
 
 ```hcl
+# Trust: Approve one exact fingerprint; edits replace this immutable override.
 resource "prisma-airs_supply_chain_skill_scanning_override" "trusted" {
   skill_name  = "approved-skill"
   fingerprint = var.skill_fingerprint

@@ -62,7 +62,7 @@ terraform import prisma-airs_runtime_customer_app.chatbot <app_name>
 
 Read, import, and cleanup verification use the supported paginated customer-app list endpoint. The legacy single-app GET can return 403 even for a superuser account. A missing app is removed from state; the next plan requires creation, which this import-only resource cannot perform.
 
-The live update API requires a deployment `auth_code`. SDK v0.6.1, pinned by this provider, resolves an unambiguous code through the supported list endpoint. Multiple distinct deployment codes produce an explicit ambiguity error rather than choosing a credential silently. Renaming an imported app is unsupported and returns a plan diagnostic; import a different application to manage a different name.
+The live update API requires a deployment `auth_code`. SDK v0.8.1, pinned by this provider, resolves an unambiguous code through the supported list endpoint. Multiple distinct deployment codes produce an explicit ambiguity error rather than choosing a credential silently. Renaming an imported app is unsupported and returns a plan diagnostic; import a different application to manage a different name.
 
 Explicit empty values for app name, model, cloud provider, or environment are rejected during validation because the SDK request omits them rather than clearing the existing value. Omitted optional fields retain observed metadata.
 

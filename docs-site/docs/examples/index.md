@@ -11,10 +11,10 @@ The [public examples repository](https://github.com/cdot65/prisma-airs-terraform
 
 | Product | What you configure |
 | --- | --- |
-| [AI Runtime Security](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-runtime-security) | A custom topic and application security profile |
+| [AI Runtime Security](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-runtime-security) | A policy/topic, optional scanning key, and protected import-only application |
 | [AI Red Teaming](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-red-teaming) | An authenticated application target and prompt-set container |
-| [AI Gateway](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway) | Owned model connections, AIRS checks, four routing patterns, application keys, policies, and optional platform features |
-| [AI Supply Chain Security](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-supply-chain-security) | A Model Security group and rule discovery |
+| [AI Gateway](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway) | Existing or owned workspace, model connections, AIRS checks, four routing patterns, application keys, policies, and optional platform features |
+| [AI Supply Chain Security](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-supply-chain-security) | Model Security groups and Skill Scanning policy, trust, onboarding, and result discovery |
 
 Each project has its own prerequisites and state. Apply the product you need; applying all four is unnecessary.
 
@@ -26,6 +26,9 @@ These complete inline configurations use the [released provider](../getting-star
 | --- | --- | --- |
 | [Runtime policy](runtime-policy.md) | Topic references and versioned security profiles | Runtime management |
 | [Native targets](native-targets.md) | Seven native connection families and payload templates | Red Team management |
+| [Gateway workspaces](gateway-workspaces.md) | Dedicated/external IAM scope ownership and native workspace settings | Gateway admin/IAM and existing role grants |
+| [Skill Scanning policy](skill-scanning.md) | Adopted rule baselines and immutable fingerprint trust | Skill Scanning management |
+| [Skill Scanning onboarding](skill-onboarding.md) | Full registration PUT and protected write-only inputs | Explicit tenant onboarding ownership; Terraform 1.11+ |
 | [Gateway](gateway.md) | Integration → workspace binding → provider → routing config | Gateway management and an existing workspace |
 | [Model Security](model-security.md) | Groups and read-only rule discovery | Licensed Model Security |
 | [Repository configurations](repository-configurations.md) | Complete projects and additional provider-checkout scenarios | Services used by each configuration |
@@ -36,4 +39,4 @@ Examples use short `# Concept: purpose` comments at dependency and product bound
 
 Load OAuth credentials outside the HCL. Review a saved plan before applying, then check for a stable post-apply plan. Cleanup accounts for [revision history, archives, tombstones, and key/app cascades](../guides/import-and-state.md).
 
-[Gateway workspace and routing](gateway-workspaces.md) creates a dedicated scope, workspace and child config.
+The public projects pin provider 0.10.0 and map every current resource/data source in their [release coverage table](https://github.com/cdot65/prisma-airs-terraform-examples/blob/main/docs/resource-coverage.md). Optional lessons state their entitlement, ownership, and validation limits.

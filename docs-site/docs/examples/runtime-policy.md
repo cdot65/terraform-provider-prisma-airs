@@ -15,7 +15,8 @@ Save this complete configuration as `main.tf` in a separate directory:
 terraform {
   required_providers {
     prisma-airs = {
-      source = "cdot65/prisma-airs"
+      source  = "cdot65/prisma-airs"
+      version = "~> 0.10.0"
     }
   }
 }
