@@ -9,7 +9,7 @@ Manages `prisma-airs_gateway_integration` with provider v0.10.0 and published Go
 
 ## Example
 
-This discovery example requires the catalog-capable development provider; see the [complete OpenAI and Claude Opus guide](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/).
+This discovery example requires provider 0.11.0 or later; see the [complete OpenAI and Claude Opus guide](https://cdot65.github.io/terraform-provider-prisma-airs/examples/gateway/).
 
 ```hcl
 # Discovery: Resolve active provider-family UUIDs by catalog slug.
@@ -26,7 +26,7 @@ resource "prisma-airs_gateway_integration" "example" {
 
 ## Ownership and lifecycle
 
-The resource owns an organization integration. It does not create a default provider or bind workspaces implicitly. Establish an `integration_workspace_binding`, then create a workspace provider with `depends_on` on that binding. `ai_provider_id` is immutable. Use the [AI provider catalog data source](https://cdot65.github.io/terraform-provider-prisma-airs/data-sources/gateway-ai-providers/) to resolve provider-family UUIDs by slug: `open-ai` for OpenAI and `anthropic` for Anthropic. The catalog data source is pending release and requires a development build; provider 0.10.0 still accepts only an explicitly supplied family UUID. Sensitive `key` and `configurations` are desired inputs retained through masked reads; their remote drift cannot be recovered reliably.
+The resource owns an organization integration. It does not create a default provider or bind workspaces implicitly. Establish an `integration_workspace_binding`, then create a workspace provider with `depends_on` on that binding. `ai_provider_id` is immutable. Use the [AI provider catalog data source](https://cdot65.github.io/terraform-provider-prisma-airs/data-sources/gateway-ai-providers/) to resolve provider-family UUIDs by slug: `open-ai` for OpenAI and `anthropic` for Anthropic. The catalog data source is available in provider 0.11.0 or later. Sensitive `key` and `configurations` are desired inputs retained through masked reads; their remote drift cannot be recovered reliably.
 
 ## Import
 

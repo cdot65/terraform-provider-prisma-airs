@@ -4,7 +4,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.10.0"
+      version = "= 0.11.0"
     }
   }
 }
@@ -17,8 +17,10 @@ variable "workspace_id" {
   type = string
 }
 
-variable "ai_provider_id" {
-  type = string
+variable "provider_slug" {
+  description = "Catalog slug: open-ai for OpenAI or anthropic for Anthropic."
+  type        = string
+  default     = "open-ai"
 }
 
 variable "model" {
@@ -30,10 +32,13 @@ variable "upstream_api_key" {
   sensitive = true
 }
 
+# Discovery: Resolve the family UUID without owning catalog entries.
+data "prisma-airs_gateway_ai_providers" "catalog" {}
+
 # Connection: Keep upstream credentials in the integration, outside routing.
 resource "prisma-airs_gateway_integration" "application" {
   name           = "Example - Gateway - Development"
-  ai_provider_id = var.ai_provider_id
+  ai_provider_id = data.prisma-airs_gateway_ai_providers.catalog.ids_by_slug[var.provider_slug]
   key            = var.upstream_api_key
 }
 

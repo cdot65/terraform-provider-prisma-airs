@@ -145,7 +145,7 @@ test('catalog lookup and GPT/Claude lesson expose slug discovery without UUID in
   await page.goto('reference/generated/prisma-airs_gateway_ai_providers/');
   await expect(page.locator('article')).toContainText('ids_by_slug');
   await page.goto('examples/gateway/');
-  await expect(page.locator('article')).toContainText('pending release');
+  await expect(page.locator('article')).toContainText('0.11.0');
   await expect(page.locator('pre.language-hcl')).toContainText('prisma-airs_gateway_ai_providers');
   await expect(page.locator('pre.language-hcl')).toContainText('claude-opus-4-6');
   await expect(page.locator('pre.language-hcl')).toContainText('gpt-4.1');

@@ -2,7 +2,7 @@
 
 Discover the provider-family UUIDs needed to create upstream integrations. Select a readable catalog slug instead of copying a UUID from the console or CLI.
 
-This data source is new development functionality, pending the next provider release. Provider 0.10.0 does not expose it. For local use, build this provider checkout and use a [development override](../getting-started/installation.md#use-the-updated-provider-from-source).
+Available in provider **0.11.0 and later**. Install it from the [Terraform Registry](../getting-started/installation.md#install-from-the-terraform-registry); provider 0.10.0 does not expose this data source.
 
 ```hcl
 # Discovery: Read the upstream catalog without owning its entries.
@@ -26,17 +26,17 @@ See the complete [OpenAI and Claude Opus example](../examples/gateway.md) for co
 
 ## Run discovery before configuring models
 
-You can read the catalog without an upstream API key. Save this complete configuration in a separate directory and use the development override described above:
+You can read the catalog without an upstream API key. Save this complete configuration in a separate directory and install provider 0.11.0 with `terraform init`:
 
 ```hcl
-# Setup: Use the catalog-capable development provider until its release.
+# Setup: Install the release that supports provider-family discovery.
 terraform {
   required_version = ">= 1.11.0, < 2.0.0"
 
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "> 0.10.0, < 1.0.0"
+      version = "= 0.11.0"
     }
   }
 }
@@ -63,7 +63,7 @@ output "catalog_counts" {
 }
 ```
 
-Run `terraform apply`, then `terraform output -no-color`. An actual run on 2026-10-04 returned the following; provider UUID values are sanitized, while Terraform's output structure and counts are retained:
+Run `terraform apply`, then `terraform output -no-color`. An actual development-provider run on 2026-10-04 returned the following; provider UUID values are sanitized, while Terraform's output structure and counts are retained:
 
 ```text
 catalog_counts = {
@@ -78,4 +78,4 @@ provider_family_ids = {
 
 The apply reported `Resources: 0 added, 0 changed, 0 destroyed.` Its subsequent unchanged plan exited 0, and cleanup left no state entries. These results come from a live catalog read, not mock data. Your catalog counts and UUIDs can differ.
 
-See the [recorded CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog.txt) and [source/build receipt](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog-receipt.json). Run `terraform destroy` to remove the read-only state outputs when finished; no catalog entry is deleted.
+See the [recorded CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/main/docs/live-runs/gateway-provider-catalog.txt) and [source/build receipt](https://github.com/cdot65/prisma-airs-terraform-examples/blob/main/docs/live-runs/gateway-provider-catalog-receipt.json). Run `terraform destroy` to remove the read-only state outputs when finished; no catalog entry is deleted.

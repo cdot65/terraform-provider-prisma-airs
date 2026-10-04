@@ -4,7 +4,7 @@ Create two upstream connections in an existing Gateway workspace without supplyi
 
 ## Before you start
 
-This example uses the new `prisma-airs_gateway_ai_providers` data source, which is **pending release** and unavailable in Registry provider 0.10.0. Install Go 1.25.6+ and `make`, build the catalog-capable source branch, and configure a [development override](../getting-started/installation.md#use-the-updated-provider-from-source). The version constraint below reserves this configuration for a later release; development overrides bypass Registry version selection. Until the feature is published, skip `terraform init` and use that local build.
+This example requires provider **0.11.0**, which includes `prisma-airs_gateway_ai_providers`. Install it from the [Terraform Registry](../getting-started/installation.md#install-from-the-terraform-registry); no local provider build is required.
 
 Load the three [management environment variables](../getting-started/authentication.md). You also need an existing Gateway workspace, a Gateway inference deployment, and OpenAI and Anthropic **API** credentials with access to the selected models. A ChatGPT subscription is separate from OpenAI API access; this example routes GPT chat completions through the OpenAI API.
 
@@ -12,7 +12,7 @@ The sample model IDs are `gpt-4.1` and `claude-opus-4-6`. They are explicit API 
 
 ## Preview real provider discovery
 
-Before supplying model-service credentials, run the [read-only catalog configuration](../data-sources/gateway-ai-providers.md#run-discovery-before-configuring-models). It uses only management authentication. This is the actual Terraform output recorded on 2026-10-04, with UUID values sanitized:
+Before supplying model-service credentials, run the [read-only catalog configuration](../data-sources/gateway-ai-providers.md#run-discovery-before-configuring-models). It uses only management authentication. This is actual Terraform output from the development-provider run on 2026-10-04, with UUID values sanitized:
 
 ```text
 catalog_counts = {
@@ -25,7 +25,7 @@ provider_family_ids = {
 }
 ```
 
-Terraform reported `Resources: 0 added, 0 changed, 0 destroyed.` The [full CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-provider-catalog.txt) records the unchanged plan and cleanup. These values came from the live catalog, not mocked tests; counts and UUIDs can differ in your environment.
+Terraform reported `Resources: 0 added, 0 changed, 0 destroyed.` The [full CLI transcript](https://github.com/cdot65/prisma-airs-terraform-examples/blob/main/docs/live-runs/gateway-provider-catalog.txt) records the unchanged plan and cleanup. These values came from the live catalog, not mocked tests; counts and UUIDs can differ in your environment.
 
 ## Configure both connections
 
@@ -38,14 +38,14 @@ Load `TF_VAR_upstream_api_keys` from your credential store as a JSON map with th
 ```
 
 ```hcl
-# Setup: Use the catalog-capable provider build until its Registry release.
+# Setup: Pin the release that includes provider-family discovery.
 terraform {
   required_version = ">= 1.11.0, < 2.0.0"
 
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "> 0.10.0, < 1.0.0"
+      version = "= 0.11.0"
     }
   }
 }
@@ -178,9 +178,10 @@ The integration owns the upstream connection, the binding authorizes the existin
 
 ## Apply and inspect
 
-With your development override selected:
+With management credentials and model inputs configured:
 
 ```bash
+terraform init
 terraform validate
 terraform plan -out=create.tfplan
 terraform apply create.tfplan
@@ -189,11 +190,11 @@ terraform output routes
 
 `routes` distinguishes the provider-family UUID, organization integration UUID, workspace provider UUID, routing config UUID, and selected model. The sensitive `application_keys` output contains Gateway credentials, not upstream API keys. Protect state and saved plans.
 
-Once a catalog-capable version is published, pin that exact version and run `terraform init` before these commands. A successful apply establishes configuration; it does not prove that a model is enabled or callable.
+A successful apply establishes configuration; it does not prove that a model is enabled or callable.
 
 ## Call GPT and Claude
 
-Use the [public catalog example](https://github.com/cdot65/prisma-airs-terraform-examples/tree/feat/gateway-catalog-examples/examples/ai-gateway/provider-catalog) for copyable request commands for each route, expected outcomes, and cleanup. The inference endpoint and Gateway application keys are separate from management credentials. Enable/register the selected models in Gateway if needed before sending traffic.
+Use the [public catalog example](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway/provider-catalog) for copyable request commands for each route, expected outcomes, and cleanup. The inference endpoint and Gateway application keys are separate from management credentials. Enable/register the selected models in Gateway if needed before sending traffic.
 
 ## A real inference response
 
@@ -207,7 +208,7 @@ A supplemental run discovered existing connections with `airs cli aigateway`, th
 }
 ```
 
-See the [full recorded response and exact Terraform source](https://github.com/cdot65/prisma-airs-terraform-examples/blob/feat/gateway-catalog-examples/docs/live-runs/gateway-existing-models.md). This excerpt is real output, not a mock or a full response schema. The run reused an existing connection; it did not apply the ten-resource project above that creates new upstream integrations.
+See the [full recorded response and exact Terraform source](https://github.com/cdot65/prisma-airs-terraform-examples/blob/main/docs/live-runs/gateway-existing-models.md). This excerpt is real output, not a mock or a full response schema. The run reused an existing connection; it did not apply the ten-resource project above that creates new upstream integrations.
 
 Claude Opus requests through all three existing Vertex connections returned HTTP 401 authentication errors. The existing Bedrock connection returned HTTP 403 with an invalid security token. No direct Anthropic integration was configured, so successful Claude inference remains unverified. The recorded evidence includes the actual errors and cleanup; supply valid upstream credentials before expecting the direct Anthropic route to work. All temporary configs and keys were destroyed.
 
@@ -224,4 +225,4 @@ terraform apply cleanup.tfplan
 
 Destroy removes both model routes, application keys, workspace providers, and integrations, and disables their owned workspace bindings. It does not delete the existing workspace or catalog entries.
 
-For existing shared connections, read [Gateway integrations](../data-sources/gateway-integrations.md) instead of recreating them. For guardrails, request budgets, and four routing lessons, see the [expanded Gateway project](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway), which remains a provider 0.10.0 compatibility example until the new catalog data source is released.
+For existing shared connections, read [Gateway integrations](../data-sources/gateway-integrations.md) instead of recreating them. For guardrails, request budgets, and four routing lessons, see the [expanded Gateway project](https://github.com/cdot65/prisma-airs-terraform-examples/tree/main/examples/ai-gateway), which retains its provider 0.10.0 compatibility configuration.

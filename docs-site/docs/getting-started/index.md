@@ -11,7 +11,7 @@ You need Terraform 1.0 or later, an AIRS tenant with Runtime Security management
 
 :::info[Updated provider]
 
-These guides describe provider v0.10.0, built on Go SDK v0.8.1. v0.7.0 and earlier use different resource names or configuration schemas. Follow [installation](installation.md) and review [migration](../guides/migration.md) before upgrading existing state.
+These guides describe provider v0.11.0, built on Go SDK v0.8.1. v0.7.0 and earlier use different resource names or configuration schemas. Follow [installation](installation.md) and review [migration](../guides/migration.md) before upgrading existing state.
 
 :::
 
@@ -21,7 +21,7 @@ Obtain a client ID, client secret, and tenant service group (TSG) ID using the [
 
 ## 2. Install the provider
 
-Follow [installation](installation.md) to install provider v0.10.0 from the Terraform Registry. Work in a separate directory for the configuration below.
+Follow [installation](installation.md) to install provider v0.11.0 from the Terraform Registry. Work in a separate directory for the configuration below.
 
 ## 3. Write your first profile
 
@@ -33,7 +33,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.10.0"
+      version = "~> 0.11.0"
     }
   }
 }

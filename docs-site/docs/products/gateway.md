@@ -10,4 +10,4 @@ See the workflow for ownership, secret/import limits, and the management extensi
 
 ## Discover upstream providers
 
-The development provider adds an [AI provider catalog data source](../data-sources/gateway-ai-providers.md), bringing Gateway coverage to **16 resources and 16 data sources**. The [OpenAI GPT and Claude Opus example](../examples/gateway.md) uses exact catalog slugs instead of manually supplied provider-family UUIDs. This feature is pending release and requires the documented development build.
+Provider 0.11.0 adds an [AI provider catalog data source](../data-sources/gateway-ai-providers.md), bringing Gateway coverage to **16 resources and 16 data sources**. The [OpenAI GPT and Claude Opus example](../examples/gateway.md) uses exact catalog slugs instead of manually supplied provider-family UUIDs. Install provider 0.11.0 or later from the Terraform Registry.

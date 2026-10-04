@@ -1,5 +1,13 @@
 # Release Notes
 
+## v0.11.0 — Gateway provider-family discovery
+
+- Add the read-only `prisma-airs_gateway_ai_providers` data source using Go SDK v0.8.1.
+- Expose safe catalog metadata and active provider-family UUIDs as `ids_by_slug`, with duplicate and empty identity checks.
+- Resolve OpenAI and Anthropic UUIDs in Terraform instead of requiring users to copy them.
+- Publish complete GPT and Claude Opus configuration and read-only discovery guides, with actual sanitized catalog and inference evidence.
+- Retain existing resource schemas and state compatibility.
+
 ## v0.10.0 — Gateway workspaces and Skill Scanning
 
 ### Skill Scanning
