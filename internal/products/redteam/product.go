@@ -14,9 +14,11 @@ func Definition() product.Definition {
 			{Name: "mgmt_endpoint", Environment: "PANW_RED_TEAM_MGMT_ENDPOINT", Description: "Red Teaming management endpoint override."},
 		},
 		Resources: []product.Resource{
+			{New: NewAdapterResource, Guide: "resources/red-team-adapter"},
 			{New: NewRedTeamTargetResource, Guide: "resources/red-team-target"},
 			{New: NewRedTeamCustomPromptSetResource, Guide: "resources/red-team-custom-prompt-set"},
 		},
+		DataSources: []product.DataSource{{New: NewAdapterDataSource, Guide: "data-sources/red-team-adapter"}, {New: NewAdaptersDataSource, Guide: "data-sources/red-team-adapters"}},
 		Configure: func(c product.Credentials, endpoints map[string]string) (any, error) {
 			return redteam.NewClient(redteam.Opts{ClientID: c.ClientID, ClientSecret: c.ClientSecret, TsgID: c.TsgID,
 				TokenEndpoint: c.TokenEndpoint, DataEndpoint: endpoints["data_endpoint"], MgmtEndpoint: endpoints["mgmt_endpoint"]})

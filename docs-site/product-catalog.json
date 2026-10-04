@@ -57,6 +57,10 @@
     ],
     "resources": [
       {
+        "name": "prisma-airs_red_team_adapter",
+        "guide": "resources/red-team-adapter"
+      },
+      {
         "name": "prisma-airs_red_team_target",
         "guide": "resources/red-team-target"
       },
@@ -65,7 +69,16 @@
         "guide": "resources/red-team-custom-prompt-set"
       }
     ],
-    "data_sources": []
+    "data_sources": [
+      {
+        "name": "prisma-airs_red_team_adapter",
+        "guide": "data-sources/red-team-adapter"
+      },
+      {
+        "name": "prisma-airs_red_team_adapters",
+        "guide": "data-sources/red-team-adapters"
+      }
+    ]
   },
   {
     "id": "gateway",

@@ -25,6 +25,7 @@ These complete inline configurations use the [released provider](../getting-star
 | Example | What it teaches | Access |
 | --- | --- | --- |
 | [Runtime policy](runtime-policy.md) | Topic references and versioned security profiles | Runtime management |
+| [Adapters](red-team-adapters.md) | Script ownership, deliberate broker execution, discovery, and secret-preserving adoption (upcoming release) | Existing compatible Network Broker |
 | [Native targets](native-targets.md) | Seven native connection families and payload templates | Red Team management |
 | [Gateway workspaces](gateway-workspaces.md) | Dedicated/external IAM scope ownership and native workspace settings | Gateway admin/IAM and existing role grants |
 | [Skill Scanning policy](skill-scanning.md) | Adopted rule baselines and immutable fingerprint trust | Skill Scanning management |

@@ -354,10 +354,10 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 									},
 									"action": schema.StringAttribute{
 										Required:    true,
-										Description: "Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'.",
+										Description: "Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred.",
 										Validators: []validator.String{
 											stringvalidator.OneOf(
-												"block", "allow",
+												"block", "allow", "",
 												string(airsruntime.ToxicContentHighBlockModerateAllow),
 												string(airsruntime.ToxicContentHighBlockModerateBlock),
 												string(airsruntime.ToxicContentHighAllowModerateAllow),
@@ -510,6 +510,9 @@ func (r *securityProfileResource) Configure(_ context.Context, req resource.Conf
 func (r *securityProfileResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan SecurityProfileResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if !resp.Diagnostics.HasError() {
+		validateProfileActions(&plan, &resp.Diagnostics)
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -572,6 +575,9 @@ func (r *securityProfileResource) Read(ctx context.Context, req resource.ReadReq
 func (r *securityProfileResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan SecurityProfileResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if !resp.Diagnostics.HasError() {
+		validateProfileActions(&plan, &resp.Diagnostics)
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}

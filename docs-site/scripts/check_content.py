@@ -8,7 +8,7 @@ import tempfile
 
 SITE = Path(__file__).resolve().parents[1]
 ROOT = SITE.parent
-COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/model-security.md', 'examples/gateway.md', 'examples/gateway-workspaces.md', 'examples/skill-scanning.md', 'examples/skill-onboarding.md']
+COMPLETE = ['getting-started/index.md', 'examples/runtime-policy.md', 'examples/native-targets.md', 'examples/red-team-adapters.md', 'examples/model-security.md', 'examples/gateway.md', 'examples/gateway-workspaces.md', 'examples/skill-scanning.md', 'examples/skill-onboarding.md']
 
 
 def main():
@@ -55,6 +55,11 @@ def main():
                 work = base / str(validated)
                 work.mkdir()
                 (work / 'main.tf').write_text(text + '\n')
+                if relative == 'examples/red-team-adapters.md':
+                    script = re.search(r'```python\n(.*?)\n```', path.read_text(), re.DOTALL)
+                    if script is None:
+                        raise SystemExit('Adapter walkthrough is missing its Python source')
+                    (work / 'adapter.py').write_text(script.group(1) + '\n')
                 result = subprocess.run(['terraform', 'validate', '-json'], cwd=work, env=env, capture_output=True, text=True, check=False)
                 report = json.loads(result.stdout)
                 if result.returncode or not report['valid']:

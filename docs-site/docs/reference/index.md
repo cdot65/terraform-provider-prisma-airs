@@ -22,8 +22,11 @@ See [provider configuration](provider-configuration.md), [environment variables]
 
 | Terraform type | Kind | Guide | Schema |
 | --- | --- | --- | --- |
+| `prisma-airs_red_team_adapter` | Resource | [Lifecycle](../resources/red-team-adapter.md) | [Attributes](generated/prisma-airs_red_team_adapter.md) |
 | `prisma-airs_red_team_target` | Resource | [Lifecycle](../resources/red-team-target.md) | [Attributes](generated/prisma-airs_red_team_target.md) |
 | `prisma-airs_red_team_custom_prompt_set` | Resource | [Lifecycle](../resources/red-team-custom-prompt-set.md) | [Attributes](generated/prisma-airs_red_team_custom_prompt_set.md) |
+| `prisma-airs_red_team_adapter` | Data source | [Lifecycle](../data-sources/red-team-adapter.md) | [Attributes](generated/data-source-prisma-airs_red_team_adapter.md) |
+| `prisma-airs_red_team_adapters` | Data source | [Lifecycle](../data-sources/red-team-adapters.md) | [Attributes](generated/prisma-airs_red_team_adapters.md) |
 
 ## AI Gateway
 

@@ -108,7 +108,7 @@ func TestProductCatalogMatchesProtocolSchema(t *testing.T) {
 			sources[entry.Name] = true
 		}
 	}
-	if len(wantLabels) != 0 || len(resources) != 26 || len(sources) != 28 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
+	if len(wantLabels) != 0 || len(resources) != 27 || len(sources) != 30 || len(response.ResourceSchemas) != len(resources) || len(response.DataSourceSchemas) != len(sources) {
 		t.Fatal("catalog has missing or unclassified types")
 	}
 	if len(response.Provider.Block.Attributes) != 4 || len(response.Provider.Block.BlockTypes) != 4 {

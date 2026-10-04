@@ -7,6 +7,37 @@ subcategory: "AI Runtime Security"
 
 Manages the complete revision history of one named AI security profile in Prisma AIRS Management API.
 
+## Imported toxic-content categories
+
+Some existing profiles return `action = ""` on `toxic-content` with explicit `toxic_category` entries. Preserve that exact representation during adoption. The provider accepts it only with categories and does not infer allow/block semantics. Use documented actions for new rules; do not substitute an action to make an import validate.
+
+```hcl
+# Adoption: Preserve this observed representation without assigning new semantics.
+resource "prisma-airs_runtime_security_profile" "imported_categories" {
+  profile_name = "existing-profile-name"
+
+  ai_security_profile {
+    model_type = "default"
+
+    model_protection {
+      name   = "toxic-content"
+      action = ""
+
+      toxic_category {
+        category = "violent-crime"
+        action   = "high:allow, moderate:allow"
+      }
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+Match every category in your existing profile before planning; this excerpt shows only one observed category. A disposable copy of the full returned representation passed create/update/no-op/destroy; that validates round-trip compatibility, not the meaning of an empty action.
+
 ## Example Usage
 
 ### Basic — Prompt Injection Protection
@@ -414,7 +445,7 @@ Nesting: `list`.
 
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. |
+| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred. |
 | `name` | `string` | required | — | Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'. |
 
 ##### ai_security_profile.model_protection.topic_list
