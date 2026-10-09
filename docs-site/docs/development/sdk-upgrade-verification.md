@@ -1,5 +1,7 @@
 # SDK upgrade verification — 2026-10-02
 
+For the Go SDK v0.9.0 integration, see the separately recorded [directional profile live verification from 2026-10-09](directional-profile-verification.md).
+
 The provider v0.7.0 release candidate on `chore/sdk-v0.6.0` was verified using published `prisma-airs-go v0.6.1`, with `GOWORK=off` and no module replacement. The evidence below records pre-release verification; these changes require HCL/state refactoring for native targets and removed prompt-set properties. Phase 3 resource expansion and scanner-key regeneration remain backlog.
 
 ## Published dependency

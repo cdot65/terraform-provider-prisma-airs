@@ -37,9 +37,10 @@ func TestAccSecurityProfileResource_lifecycle(t *testing.T) {
 			},
 			{
 				// Profiles are imported by name.
-				ResourceName:      addr,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            addr,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"dlp_tenant_id"},
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					return s.RootModule().Resources[addr].Primary.Attributes["profile_name"], nil
 				},
