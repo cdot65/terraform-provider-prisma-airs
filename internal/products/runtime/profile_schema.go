@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
+var _ resource.ResourceWithValidateConfig = &securityProfileResource{}
+
 func profileOptionalString(description string) schema.StringAttribute {
 	return schema.StringAttribute{Optional: true, Computed: true, Description: description,
 		PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}}
@@ -61,7 +63,10 @@ func extendProfileSchema(s *schema.Schema) {
 	// Detector identifiers and actions may evolve, including compound action strings.
 	for _, name := range []string{"name", "action"} {
 		a := mp.NestedObject.Attributes[name].(schema.StringAttribute)
-		a.Validators = []validator.String{stringvalidator.LengthAtLeast(1)}
+		a.Validators = nil
+		if name == "name" {
+			a.Validators = []validator.String{stringvalidator.LengthAtLeast(1)}
+		}
 		mp.NestedObject.Attributes[name] = a
 	}
 	blocks["model_protection"] = mp
@@ -88,6 +93,9 @@ func (r *securityProfileResource) ValidateConfig(ctx context.Context, req resour
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if req.Config.Raw.IsFullyKnown() {
+		validateProfileActions(&config, &resp.Diagnostics)
 	}
 	for _, p := range config.AiSecurityProfiles {
 		if p.ContentTypeConfigurations != nil && (p.DataProtection != nil || p.AppProtection != nil || len(p.ModelProtection) > 0 || len(p.AgentProtection) > 0) {

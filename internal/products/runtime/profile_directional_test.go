@@ -256,3 +256,13 @@ func TestPartialRemovalOfUnrepresentableDetectorIsRejected(t *testing.T) {
 		t.Fatal("unrepresentable detector silently removed from a partially retained list")
 	}
 }
+
+func TestObservedEmptyToxicActionRemovalIsRepresentable(t *testing.T) {
+	before := map[string]any{"model-protection": []any{map[string]any{
+		"name": "toxic-content", "action": "",
+		"toxic-category-list": []any{map[string]any{"category": "harassment", "action": ""}},
+	}}}
+	if _, err := mergePolicyValue(before, before, map[string]any{}, "policy"); err != nil {
+		t.Fatal(err)
+	}
+}

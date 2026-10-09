@@ -112,12 +112,15 @@ func protectionToSDK(ctx context.Context, model *ProtectionModel, diags *diag.Di
 			Action:               airsruntime.ProfileAction(mp.Action.ValueString()),
 		}
 		setStringPresence(&sdkMP.ProfileJSON, "severity", mp.Severity)
+		setStringPresence(&sdkMP.ProfileJSON, "action", mp.Action)
 		for _, tc := range mp.ToxicCategories {
-			sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, airsruntime.ToxicCategoryConfig{
+			category := airsruntime.ToxicCategoryConfig{
 				SeverityByConfidence: confidenceToSDK(tc.SeverityByConfidence),
 				Category:             tc.Category.ValueString(),
 				Action:               tc.Action.ValueString(),
-			})
+			}
+			setStringPresence(&category.ProfileJSON, "action", tc.Action)
+			sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, category)
 		}
 		for _, tl := range mp.TopicLists {
 			sdkTL := airsruntime.TopicArrayConfig{

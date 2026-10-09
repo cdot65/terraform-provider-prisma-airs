@@ -283,6 +283,56 @@ func TestSecurityProfileLegacyTerraformLifecycle(t *testing.T) {
 	}})
 }
 
+func TestSecurityProfileEmptyToxicCategoryLifecycle(t *testing.T) {
+	for _, layout := range []string{"legacy", "directional"} {
+		t.Run(layout, func(t *testing.T) {
+			f, server := newSecurityProfileFixture(t)
+			f.legacy = true // Echo requests, rather than replaying the directional fixture.
+			detector := `model_protection {
+ name="toxic-content"
+ action=""
+ toxic_category {
+  category="harassment"
+  action=""
+ }
+}`
+			configuration := func(protection string) string {
+				if layout == "directional" {
+					protection = "content_type_mode=\"per_content_type\"\ncontent_type_configurations {\n response {\n" + protection + "\n }\n}"
+				}
+				return securityProfileProviderConfig(server) + `resource "prisma-airs_runtime_security_profile" "empty_toxic" {
+ profile_name="empty-toxic"
+ ai_security_profile {
+` + protection + "\n}\n}"
+			}
+			address := "prisma-airs_runtime_security_profile.empty_toxic"
+			config := configuration(detector)
+			checkEmptyActions := func(_ *terraform.State) error {
+				f.Lock()
+				defer f.Unlock()
+				profile := f.profiles[len(f.profiles)-1].Policy.AiSecurityProfiles[0]
+				protections := profile.ModelConfiguration.ModelProtection
+				if layout == "directional" {
+					protections = profile.ContentTypeConfigurations.Response.ModelProtection
+				}
+				if protections[0].FieldPresence("action") != airsruntime.JSONPresent || protections[0].Action != "" ||
+					protections[0].ToxicCategoryList[0].FieldPresence("action") != airsruntime.JSONPresent || protections[0].ToxicCategoryList[0].Action != "" {
+					return fmt.Errorf("explicit empty toxicity actions were omitted or rewritten")
+				}
+				return nil
+			}
+			resource.UnitTest(t, resource.TestCase{ProtoV6ProviderFactories: testAccProtoV6ProviderFactories, Steps: []resource.TestStep{
+				{Config: config, Check: checkEmptyActions},
+				{Config: config, ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}},
+				{ResourceName: address, ImportState: true, ImportStateId: "empty-toxic", ImportStateVerify: true, ImportStateVerifyIgnore: []string{"dlp_tenant_id"}},
+				{Config: configuration(strings.Replace(detector, `name="toxic-content"`, "name=\"toxic-content\"\nseverity=\"high\"", 1)), Check: checkEmptyActions},
+				{Config: configuration("")},
+				{Config: configuration(""), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()}}},
+			}})
+		})
+	}
+}
+
 func TestSecurityProfileDirectionalImportConverges(t *testing.T) {
 	f, server := newSecurityProfileFixture(t)
 	f.profiles = []airsruntime.SecurityProfile{f.fixture}

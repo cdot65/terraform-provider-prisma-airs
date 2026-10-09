@@ -509,7 +509,7 @@ Nesting: `list`.
 
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. |
+| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred. |
 | `name` | `string` | required | — | Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'. |
 | `severity` | `string` | optional, computed | — | Model detector severity. |
 
@@ -670,7 +670,7 @@ Nesting: `list`.
 
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. |
+| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred. |
 | `name` | `string` | required | — | Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'. |
 | `severity` | `string` | optional, computed | — | Model detector severity. |
 
@@ -831,7 +831,7 @@ Nesting: `list`.
 
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. |
+| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred. |
 | `name` | `string` | required | — | Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'. |
 | `severity` | `string` | optional, computed | — | Model detector severity. |
 
@@ -992,7 +992,7 @@ Nesting: `list`.
 
 | Attribute | Type | Presence | Sensitive | Description |
 | --- | --- | --- | --- | --- |
-| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. |
+| `action` | `string` | required | — | Action to take: 'block', 'allow', or compound toxic-content values like 'high:block, moderate:allow'. Empty is preserved only for imported toxic-content with explicit categories; its semantics are not inferred. |
 | `name` | `string` | required | — | Protection name: 'prompt-injection', 'toxic-content', 'contextual-grounding', or 'topic-guardrails'. |
 | `severity` | `string` | optional, computed | — | Model detector severity. |
 

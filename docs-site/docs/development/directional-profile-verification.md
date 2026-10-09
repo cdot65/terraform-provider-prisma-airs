@@ -1,6 +1,6 @@
 # Directional profile live verification — 2026-10-09
 
-The provider's Go SDK v0.9.0 integration was exercised against the live Runtime management API on 2026-10-09 UTC. The run used the complete [directional security profile example](../examples/directional-security-profile.md), a local provider binary built with Go 1.27.1, Terraform 1.16.4, and the published Go module without a local replacement. The six revisions below are actual service receipts from the disposable profile `tf-live-directional-5fbaff621178`.
+The provider's Go SDK v0.9.0 integration was exercised against the live Runtime management API on 2026-10-09 UTC. The run used the complete [directional security profile example](../examples/directional-security-profile.md), a local provider binary built with Go 1.27.1, Terraform 1.16.4, and the published Go module without a local replacement. The final run followed rebasing onto the v0.12.0 main branch and retaining its adoption safeguards. The six revisions below are actual service receipts from the disposable profile `tf-live-directional-993438dfde34`.
 
 ## Reproduce the run
 
@@ -20,13 +20,15 @@ Every API receipt and full Terraform output is retained outside the repository w
 These lines are copied from the successful live run. The excerpt omits development-override warnings and the expanded policy listing; it retains the actual Terraform results.
 
 ```text
-UTC: 2026-10-09T21:25:28.779808+00:00
-Owned profile: tf-live-directional-5fbaff621178
+UTC: 2026-10-09T21:36:57.084063+00:00
+Owned profile: tf-live-directional-993438dfde34
+Provider binary SHA256: 75aac3e497d8a2ea5bf419025bd8624c5f64ea0ce11af997b5c242bd3839172b
 Borrowed DLP reference: read-only=true
 validate: exit=0
 create: exit=0
 Plan: 1 to add, 0 to change, 0 to destroy.
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+Presence: shared=false inline=true tool-response-inline=omitted
 refresh-stable: exit=0
 No changes. Your infrastructure matches the configuration.
 import: exit=0
@@ -67,12 +69,12 @@ Cleanup: remaining_revisions=0 observed_revision_ids=6
 
 | Revision | Operation | Actual returned profile UUID |
 | --- | --- | --- |
-| 1 | Create all four directions | `b7f687fe-4d8a-4991-89d7-6cc6a7e8e7dc` |
-| 2 | Change response toxicity high-confidence severity from medium to high | `8d151804-3825-44a1-8e5b-ff3bf28e7b22` |
-| 3 | Change shared maximum inline latency from 5 to 6 | `3b80fbb7-72ce-4a09-8c70-1c11742917c3` |
-| 4 | Remove prompt injection from the prompt direction | `f9e544ab-54e6-46a7-9060-21ffaca2b323` |
-| 5 | Change response severity remotely from high to low | `20a97262-baf4-462f-8fa6-15b15efd4f6a` |
-| 6 | Apply Terraform to restore response severity to high | `e58b3fc5-a535-4f4e-afa2-3c844f142ba1` |
+| 1 | Create all four directions | `3ebe6eb5-2c9c-44a8-bd80-d102387f808d` |
+| 2 | Change response toxicity high-confidence severity from medium to high | `9f14c659-e1c5-4de6-9b65-a37839a01b06` |
+| 3 | Change shared maximum inline latency from 5 to 6 | `f97c54ae-6f67-4a61-b38e-0f40dff82095` |
+| 4 | Remove prompt injection from the prompt direction | `f0476411-6502-4aa1-8cf9-fc6752bd675c` |
+| 5 | Change response severity remotely from high to low | `8ff813b1-dd6b-497b-b435-e3faf1ba7220` |
+| 6 | Apply Terraform to restore response severity to high | `efafe4c0-2ab5-4dea-911e-63ed084a17da` |
 
 The response-only update's real plan contained:
 
@@ -102,8 +104,8 @@ TF_ACC=1 go test -race ./internal/provider \
 The successful run captured:
 
 ```text
---- PASS: TestAccSecurityProfileResource_revisionsAndRename (49.09s)
---- PASS: TestAccSecurityProfileResource_richPolicy (33.17s)
+--- PASS: TestAccSecurityProfileResource_revisionsAndRename (48.03s)
+--- PASS: TestAccSecurityProfileResource_richPolicy (34.45s)
 PASS
 ```
 
@@ -113,7 +115,7 @@ The first legacy runs exposed two outdated test assertions: literal JSON compari
 
 ## Offline and documentation checks
 
-`make check`, `make build`, and `make generate` passed. `make docs-check` validated 98 HCL snippets, including eight complete roots, checked the generated schemas and Registry pages, built Docusaurus, and passed 11 browser tests plus nine visual parity comparisons. The directional example also passed live `terraform validate` and its post-apply plans returned exit code 0.
+`make check`, `make build`, and `make generate` passed. `make docs-check` validated 106 HCL snippets, including ten complete roots, checked the generated schemas and Registry pages, built Docusaurus, and passed 13 browser tests plus nine visual parity comparisons. The directional example also passed live `terraform validate` and its post-apply plans returned exit code 0.
 
 ## Additional evidence
 

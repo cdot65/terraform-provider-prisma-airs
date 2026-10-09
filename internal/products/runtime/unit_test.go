@@ -121,8 +121,10 @@ func TestSecurityProfileSchema_ModelProtectionValidators(t *testing.T) {
 	}
 
 	actionAttr := mpBlock.NestedObject.Attributes["action"].(schema.StringAttribute)
-	if len(actionAttr.Validators) == 0 {
-		t.Error("model_protection.action: expected validators, got none")
+	// Empty toxicity actions require sibling category context, so resource-level
+	// validation enforces them. Future nonempty action strings remain accepted.
+	if !actionAttr.Required {
+		t.Error("model_protection.action: expected a required attribute")
 	}
 }
 

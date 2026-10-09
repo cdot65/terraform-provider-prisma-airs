@@ -6,7 +6,7 @@ Use Terraform 1.0 or later for ordinary resources; Skill Scanning write-only aut
 
 ## Install from the Terraform Registry
 
-Provider v0.11.0 uses Go SDK v0.8.1 and uses product-prefixed Terraform types and nested product endpoint blocks. Review [migration](../guides/migration.md) before upgrading from v0.7.0 or earlier.
+Provider v0.13.0 uses Go SDK v0.9.0 and uses product-prefixed Terraform types and nested product endpoint blocks. Review [migration](../guides/migration.md) before upgrading from v0.7.0 or earlier.
 
 ```hcl
 # Setup: Declare the provider required by this configuration.
@@ -14,7 +14,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.11.0"
+      version = "~> 0.13.0"
     }
   }
 }

@@ -1,5 +1,13 @@
 # Release Notes
 
+## v0.13.0 — Directional Runtime security profiles (2026-10-09)
+
+- Adopt published Go SDK v0.9.0 and configure prompt, response, tool-call, and tool-response protections independently with native HCL.
+- Add detector severities, confidence overrides, source-code detection, shared full-conversation inspection, and computed DLP tenant metadata to the legacy and directional interfaces.
+- Preserve explicit false, omitted/null/empty values, future extensions, and unrelated directions across edits using persisted policy snapshots and identity-aware merging. Diagnose ambiguous or unsupported removals before mutation.
+- Keep existing legacy HCL and state readable, including imported toxic-content category policies with empty actions. Policy edits retain the Terraform address while tracking new revision UUIDs.
+- Document actual live create, refresh, import, edit, detector removal, remote drift, repair, and cleanup receipts in [directional profile verification](../development/directional-profile-verification.md). Legacy live tests also pass.
+
 ## v0.12.0 — Adapter ownership and adoption fidelity
 
 - Add Red Team adapter resources, single/list discovery, and adapter-backed targets using existing Go SDK v0.8.1.

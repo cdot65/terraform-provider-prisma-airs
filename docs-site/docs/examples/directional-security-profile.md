@@ -1,6 +1,6 @@
 # Directional security profiles
 
-Configure prompt, response, tool-call, and tool-response inspection independently. This interface requires a provider build containing the Go SDK v0.9.0 integration. Existing legacy protection blocks remain usable.
+Configure prompt, response, tool-call, and tool-response inspection independently. Use provider v0.13.0 or later, built on Go SDK v0.9.0. Existing legacy protection blocks remain usable.
 
 ## Complete configuration
 
@@ -11,7 +11,8 @@ Save this configuration as `main.tf` in a separate directory. Load the [Runtime 
 terraform {
   required_providers {
     prisma-airs = {
-      source = "cdot65/prisma-airs"
+      source  = "cdot65/prisma-airs"
+      version = "~> 0.13.0"
     }
   }
 }
@@ -283,7 +284,7 @@ The computed `dlp_tenant_id` records optional response metadata. GET may omit it
 
 Terraform private state retains the service policy, including omitted fields, explicit false, null arrays, empty arrays/objects, unknown direction keys, detector options, DLP rule objects, and future additive fields. Updates compare the previous and planned typed projections, applying managed changes to that saved JSON. Policy numbers retain their precision. The snapshot is provider metadata, not an editable HCL attribute. Unknown top-level profile extensions are retained separately and carried into update requests; known response audit fields are excluded.
 
-Entries are matched within their profile and direction by identity, never by list position. Duplicate identities that make a changed list ambiguous produce a diagnostic before writing. Removing an entire direction container with future direction keys, or an unrepresentable detector without a name/action, also requires resolving ownership before mutation. Removing a managed detector removes its subtree, including extensions on that detector. Unchanged opaque fields survive other edits. Optional computed severities retain observed service values when omitted from configuration; configuring them explicitly makes remote changes observable as drift.
+Entries are matched within their profile and direction by identity, never by list position. Duplicate identities that make a changed list ambiguous produce a diagnostic before writing. Removing an entire direction container with future direction keys, or an unrepresentable detector without a name/action, also requires resolving ownership before mutation. Observed toxic-content rules with explicit category settings retain empty actions. Removing a managed detector removes its subtree, including extensions on that detector. Unchanged opaque fields survive other edits. Optional computed severities retain observed service values when omitted from configuration; configuring them explicitly makes remote changes observable as drift.
 
 The schema adds fields without changing existing paths or types. Old state remains readable and acquires preservation metadata on refresh. If that metadata is unavailable, update reports a diagnostic requiring refresh.
 

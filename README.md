@@ -9,7 +9,7 @@ Terraform provider for Palo Alto Networks **Prisma AIRS** — manage AI security
 
 Built on the [prisma-airs-go](https://github.com/cdot65/prisma-airs-go) SDK using the [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework).
 
-The provider uses published Go SDK v0.8.1 for coordinated Gateway workspaces and Skill Scanning, with native HCL and a Terraform 1.11+ write-only authorization-code input. Review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before upgrading existing configurations and state.
+The provider uses published Go SDK v0.9.0 for directional Runtime security profiles, coordinated Gateway workspaces, and Skill Scanning, with native HCL and a Terraform 1.11+ write-only authorization-code input. Review the [migration guide](https://cdot65.github.io/terraform-provider-prisma-airs/guides/migration/) before upgrading existing configurations and state.
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ terraform {
   required_providers {
     prisma-airs = {
       source  = "cdot65/prisma-airs"
-      version = "~> 0.12.0"
+      version = "~> 0.13.0"
     }
   }
 }

@@ -279,8 +279,10 @@ func validatePolicyRemoval(name string, raw any, path string) error {
 					continue
 				}
 				detector, _ := object["name"].(string)
-				action, _ := object["action"].(string)
-				if detector == "" || action == "" {
+				action, hasAction := object["action"].(string)
+				categories, _ := object["toxic-category-list"].([]any)
+				observedEmptyToxicAction := hasAction && detector == "toxic-content" && len(categories) > 0
+				if detector == "" || !hasAction || (action == "" && !observedEmptyToxicAction) {
 					return fmt.Errorf("%s contains a model detector without a configurable name/action; its removal cannot be represented safely", path)
 				}
 			}
