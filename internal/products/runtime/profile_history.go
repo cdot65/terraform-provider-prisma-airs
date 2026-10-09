@@ -104,6 +104,9 @@ func readCreatedProfile(ctx context.Context, client *airsruntime.Client, receipt
 	plan.ProfileID = plan.ID
 	plan.Revision = types.Int64Value(int64(receipt.Revision))
 	plan.Active = types.BoolValue(receipt.Active)
+	if receipt.FieldPresence("dlp_tenant_id") != airsruntime.JSONOmitted {
+		plan.DLPTenantID = types.StringValue(receipt.DLPTenantID)
+	}
 	plan.UpdatedAt = types.StringValue(receipt.LastModifiedTs)
 	plan.CreatedAt = types.StringNull()
 	profiles, err := namedProfileRevisions(ctx, client, plan.ProfileName.ValueString())

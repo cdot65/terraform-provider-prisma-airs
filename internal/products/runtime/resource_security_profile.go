@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	_ resource.Resource                = &securityProfileResource{}
-	_ resource.ResourceWithImportState = &securityProfileResource{}
+	_ resource.Resource                   = &securityProfileResource{}
+	_ resource.ResourceWithImportState    = &securityProfileResource{}
+	_ resource.ResourceWithValidateConfig = &securityProfileResource{}
 )
 
 func NewSecurityProfileResource() resource.Resource {
@@ -37,6 +38,7 @@ type securityProfileResource struct {
 // ── Model types ──────────────────────────────────────────────────────
 
 type SecurityProfileResourceModel struct {
+	DLPTenantID        types.String             `tfsdk:"dlp_tenant_id"`
 	ID                 types.String             `tfsdk:"id"`
 	ProfileID          types.String             `tfsdk:"profile_id"`
 	Revision           types.Int64              `tfsdk:"revision"`
@@ -49,14 +51,17 @@ type SecurityProfileResourceModel struct {
 }
 
 type AiSecurityProfileModel struct {
-	ModelType         types.String           `tfsdk:"model_type"`
-	ContentType       types.String           `tfsdk:"content_type"`
-	MaskDataInStorage types.Bool             `tfsdk:"mask_data_in_storage"`
-	Latency           *LatencyModel          `tfsdk:"latency"`
-	DataProtection    *DataProtectionModel   `tfsdk:"data_protection"`
-	AppProtection     *AppProtectionModel    `tfsdk:"app_protection"`
-	ModelProtection   []ModelProtectionModel `tfsdk:"model_protection"`
-	AgentProtection   []AgentProtectionModel `tfsdk:"agent_protection"`
+	ContentTypeMode                  types.String                    `tfsdk:"content_type_mode"`
+	ContentTypeConfigurations        *ContentTypeConfigurationsModel `tfsdk:"content_type_configurations"`
+	EnableFullConversationInspection types.Bool                      `tfsdk:"enable_full_conversation_inspection"`
+	ModelType                        types.String                    `tfsdk:"model_type"`
+	ContentType                      types.String                    `tfsdk:"content_type"`
+	MaskDataInStorage                types.Bool                      `tfsdk:"mask_data_in_storage"`
+	Latency                          *LatencyModel                   `tfsdk:"latency"`
+	DataProtection                   *DataProtectionModel            `tfsdk:"data_protection"`
+	AppProtection                    *AppProtectionModel             `tfsdk:"app_protection"`
+	ModelProtection                  []ModelProtectionModel          `tfsdk:"model_protection"`
+	AgentProtection                  []AgentProtectionModel          `tfsdk:"agent_protection"`
 }
 
 type LatencyModel struct {
@@ -65,13 +70,15 @@ type LatencyModel struct {
 }
 
 type DataProtectionModel struct {
-	DataLeakDetection *DataLeakDetectionModel `tfsdk:"data_leak_detection"`
-	DatabaseSecurity  []DatabaseSecurityModel `tfsdk:"database_security"`
+	SourceCodeDetection *SourceCodeDetectionModel `tfsdk:"source_code_detection"`
+	DataLeakDetection   *DataLeakDetectionModel   `tfsdk:"data_leak_detection"`
+	DatabaseSecurity    []DatabaseSecurityModel   `tfsdk:"database_security"`
 }
 
 type DatabaseSecurityModel struct {
-	Name   types.String `tfsdk:"name"`
-	Action types.String `tfsdk:"action"`
+	Severity types.String `tfsdk:"severity"`
+	Name     types.String `tfsdk:"name"`
+	Action   types.String `tfsdk:"action"`
 }
 
 type DataLeakDetectionModel struct {
@@ -87,6 +94,7 @@ type DataLeakMemberModel struct {
 }
 
 type AppProtectionModel struct {
+	UrlDetectedSeverity     types.String                  `tfsdk:"url_detected_severity"`
 	AlertURLCategory        types.List                    `tfsdk:"alert_url_category"`
 	BlockURLCategory        types.List                    `tfsdk:"block_url_category"`
 	AllowURLCategory        types.List                    `tfsdk:"allow_url_category"`
@@ -96,20 +104,24 @@ type AppProtectionModel struct {
 }
 
 type MaliciousCodeProtectionModel struct {
-	Name   types.String `tfsdk:"name"`
-	Action types.String `tfsdk:"action"`
+	Severity types.String `tfsdk:"severity"`
+	Name     types.String `tfsdk:"name"`
+	Action   types.String `tfsdk:"action"`
 }
 
 type ModelProtectionModel struct {
-	Name            types.String         `tfsdk:"name"`
-	Action          types.String         `tfsdk:"action"`
-	ToxicCategories []ToxicCategoryModel `tfsdk:"toxic_category"`
-	TopicLists      []TopicListModel     `tfsdk:"topic_list"`
+	SeverityByConfidence *SeverityByConfidenceModel `tfsdk:"severity_by_confidence"`
+	Severity             types.String               `tfsdk:"severity"`
+	Name                 types.String               `tfsdk:"name"`
+	Action               types.String               `tfsdk:"action"`
+	ToxicCategories      []ToxicCategoryModel       `tfsdk:"toxic_category"`
+	TopicLists           []TopicListModel           `tfsdk:"topic_list"`
 }
 
 type ToxicCategoryModel struct {
-	Category types.String `tfsdk:"category"`
-	Action   types.String `tfsdk:"action"`
+	SeverityByConfidence *SeverityByConfidenceModel `tfsdk:"severity_by_confidence"`
+	Category             types.String               `tfsdk:"category"`
+	Action               types.String               `tfsdk:"action"`
 }
 
 type TopicListModel struct {
@@ -118,14 +130,16 @@ type TopicListModel struct {
 }
 
 type TopicRefModel struct {
+	Severity  types.String `tfsdk:"severity"`
 	TopicName types.String `tfsdk:"topic_name"`
 	TopicID   types.String `tfsdk:"topic_id"`
 	Revision  types.Int64  `tfsdk:"revision"`
 }
 
 type AgentProtectionModel struct {
-	Name   types.String `tfsdk:"name"`
-	Action types.String `tfsdk:"action"`
+	Severity types.String `tfsdk:"severity"`
+	Name     types.String `tfsdk:"name"`
+	Action   types.String `tfsdk:"action"`
 }
 
 type DlpDataProfileModel struct {
@@ -491,6 +505,7 @@ func (r *securityProfileResource) Schema(_ context.Context, _ resource.SchemaReq
 			},
 		},
 	}
+	extendProfileSchema(&resp.Schema)
 }
 
 // ── CRUD ─────────────────────────────────────────────────────────────
@@ -545,6 +560,7 @@ func (r *securityProfileResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
+	saveProfileSnapshot(ctx, resp.Private, profile, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -568,7 +584,11 @@ func (r *securityProfileResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	state.CreatedAt = profileCreationTime(ctx, r.client, found.ProfileName, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
+	saveProfileSnapshot(ctx, resp.Private, found, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -594,8 +614,9 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	updateReq := airsruntime.UpdateProfileRequest{
+		ProfileJSON: airsruntime.ProfileJSON{Extensions: preservedProfileExtensions(ctx, req.Private, &resp.Diagnostics)},
 		ProfileName: plan.ProfileName.ValueString(),
-		Policy:      planToSDKPolicy(ctx, &plan, &resp.Diagnostics),
+		Policy:      preservedProfilePolicy(ctx, req.Private, &state, &plan, &resp.Diagnostics),
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -609,7 +630,7 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 			return
 		}
 		profile, err = r.client.Profiles.Create(ctx, airsruntime.CreateProfileRequest{
-			ProfileName: updateReq.ProfileName, Policy: updateReq.Policy,
+			ProfileName: updateReq.ProfileName, Policy: updateReq.Policy, ProfileJSON: updateReq.ProfileJSON,
 		})
 	} else {
 		profile, err = r.client.Profiles.Update(ctx, state.ProfileID.ValueString(), updateReq)
@@ -625,6 +646,7 @@ func (r *securityProfileResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	mapProfileToState(ctx, profile, &plan, &resp.Diagnostics)
+	saveProfileSnapshot(ctx, resp.Private, profile, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -678,7 +700,11 @@ func (r *securityProfileResource) ImportState(ctx context.Context, req resource.
 
 	var state SecurityProfileResourceModel
 	state.CreatedAt = profileCreationTime(ctx, r.client, found.ProfileName, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	mapProfileToState(ctx, found, &state, &resp.Diagnostics)
+	saveProfileSnapshot(ctx, resp.Private, found, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -689,8 +715,8 @@ func (r *securityProfileResource) ImportState(ctx context.Context, req resource.
 func (r *securityProfileResource) resolveTopicRefs(ctx context.Context, plan *SecurityProfileResourceModel, diags *diag.Diagnostics) {
 	// Collect topic names that need resolution.
 	var needsResolve bool
-	for _, asp := range plan.AiSecurityProfiles {
-		for _, mp := range asp.ModelProtection {
+	for _, protection := range profileProtectionModels(plan) {
+		for _, mp := range protection.ModelProtection {
 			for _, tl := range mp.TopicLists {
 				for _, t := range tl.Topics {
 					if !t.TopicName.IsNull() && !t.TopicName.IsUnknown() && t.TopicName.ValueString() != "" &&
@@ -724,11 +750,11 @@ func (r *securityProfileResource) resolveTopicRefs(ctx context.Context, plan *Se
 	}
 
 	// Fill in topic_id and revision.
-	for aspIdx := range plan.AiSecurityProfiles {
-		for mpIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection {
-			for tlIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists {
-				for tIdx := range plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists[tlIdx].Topics {
-					ref := &plan.AiSecurityProfiles[aspIdx].ModelProtection[mpIdx].TopicLists[tlIdx].Topics[tIdx]
+	for _, protection := range profileProtectionModels(plan) {
+		for mpIdx := range protection.ModelProtection {
+			for tlIdx := range protection.ModelProtection[mpIdx].TopicLists {
+				for tIdx := range protection.ModelProtection[mpIdx].TopicLists[tlIdx].Topics {
+					ref := &protection.ModelProtection[mpIdx].TopicLists[tlIdx].Topics[tIdx]
 					name := ref.TopicName.ValueString()
 					if name == "" {
 						continue
@@ -775,86 +801,24 @@ func planToSDKPolicy(ctx context.Context, plan *SecurityProfileResourceModel, di
 				InlineTimeoutAction: airsruntime.ProfileAction(asp.Latency.InlineTimeoutAction.ValueString()),
 				MaxInlineLatency:    int32(asp.Latency.MaxInlineLatency.ValueInt64()),
 			}
-		}
-
-		if asp.DataProtection != nil {
-			dpConfig := &airsruntime.DataProtectionConfig{}
-
-			if asp.DataProtection.DataLeakDetection != nil {
-				dld := asp.DataProtection.DataLeakDetection
-				sdkDLD := airsruntime.DataLeakDetectionConfig{
-					Action:         airsruntime.ProfileAction(dld.Action.ValueString()),
-					MaskDataInline: dld.MaskDataInline.ValueBool(),
-				}
-				for _, m := range dld.Members {
-					sdkDLD.Member = append(sdkDLD.Member, airsruntime.DataLeakMember{
-						Text:    m.Text.ValueString(),
-						ID:      m.ID.ValueString(),
-						Version: m.Version.ValueString(),
-					})
-				}
-				dpConfig.DataLeakDetection = &sdkDLD
-			}
-
-			for _, ds := range asp.DataProtection.DatabaseSecurity {
-				dpConfig.DatabaseSecurity = append(dpConfig.DatabaseSecurity, airsruntime.DatabaseSecurityConfig{
-					Name:   ds.Name.ValueString(),
-					Action: ds.Action.ValueString(),
-				})
-			}
-
-			mc.DataProtection = dpConfig
-		}
-
-		if asp.AppProtection != nil {
-			mc.AppProtection = &airsruntime.AppProtectionConfig{
-				AlertURLCategory:   listToURLCategory(ctx, asp.AppProtection.AlertURLCategory, diags),
-				BlockURLCategory:   listToURLCategory(ctx, asp.AppProtection.BlockURLCategory, diags),
-				AllowURLCategory:   listToURLCategory(ctx, asp.AppProtection.AllowURLCategory, diags),
-				DefaultURLCategory: listToURLCategory(ctx, asp.AppProtection.DefaultURLCategory, diags),
-				UrlDetectedAction:  asp.AppProtection.UrlDetectedAction.ValueString(),
-			}
-			if asp.AppProtection.MaliciousCodeProtection != nil {
-				mc.AppProtection.MaliciousCodeProtection = &airsruntime.MaliciousCodeProtectionConfig{
-					Name:   asp.AppProtection.MaliciousCodeProtection.Name.ValueString(),
-					Action: asp.AppProtection.MaliciousCodeProtection.Action.ValueString(),
-				}
+			setStringPresence(&mc.Latency.ProfileJSON, "inline-timeout-action", asp.Latency.InlineTimeoutAction)
+			if !asp.Latency.MaxInlineLatency.IsNull() && !asp.Latency.MaxInlineLatency.IsUnknown() {
+				mc.Latency.SetFieldPresence("max-inline-latency", airsruntime.JSONPresent)
 			}
 		}
 
-		for _, mp := range asp.ModelProtection {
-			sdkMP := airsruntime.ModelProtectionConfig{
-				Name:   mp.Name.ValueString(),
-				Action: airsruntime.ProfileAction(mp.Action.ValueString()),
-			}
-			for _, tc := range mp.ToxicCategories {
-				sdkMP.ToxicCategoryList = append(sdkMP.ToxicCategoryList, airsruntime.ToxicCategoryConfig{
-					Category: tc.Category.ValueString(),
-					Action:   tc.Action.ValueString(),
-				})
-			}
-			for _, tl := range mp.TopicLists {
-				sdkTL := airsruntime.TopicArrayConfig{
-					Action: airsruntime.ProfileAction(tl.Action.ValueString()),
-				}
-				for _, t := range tl.Topics {
-					sdkTL.Topic = append(sdkTL.Topic, airsruntime.TopicRef{
-						TopicName: t.TopicName.ValueString(),
-						TopicID:   t.TopicID.ValueString(),
-						Revision:  t.Revision.ValueInt64(),
-					})
-				}
-				sdkMP.TopicList = append(sdkMP.TopicList, sdkTL)
-			}
-			mc.ModelProtection = append(mc.ModelProtection, sdkMP)
+		protection := protectionToSDK(ctx, asp.protection(), diags)
+		mc.DataProtection, mc.AppProtection = protection.DataProtection, protection.AppProtection
+		mc.ModelProtection, mc.AgentProtection = protection.ModelProtection, protection.AgentProtection
+		setBoolPresence(&mc.ProfileJSON, "mask-data-in-storage", asp.MaskDataInStorage)
+		if !asp.EnableFullConversationInspection.IsNull() && !asp.EnableFullConversationInspection.IsUnknown() {
+			value := asp.EnableFullConversationInspection.ValueBool()
+			mc.EnableFullConversationInspection = &value
 		}
-
-		for _, ap := range asp.AgentProtection {
-			mc.AgentProtection = append(mc.AgentProtection, airsruntime.AgentProtectionConfig{
-				Name:   ap.Name.ValueString(),
-				Action: airsruntime.ProfileAction(ap.Action.ValueString()),
-			})
-		}
+		config.ContentTypeMode = asp.ContentTypeMode.ValueString()
+		setStringPresence(&config.ProfileJSON, "content-type", asp.ContentType)
+		setStringPresence(&config.ProfileJSON, "content-type-mode", asp.ContentTypeMode)
+		config.ContentTypeConfigurations = directionsToSDK(ctx, asp.ContentTypeConfigurations, diags)
 
 		config.ModelConfiguration = mc
 		policy.AiSecurityProfiles = append(policy.AiSecurityProfiles, config)
@@ -879,11 +843,8 @@ func listToURLCategory(ctx context.Context, list types.List, diags *diag.Diagnos
 	if list.IsNull() || list.IsUnknown() {
 		return nil
 	}
-	var members []string
+	members := []string{}
 	diags.Append(list.ElementsAs(ctx, &members, false)...)
-	if len(members) == 0 {
-		return nil
-	}
 	return &airsruntime.URLCategoryMember{Member: members}
 }
 
@@ -897,6 +858,12 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 	state.Active = types.BoolValue(profile.Active)
 
 	state.UpdatedAt = types.StringValue(profile.LastModifiedTs)
+	// GET can omit response-only metadata. Keep a previously observed tenant.
+	if profile.FieldPresence("dlp_tenant_id") != airsruntime.JSONOmitted {
+		state.DLPTenantID = types.StringValue(profile.DLPTenantID)
+	} else if state.DLPTenantID.IsUnknown() {
+		state.DLPTenantID = types.StringNull()
+	}
 
 	if profile.Policy == nil {
 		state.AiSecurityProfiles = nil
@@ -910,7 +877,9 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 		model := AiSecurityProfileModel{
 			ModelType: types.StringValue(asp.ModelType),
 		}
-		model.ContentType = types.StringValue(asp.ContentType)
+		model.ContentType = sdkString(asp.ContentType, asp.FieldPresence("content-type"))
+		model.ContentTypeMode = sdkString(asp.ContentTypeMode, asp.FieldPresence("content-type-mode"))
+		model.ContentTypeConfigurations = directionsFromSDK(ctx, asp.ContentTypeConfigurations, priorDirections(priorAiProfiles, asp), diags)
 
 		if asp.ModelConfiguration != nil {
 			mc := asp.ModelConfiguration
@@ -923,94 +892,17 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 				}
 			}
 
-			if mc.DataProtection != nil {
-				dpModel := &DataProtectionModel{}
-
-				if mc.DataProtection.DataLeakDetection != nil {
-					dld := mc.DataProtection.DataLeakDetection
-					dldModel := &DataLeakDetectionModel{
-						Action: types.StringValue(string(dld.Action)),
-					}
-					dldModel.MaskDataInline = types.BoolValue(dld.MaskDataInline)
-					for _, m := range dld.Member {
-						member := DataLeakMemberModel{
-							Text: types.StringValue(m.Text),
-						}
-						if m.ID != "" {
-							member.ID = types.StringValue(m.ID)
-						}
-						if m.Version != "" {
-							member.Version = types.StringValue(m.Version)
-						}
-						dldModel.Members = append(dldModel.Members, member)
-					}
-					dpModel.DataLeakDetection = dldModel
-				}
-
-				for _, ds := range mc.DataProtection.DatabaseSecurity {
-					dpModel.DatabaseSecurity = append(dpModel.DatabaseSecurity, DatabaseSecurityModel{
-						Name:   types.StringValue(ds.Name),
-						Action: types.StringValue(ds.Action),
-					})
-				}
-
-				model.DataProtection = dpModel
+			protection := protectionFromSDK(ctx, &airsruntime.ProtectionConfiguration{
+				DataProtection: mc.DataProtection, AppProtection: mc.AppProtection,
+				ModelProtection: mc.ModelProtection, AgentProtection: mc.AgentProtection,
+			}, priorProfileProtection(priorAiProfiles, asp), diags)
+			model.DataProtection, model.AppProtection = protection.DataProtection, protection.AppProtection
+			model.ModelProtection, model.AgentProtection = protection.ModelProtection, protection.AgentProtection
+			if mc.FieldPresence("mask-data-in-storage") == airsruntime.JSONOmitted {
+				model.MaskDataInStorage = types.BoolNull()
 			}
+			model.EnableFullConversationInspection = types.BoolPointerValue(mc.EnableFullConversationInspection)
 
-			if mc.AppProtection != nil {
-				model.AppProtection = &AppProtectionModel{
-					AlertURLCategory:   urlCategoryToList(ctx, mc.AppProtection.AlertURLCategory, diags),
-					BlockURLCategory:   urlCategoryToList(ctx, mc.AppProtection.BlockURLCategory, diags),
-					AllowURLCategory:   urlCategoryToList(ctx, mc.AppProtection.AllowURLCategory, diags),
-					DefaultURLCategory: urlCategoryToList(ctx, mc.AppProtection.DefaultURLCategory, diags),
-					UrlDetectedAction:  types.StringValue(mc.AppProtection.UrlDetectedAction),
-				}
-				if mc.AppProtection.MaliciousCodeProtection != nil {
-					model.AppProtection.MaliciousCodeProtection = &MaliciousCodeProtectionModel{
-						Name:   types.StringValue(mc.AppProtection.MaliciousCodeProtection.Name),
-						Action: types.StringValue(mc.AppProtection.MaliciousCodeProtection.Action),
-					}
-				}
-			}
-
-			for mpIdx, mp := range mc.ModelProtection {
-				mpModel := ModelProtectionModel{
-					Name:   types.StringValue(mp.Name),
-					Action: types.StringValue(string(mp.Action)),
-				}
-				for _, tc := range mp.ToxicCategoryList {
-					mpModel.ToxicCategories = append(mpModel.ToxicCategories, ToxicCategoryModel{
-						Category: types.StringValue(tc.Category),
-						Action:   types.StringValue(tc.Action),
-					})
-				}
-				for tlIdx, tl := range mp.TopicList {
-					tlModel := TopicListModel{
-						Action: types.StringValue(string(tl.Action)),
-					}
-					if len(tl.Topic) > 0 {
-						for _, t := range tl.Topic {
-							tlModel.Topics = append(tlModel.Topics, TopicRefModel{
-								TopicName: types.StringValue(t.TopicName),
-								TopicID:   types.StringValue(t.TopicID),
-								Revision:  types.Int64Value(t.Revision),
-							})
-						}
-					} else {
-						// API may not return topics; preserve from prior state
-						tlModel.Topics = priorTopicsFromSlice(priorAiProfiles, mpIdx, tlIdx)
-					}
-					mpModel.TopicLists = append(mpModel.TopicLists, tlModel)
-				}
-				model.ModelProtection = append(model.ModelProtection, mpModel)
-			}
-
-			for _, ap := range mc.AgentProtection {
-				model.AgentProtection = append(model.AgentProtection, AgentProtectionModel{
-					Name:   types.StringValue(ap.Name),
-					Action: types.StringValue(string(ap.Action)),
-				})
-			}
 		}
 
 		state.AiSecurityProfiles = append(state.AiSecurityProfiles, model)
@@ -1031,40 +923,8 @@ func mapProfileToState(ctx context.Context, profile *airsruntime.SecurityProfile
 	}
 }
 
-func priorTopicsFromSlice(priorProfiles []AiSecurityProfileModel, mpIdx, tlIdx int) []TopicRefModel {
-	if len(priorProfiles) == 0 {
-		return nil
-	}
-	asp := priorProfiles[0]
-	if mpIdx >= len(asp.ModelProtection) {
-		return nil
-	}
-	mp := asp.ModelProtection[mpIdx]
-	if tlIdx >= len(mp.TopicLists) {
-		return nil
-	}
-	// Resolve any unknown values (from plan) to concrete defaults
-	topics := make([]TopicRefModel, len(mp.TopicLists[tlIdx].Topics))
-	for i, t := range mp.TopicLists[tlIdx].Topics {
-		topics[i] = TopicRefModel{
-			TopicName: t.TopicName,
-		}
-		if t.TopicID.IsUnknown() {
-			topics[i].TopicID = types.StringValue("")
-		} else {
-			topics[i].TopicID = t.TopicID
-		}
-		if t.Revision.IsUnknown() {
-			topics[i].Revision = types.Int64Value(0)
-		} else {
-			topics[i].Revision = t.Revision
-		}
-	}
-	return topics
-}
-
 func urlCategoryToList(ctx context.Context, cat *airsruntime.URLCategoryMember, diags *diag.Diagnostics) types.List {
-	if cat == nil || len(cat.Member) == 0 {
+	if cat == nil || cat.FieldPresence("member") != airsruntime.JSONPresent {
 		return types.ListNull(types.StringType)
 	}
 	list, d := types.ListValueFrom(ctx, types.StringType, cat.Member)

@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -121,7 +122,7 @@ func TestAccSecurityProfileResource_revisionsAndRename(t *testing.T) {
 				}
 				return nil
 			})},
-			{ResourceName: addr, ImportState: true, ImportStateId: name, ImportStateVerify: true},
+			{ResourceName: addr, ImportState: true, ImportStateId: name, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"dlp_tenant_id"}},
 			{PreConfig: func() {
 				ctx, cancel := accCtx()
 				defer cancel()
@@ -185,12 +186,11 @@ func (c profilePolicyDeltaCheck) CheckPlan(_ context.Context, req plancheck.Chec
 			}
 			expected[0].(map[string]any)["model_protection"].([]any)[0].(map[string]any)["action"] = c.action
 			after := change.Change.After.(map[string]any)["ai_security_profile"]
-			expectedJSON, expectedErr := json.Marshal(expected)
-			afterJSON, afterErr := json.Marshal(after)
-			// Normalize JSON number representations (json.Number versus float64)
-			// while still comparing every configured/computed policy leaf.
-			if expectedErr != nil || afterErr != nil || string(expectedJSON) != string(afterJSON) {
-				resp.Error = fmt.Errorf("policy plan changed fields beyond the requested action")
+			// The plan omits unknown optional/computed fields whose prior value
+			// was null. Compare every populated leaf, treating absent and null
+			// map values alike and normalizing JSON number representations.
+			if paths := policyChangedPaths("ai_security_profile", expected, after); len(paths) > 0 {
+				resp.Error = fmt.Errorf("policy plan changed fields beyond the requested action: %v", paths)
 			}
 			beforeDLP, _ := json.Marshal(change.Change.Before.(map[string]any)["dlp_data_profile"])
 			afterDLP, _ := json.Marshal(change.Change.After.(map[string]any)["dlp_data_profile"])
@@ -201,6 +201,42 @@ func (c profilePolicyDeltaCheck) CheckPlan(_ context.Context, req plancheck.Chec
 		}
 	}
 	resp.Error = fmt.Errorf("profile absent from policy delta plan")
+}
+
+// Report paths rather than tenant-specific policy values when a live check fails.
+func policyChangedPaths(path string, before, after any) []string {
+	a, _ := json.Marshal(before)
+	b, _ := json.Marshal(after)
+	if string(a) == string(b) {
+		return nil
+	}
+	if left, ok := before.(map[string]any); ok {
+		if right, ok := after.(map[string]any); ok {
+			keys := map[string]bool{}
+			for key := range left {
+				keys[key] = true
+			}
+			for key := range right {
+				keys[key] = true
+			}
+			var result []string
+			for key := range keys {
+				result = append(result, policyChangedPaths(path+"."+key, left[key], right[key])...)
+			}
+			sort.Strings(result)
+			return result
+		}
+	}
+	if left, ok := before.([]any); ok {
+		if right, ok := after.([]any); ok && len(left) == len(right) {
+			var result []string
+			for i := range left {
+				result = append(result, policyChangedPaths(fmt.Sprintf("%s[%d]", path, i), left[i], right[i])...)
+			}
+			return result
+		}
+	}
+	return []string{path}
 }
 
 // Rich policy regression: explicit false and omitted canonical defaults must
@@ -282,7 +318,7 @@ func TestAccSecurityProfileResource_richPolicy(t *testing.T) {
 		return len(revs) == 0, err
 	}), Steps: []resource.TestStep{
 		{Config: config("block"), Check: check},
-		{ResourceName: addr, ImportState: true, ImportStateId: name, ImportStateVerify: true},
+		{ResourceName: addr, ImportState: true, ImportStateId: name, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"dlp_tenant_id"}},
 		{Config: config("allow"), ConfigPlanChecks: resource.ConfigPlanChecks{PreApply: []plancheck.PlanCheck{plancheck.ExpectResourceAction(addr, plancheck.ResourceActionUpdate), profilePolicyDeltaCheck{addr, "allow"}, plancheck.ExpectUnknownValue(addr, tfjsonpath.New("profile_id"))}}, Check: check},
 		{Config: config("allow")},
 		{Config: namedReference, Check: resource.ComposeAggregateTestCheckFunc(resource.TestCheckResourceAttr(addr, "dlp_data_profile.0.name", dlp.Name), resource.TestCheckResourceAttr(addr, "dlp_data_profile.0.file_based", "block"))},

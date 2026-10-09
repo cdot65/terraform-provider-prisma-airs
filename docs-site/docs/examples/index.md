@@ -26,6 +26,7 @@ These complete inline configurations use the [released provider](../getting-star
 | --- | --- | --- |
 | [Runtime policy](runtime-policy.md) | Topic references and versioned security profiles | Runtime management |
 | [Adapters](red-team-adapters.md) | Script ownership, deliberate broker execution, discovery, and secret-preserving adoption (upcoming release) | Existing compatible Network Broker |
+| [Directional security profile](directional-security-profile.md) | Four inspection directions, confidence severities, and captured live lifecycle results | Runtime management; provider build with Go SDK v0.9.0 support |
 | [Native targets](native-targets.md) | Seven native connection families and payload templates | Red Team management |
 | [Gateway workspaces](gateway-workspaces.md) | Dedicated/external IAM scope ownership and native workspace settings | Gateway admin/IAM and existing role grants |
 | [Skill Scanning policy](skill-scanning.md) | Adopted rule baselines and immutable fingerprint trust | Skill Scanning management |

@@ -198,6 +198,17 @@ Since v0.6.2, the provider automatically resolves `topic_name` to `topic_id` and
 
 :::
 
+
+## Directional inspection
+
+Use `content_type_mode = "per_content_type"` and a `content_type_configurations` block with optional `prompt`, `response`, `tool_call`, and `tool_response` protection blocks. Each direction reuses `data_protection`, `app_protection`, `model_protection`, and `agent_protection`. Keep `latency`, `mask_data_in_storage`, and optional `enable_full_conversation_inspection` directly on `ai_security_profile`.
+
+All layouts support detector `severity`, `url_detected_severity`, model and toxicity-category `severity_by_confidence { high, moderate }`, topic-reference severity, and `data_protection.source_code_detection { action, severity }`. Compound toxicity actions remain intact. Mode and severity strings are open-ended; known examples are not exhaustive.
+
+See the [complete four-direction configuration](../examples/directional-security-profile.md) for the HCL interface, import, metadata, and preservation behavior. The existing legacy HCL paths and stored state remain compatible. Configure one protection layout per profile entry; a mixed service response remains readable, and conflicting configured writes receive a diagnostic.
+
+The provider retains a lossless policy snapshot in Terraform private state. This preserves unknown direction keys, detector options, DLP rules, future fields, and omitted/null/empty distinctions through refresh and managed edits. Explicit detector removal stays removed. Changed lists with ambiguous repeated identities are rejected before mutation. Optional `dlp_tenant_id` is computed response metadata, and GET omission does not cause a configuration diff.
+
 ## Argument Reference
 
 ### Top-Level

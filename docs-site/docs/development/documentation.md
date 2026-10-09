@@ -24,7 +24,7 @@ The schema generator uses Terraform's provider-schema protocol with a temporary 
 
 Use terse `# Concept: purpose` comments at dependency and product boundaries, with expanded nested HCL objects and lists. `check_content.py` enforces Terraform formatting for the HCL fences and validates them offline; the Terraform CLI configuration and explicitly nested fragment remain separate non-root examples.
 
-Examples described as complete must include a provider requirement and all variable declarations. Add complete examples to the offline Terraform validation fixtures when extending the guide catalog. Live lifecycle evidence remains in [SDK upgrade verification](sdk-upgrade-verification.md).
+Examples described as complete must include a provider requirement and all variable declarations. Add complete examples to the offline Terraform validation fixtures when extending the guide catalog. Live lifecycle evidence appears in [SDK upgrade verification](sdk-upgrade-verification.md) and [directional profile verification](directional-profile-verification.md).
 
 ## Maintain the shared design
 
