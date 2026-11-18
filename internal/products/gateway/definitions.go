@@ -44,6 +44,15 @@ func common(fields map[string]field, workspace bool) map[string]field {
 }
 func ptr[T any](v T) *T { return &v }
 
+// providerFields lets callers choose the workspace slug used in @slug/model
+// routing. A configured change replaces the provider; an omitted slug stays
+// server-assigned.
+func providerFields() map[string]field {
+	fields := common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry.")}, true)
+	fields["slug"] = field{kind: "string", immutable: true, description: "Workspace provider slug used to route requests as @slug/model. Server-assigned when omitted. Changing a configured slug replaces the provider."}
+	return fields
+}
+
 func definitions() []definition {
 	config := definition{name: "config", description: "Manages a versioned Gateway routing config using a native HCL object. Updates replace the whole document, retain the resource ID and change the computed version ID. Plaintext credentials are prohibited; reference integrations, providers or secret references.", workspace: true,
 		fields: common(map[string]field{"name": required("string", "Config name."), "config": required("object", "Complete native HCL routing document, without plaintext credentials."), "version_id": computed("string", "Current immutable config revision UUID; changes on update.")}, true),
@@ -131,7 +140,7 @@ func definitions() []definition {
 			return listSDK(c.sdk.Integrations.List(ctx, s.IntegrationsListOptions{PageSize: ptr(size), CurrentPage: ptr(page - 1)}))
 		},
 	}, definition{name: "provider", description: "Manages a workspace provider backed by an organisation integration. Establish an integration_workspace_binding first. Import uses workspace_uuid/provider_uuid.", workspace: true, pagination: true, scopedImport: true,
-		fields: common(map[string]field{"name": required("string", "Provider name."), "integration_id": immutable("string", "Bound organisation integration UUID."), "note": optional("string", "Provider note; an empty string clears it."), "usage_limits": optional("usage_settings", "Provider usage limit settings, represented as native HCL attributes."), "expires_at": optional("timestamp", "RFC 3339 expiry timestamp; equivalent offsets and precision are preserved on refresh. Removing this setting does not clear a remote expiry.")}, true),
+		fields: providerFields(),
 		create: func(ctx context.Context, c *client, b document) (document, error) {
 			return writeSDK(ctx, b, c.sdk.Providers.Create)
 		},
