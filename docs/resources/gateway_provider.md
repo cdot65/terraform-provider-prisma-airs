@@ -15,6 +15,7 @@ resource "prisma-airs_gateway_provider" "example" {
   name           = "Example - Gateway - Development"
   workspace_id   = var.workspace_id
   integration_id = var.integration_id
+  slug           = "example"
   note           = "Application provider"
 }
 ```
@@ -22,6 +23,8 @@ resource "prisma-airs_gateway_provider" "example" {
 ## Ownership and lifecycle
 
 Establish integration workspace access before creation. Add `depends_on` for that binding, since its ID is separate from `integration_id`. Workspace and integration changes require replacement. This resource owns the workspace provider, not the upstream organization integration.
+
+Set `slug` to choose how callers address the provider (`@<slug>/<model>`). When omitted, the service assigns one. Changing a configured `slug` replaces the provider; removing it from HCL keeps the current slug.
 
 Inline provider rate limits on create currently fail live with upstream HTTP 503 through the published SDK contract. They are excluded from this resource. Manage rate policies with [`prisma-airs_gateway_rate_limit`](https://cdot65.github.io/terraform-provider-prisma-airs/resources/gateway-rate-limit/); they have their own conditions and lifecycle. Provider usage limits expose supported settings as typed HCL.
 
@@ -57,7 +60,7 @@ See the [exact schema reference](https://cdot65.github.io/terraform-provider-pri
 | `name` | `string` | required | — | Provider name. |
 | `note` | `string` | optional, computed | — | Provider note; an empty string clears it. |
 | `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
-| `slug` | `string` | computed | — | Server-assigned resource slug. |
+| `slug` | `string` | optional, computed | — | Workspace provider slug used to route requests as @slug/model. Server-assigned when omitted. Changing a configured slug replaces the provider. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `usage_limits` | `single(object)` | optional, computed | — | Provider usage limit settings, represented as native HCL attributes. |
 | `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

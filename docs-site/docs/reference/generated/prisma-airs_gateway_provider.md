@@ -18,7 +18,7 @@ Presence flags describe the schema. Lifecycle guides specify validation rules, d
 | `name` | `string` | required | — | Provider name. |
 | `note` | `string` | optional, computed | — | Provider note; an empty string clears it. |
 | `organisation_id` | `string` | computed | — | Internal organisation UUID from reads; writes use the shared TSG ID. |
-| `slug` | `string` | computed | — | Server-assigned resource slug. |
+| `slug` | `string` | optional, computed | — | Workspace provider slug used to route requests as @slug/model. Server-assigned when omitted. Changing a configured slug replaces the provider. |
 | `status` | `string` | computed | — | Remote lifecycle status; externally archived objects leave Terraform state. |
 | `usage_limits` | `single(object)` | optional, computed | — | Provider usage limit settings, represented as native HCL attributes. |
 | `workspace_id` | `string` | required | — | Gateway workspace UUID, including a managed gateway_workspace.id reference. |

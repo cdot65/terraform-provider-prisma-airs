@@ -10,6 +10,7 @@ resource "prisma-airs_gateway_provider" "example" {
   name           = "Example - Gateway - Development"
   workspace_id   = var.workspace_id
   integration_id = var.integration_id
+  slug           = "example"
   note           = "Application provider"
 }
 ```
@@ -17,6 +18,8 @@ resource "prisma-airs_gateway_provider" "example" {
 ## Ownership and lifecycle
 
 Establish integration workspace access before creation. Add `depends_on` for that binding, since its ID is separate from `integration_id`. Workspace and integration changes require replacement. This resource owns the workspace provider, not the upstream organization integration.
+
+Set `slug` to choose how callers address the provider (`@<slug>/<model>`). When omitted, the service assigns one. Changing a configured `slug` replaces the provider; removing it from HCL keeps the current slug.
 
 Inline provider rate limits on create currently fail live with upstream HTTP 503 through the published SDK contract. They are excluded from this resource. Manage rate policies with [`prisma-airs_gateway_rate_limit`](gateway-rate-limit.md); they have their own conditions and lifecycle. Provider usage limits expose supported settings as typed HCL.
 
